@@ -158,7 +158,6 @@ void processTriage(uint8_t c) {
       
       if (currentA > TRIAGE_MIN_VALID_CURRENT_A) {
          ch[c].qt_dcir = (ch[c].qt_voltDrop1500 / currentA) * 1000.0f;
-         ch[c].IR = ch[c].qt_dcir; 
          Serial.printf("|- Calculated DCIR: %.1f mOhm\n", ch[c].qt_dcir);
 
          float thermalWatts = (currentA * currentA) * (ch[c].qt_dcir / 1000.0f);
