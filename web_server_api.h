@@ -14,7 +14,7 @@ extern float custom_a, custom_b, custom_c;
 extern float triage_grade_a_mohm, triage_grade_b_mohm, triage_grade_c_mohm;
 
 // دسترسی به آرایه اضافه شده در بک‌اند
-extern int topUpRetries[3];
+extern uint8_t topUpRetries[3];
 
 // ─── Forward Declarations برای توابعی که در فایل اصلی هستند ───
 void startChannel(uint8_t ch_idx, const String& name, ChannelState act);

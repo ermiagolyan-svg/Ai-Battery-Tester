@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 // دسترسی به آرایه اضافه شده در بک‌اند
-extern int topUpRetries[3];
+extern uint8_t topUpRetries[3];
 
 // ─── تابع آپدیت TFT با فرمت و پدینگ‌های درخواستی شما ───
 void updateTFT() {
