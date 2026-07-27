@@ -82,10 +82,9 @@ String buildIndexPage() {
   
   .btn-big.active-btn { border-width: 2px; }
   .btn-big.chg.active-btn { border-color: #00ffff; color: #00ffff; background: rgba(0,255,255,0.1); box-shadow: 0 0 16px rgba(0,255,255,0.2); }
-  .btn-big.d500.active-btn { border-color: #ffa500; color: #ffa500; background: rgba(255,165,0,0.1); box-shadow: 0 0 16px rgba(255,165,0,0.2); }
-  .btn-big.d1000.active-btn { border-color: #ff0000; color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 16px rgba(255,0,0,0.2); }
-  .btn-big.d1500.active-btn { border-color: #ff0000; color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 16px rgba(255,0,0,0.2); }
-  .btn-big.trg.active-btn { border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.1); box-shadow: 0 0 16px rgba(255,0,255,0.2); }
+  .btn-big.d500.active-btn { border-color: #ffff00; color: #ffff00; background: rgba(255,255,0,0.1); box-shadow: 0 0 16px rgba(255,255,0,0.2); }
+  .btn-big.d1000.active-btn { border-color: #ffa500; color: #ffa500; background: rgba(255,165,0,0.1); box-shadow: 0 0 16px rgba(255,165,0,0.2); }
+  .btn-big.d1500.active-btn { border-color: #ff0000; color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 16px rgba(255,0,0,0.2); }  .btn-big.trg.active-btn { border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.1); box-shadow: 0 0 16px rgba(255,0,255,0.2); }
 
   .btn { padding: 0 12px; height: 42px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 1; transition: all 0.2s; font-family: inherit; }
   .btn-stop { background: rgba(255, 107, 53, 0.1); color: var(--warn); border: 1px solid var(--warn); width: 100%; }
@@ -384,8 +383,8 @@ function renderCards(data) {
     if (isResting) stateColor = '#87ceeb'; 
     else if (ch.state === STATE.IR) stateColor = '#ffff00'; 
     else if (ch.state === STATE.CHARGING) stateColor = '#00ffff'; 
-    else if (ch.state === STATE.D500) stateColor = '#ffa500'; 
-    else if (ch.state === STATE.D1000) stateColor = '#ff0000'; 
+    else if (ch.state === STATE.D500) stateColor = '#ffff00'; 
+    else if (ch.state === STATE.D1000) stateColor = '#ffa500'; 
     else if (ch.state === STATE.D1500) stateColor = '#ff0000'; 
     else if (ch.state === STATE.TRIAGE) stateColor = '#ff00ff'; 
     else if (ch.state === STATE.DONE) stateColor = '#00ff00'; 

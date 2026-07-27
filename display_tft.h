@@ -58,9 +58,9 @@ void updateTFT() {
             stateStr = "CHRG"; 
         }
     }
-    else if(ch[i].state == DISCHARGE_500) { stateColor = TFT_ORANGE; stateStr = "D.5A"; } 
-    else if(ch[i].state == DISCHARGE_1000) { stateColor = TFT_RED; stateStr = "D1A"; }
-    else if(ch[i].state == DISCHARGE_1500) { stateColor = TFT_MAROON; stateStr = "D1.5A"; }
+    else if(ch[i].state == DISCHARGE_500) { stateColor = TFT_YELLOW; stateStr = "D.5A"; } 
+    else if(ch[i].state == DISCHARGE_1000) { stateColor = TFT_ORANGE; stateStr = "D1A"; }
+    else if(ch[i].state == DISCHARGE_1500) { stateColor = TFT_RED; stateStr = "D1.5A"; }
     else if(ch[i].state == Triage) { stateColor = TFT_MAGENTA; stateStr = "QUICK"; }
     else if(ch[i].state == DONE) { stateColor = TFT_GREEN; stateStr = "DONE"; }
 
