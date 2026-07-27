@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 
+// ─── متغیرهای شارژ تکمیلی (Top-Up) ───────────────────────
+static uint8_t topUpRetries[3] = {0, 0, 0};
+
 // ─── توابع مدیریت گراف هوشمند ────────────────────────────
 void graphReset(uint8_t c) {
   ch[c].graphCount = 0;
@@ -81,8 +84,13 @@ void updateInaAverage() {
   }
 }
 
+// برای دسترسی به تابع توقف پیش از تعریف کامل آن
+void stopChannel(uint8_t c);
+
 // ─── شروع و توقف کانال‌ها ──────────────────────────────
 void startChannel(uint8_t c, const String& name, ChannelState act) {
+  topUpRetries[c] = 0; // ریست شمارنده شارژ تکمیلی
+
   ch[c].name        = name;
   ch[c].mAh         = 0;
   ch[c].startMillis = millis();
@@ -131,26 +139,22 @@ void startChannel(uint8_t c, const String& name, ChannelState act) {
 
   // ─── منطق پالس تحریک شارژ (Kickstart) ─────────────────
   if (act == CHARGING) {
-    setHwState(c, CHARGING);       // ابتدا فرمان شارژ صادر می‌شود
-    delay(600);                    // صبر برای واکنش ماژول TP4056 و سنسور INA3221
+    setHwState(c, CHARGING);       
+    delay(600);                    
     
     float checkI = readCurrent(c);
-    if (checkI < 10.0f) {          // اگر جریان زیر ۱۰ میلی‌آمپر بود (عدم استارت شارژر)
-      setHwState(c, IDLE);         // تضمین ۱۰۰ درصدی قطع بودن شارژر
-      delay(100);                  // ایجاد Dead-time سخت‌افزاری
-      
-      setHwState(c, DISCHARGE_1000); // اعمال پالس دشارژ (۱ آمپر) برای افت ولتاژ سطحی
-      delay(1000);                 // مدت زمان پالس دشارژ (۱ ثانیه)
-      
-      setHwState(c, IDLE);         // قطع دشارژ
-      delay(100);                  // ایجاد Dead-time سخت‌افزاری
-      
-      setHwState(c, CHARGING);     // استارت مجدد شارژ
+    if (checkI < 10.0f) {          
+      setHwState(c, IDLE);         
+      delay(100);                  
+      setHwState(c, DISCHARGE_1000); 
+      delay(1000);                 
+      setHwState(c, IDLE);         
+      delay(100);                  
+      setHwState(c, CHARGING);     
     }
   } else {
-    setHwState(c, act);            // برای سایر حالت‌ها (دشارژ و تریاژ)
+    setHwState(c, act);            
   }
-  // ──────────────────────────────────────────────────────
   
   String actStr = (act == CHARGING) ? "شارژ" : (act == Triage) ? "تریاژ پله‌ای" : "دشارژ";
   String modeType = (ch[c].autoMode != AUTO_OFF) ? "(اتوماتیک)" : "(دستی)";
@@ -286,6 +290,72 @@ void stopChannel(uint8_t c) {
     ch[c].autoPhase = PHASE_NONE;
   }
   updateInaAverage();
+}
+
+// ─── تابع مستقل مدیریت شارژ و شارژ تکمیلی (Top-Up) ────────
+void handleCharging(uint8_t c) {
+  if (ch[c].currentNow < 50.0f && ch[c].voltNow >= 4.05f && (millis() - ch[c].startMillis > 10000)) {
+    
+    // منطق شارژ تکمیلی برای عبور از افت ولتاژ مسیر
+    if (ch[c].voltNow < 4.15f && topUpRetries[c] < 3) {
+      topUpRetries[c]++;
+      String msg = "🔄 شارژ تکمیلی کانال " + String(c+1) + " (تلاش " + String(topUpRetries[c]) + " از 3)\n";
+      msg += "ولتاژ " + String(ch[c].voltNow, 2) + "V است. اعمال پالس تحریک برای شکستن ولتاژ کاذب...";
+      sendBaleNotification(msg);
+
+      setHwState(c, IDLE);
+      delay(200);
+      setHwState(c, DISCHARGE_1000); 
+      delay(1000);
+      setHwState(c, IDLE);
+      delay(200);
+      setHwState(c, CHARGING);       
+      
+      ch[c].startMillis = millis();  
+      return;                        
+    }
+    
+    topUpRetries[c] = 0;
+
+    if (ch[c].autoMode != AUTO_OFF && ch[c].autoPhase == PHASE_INIT_CHG) {
+      AutoMode am = ch[c].autoMode; 
+      String name = ch[c].name;
+      unsigned long chargeDuration = millis() - ch[c].startMillis;
+      
+      stopChannel(c); 
+      
+      if (chargeDuration < 60000) {
+        ch[c].autoMode = am;
+        ch[c].autoPhase = PHASE_DISCHG;
+        ChannelState nState;
+        if (am == AUTO_TRIAGE) nState = Triage;
+        else if (am == AUTO_500) nState = DISCHARGE_500;
+        else if (am == AUTO_1000) nState = DISCHARGE_1000;
+        else nState = DISCHARGE_1500;
+        
+        startChannel(c, name, nState);
+        sendBaleNotification("⚡ باتری کانال " + String(c+1) + " از قبل پر بود. بدون استراحت وارد فاز تست شدیم.");
+      } else {
+        ch[c].autoMode = am;
+        ch[c].autoPhase = PHASE_REST;
+        ch[c].state = IDLE; 
+        ch[c].restStartMillis = millis(); 
+        ch[c].name = name; 
+        sendBaleNotification("☕ شارژ اولیه کانال " + String(c+1) + " کامل شد.\nآغاز فاز استراحت برای تثبیت ولتاژ...");
+      }
+    } 
+    else if (ch[c].autoMode != AUTO_OFF && ch[c].autoPhase == PHASE_FINAL_CHG) {
+      float finalCapacity = ch[c].recordedCapacity; 
+      stopChannel(c); 
+      ch[c].mAh = finalCapacity; 
+      ch[c].recordedCapacity = finalCapacity;
+      ch[c].autoMode = AUTO_OFF;
+      ch[c].autoPhase = PHASE_NONE;
+      sendBaleNotification("🎉 تست اتوماتیک کانال " + String(c+1) + " به پایان رسید!\nباتری فول شارژ و آماده است.\nظرفیت نهایی: " + String(finalCapacity, 0) + " mAh");
+    } else {
+      stopChannel(c); 
+    }
+  }
 }
 
 // ─── منطق اصلی نمونه‌برداری و لایه ایمنی ─────────────────
@@ -435,46 +505,7 @@ void sampleAll(unsigned long dt) {
     } 
 
     else if (ch[c].state == CHARGING) {
-      if (ch[c].currentNow < 50.0f && ch[c].voltNow >= 4.05f && (millis() - ch[c].startMillis > 10000)) {
-        if (ch[c].autoMode != AUTO_OFF && ch[c].autoPhase == PHASE_INIT_CHG) {
-          AutoMode am = ch[c].autoMode; 
-          String name = ch[c].name;
-          unsigned long chargeDuration = millis() - ch[c].startMillis;
-          
-          stopChannel(c); 
-          
-          if (chargeDuration < 60000) {
-            ch[c].autoMode = am;
-            ch[c].autoPhase = PHASE_DISCHG;
-            ChannelState nState;
-            if (am == AUTO_TRIAGE) nState = Triage;
-            else if (am == AUTO_500) nState = DISCHARGE_500;
-            else if (am == AUTO_1000) nState = DISCHARGE_1000;
-            else nState = DISCHARGE_1500;
-            
-            startChannel(c, name, nState);
-            sendBaleNotification("⚡ باتری کانال " + String(c+1) + " از قبل پر بود. بدون استراحت وارد فاز تست شدیم.");
-          } else {
-            ch[c].autoMode = am;
-            ch[c].autoPhase = PHASE_REST;
-            ch[c].state = IDLE; 
-            ch[c].restStartMillis = millis(); 
-            ch[c].name = name; 
-            sendBaleNotification("☕ شارژ اولیه کانال " + String(c+1) + " کامل شد.\nآغاز فاز استراحت برای تثبیت ولتاژ...");
-          }
-        } 
-        else if (ch[c].autoMode != AUTO_OFF && ch[c].autoPhase == PHASE_FINAL_CHG) {
-          float finalCapacity = ch[c].recordedCapacity; 
-          stopChannel(c); 
-          ch[c].mAh = finalCapacity; 
-          ch[c].recordedCapacity = finalCapacity;
-          ch[c].autoMode = AUTO_OFF;
-          ch[c].autoPhase = PHASE_NONE;
-          sendBaleNotification("🎉 تست اتوماتیک کانال " + String(c+1) + " به پایان رسید!\nباتری فول شارژ و آماده است.\nظرفیت نهایی: " + String(finalCapacity, 0) + " mAh");
-        } else {
-          stopChannel(c); 
-        }
-      }
+      handleCharging(c);
     }
   }
 }
