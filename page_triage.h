@@ -6,16 +6,16 @@
 String buildTriagePage() {
   return R"rawhtml(
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Parallel Matcher & Pack Builder</title>
 <style>
   :root { --bg: #0d0d0f; --surface: #161619; --surface2: #1e1e23; --border: #2a2a32; --accent: #00d4aa; --accent2: #0096ff; --warn: #ff6b35; --danger: #e74c3c; --text: #e8e8f0; --muted: #6b6b80; --mono: 'Consolas', monospace; }
-  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; padding: 20px; max-width: 1100px; margin: 0 auto; }
-  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; }
-  .btn-back { color: var(--accent); text-decoration: none; font-weight: bold; border: 1px solid var(--accent); padding: 6px 14px; border-radius: 6px; background: rgba(0,212,170,.1); transition: 0.2s; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; padding: 20px; max-width: 1100px; margin: 0 auto; direction: rtl; text-align: right; transition: all 0.3s ease; }
+  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; direction: inherit;}
+  .btn-back { color: var(--accent); text-decoration: none; font-weight: bold; border: 1px solid var(--accent); padding: 6px 14px; border-radius: 6px; background: rgba(0,212,170,.1); transition: 0.2s; direction: inherit;}
   .btn-back:hover { background: var(--accent); color: #000; }
   
   .engine-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; margin-bottom: 25px;}
@@ -27,35 +27,35 @@ String buildTriagePage() {
   .input-row { display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-start; flex-wrap: wrap;}
   .input-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px;}
   .input-group label { font-size: 12px; color: var(--muted); }
-  .input-group input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; outline: none; width: 100%; box-sizing: border-box;}
+  .input-group input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; outline: none; width: 100%; box-sizing: border-box; font-family: var(--mono); text-align: center; direction: ltr;}
   
   .tolerance-guide { font-size: 11px; color: var(--muted); background: var(--bg); border: 1px solid var(--border); padding: 10px; border-radius: 8px; margin-top: 5px; line-height: 1.6; }
   
-  .btn-run { color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; background: linear-gradient(135deg, #008060, var(--accent)); height: 40px; display: flex; align-items: center; justify-content: center; min-width: 200px; margin-top: 22px;}
+  .btn-run { color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; background: linear-gradient(135deg, #008060, var(--accent)); height: 40px; display: flex; align-items: center; justify-content: center; min-width: 200px; margin-top: 22px; font-family: inherit;}
   .btn-run:hover { opacity: 0.9; transform: translateY(-2px); }
   
-  .master-graph-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 20px; display: none; }
+  .master-graph-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 20px; display: none; direction: ltr; }
   .master-title { font-size: 14px; font-weight: bold; margin-bottom: 10px; color: var(--accent2); text-align: center;}
   
-  .clusters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
+  .clusters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; direction: inherit;}
   .cluster-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
-  .cluster-header { font-size: 15px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center;}
+  .cluster-header { font-size: 15px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; direction: ltr;}
   
   .cluster-graph { width: 100%; height: 90px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 12px; }
   
-  .cell-item { display: flex; justify-content: space-between; background: var(--bg); padding: 8px 12px; border-radius: 6px; margin-bottom: 5px; border-left: 3px solid var(--muted); font-size: 12px; font-family: var(--mono); }
+  .cell-item { display: flex; justify-content: space-between; background: var(--bg); padding: 8px 12px; border-radius: 6px; margin-bottom: 5px; border-left: 3px solid var(--muted); font-size: 12px; font-family: var(--mono); direction: ltr; text-align: left; }
   .cell-item.grade-a { border-left-color: #00e676; }
   .cell-item.grade-b { border-left-color: #00d4aa; }
   .cell-item.grade-c { border-left-color: #ff6b35; }
   .cell-item.grade-outlier { border-left-color: var(--danger); opacity: 0.8;}
   
-  .btn-build { background: var(--accent2); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px;}
+  .btn-build { background: var(--accent2); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; font-family: inherit;}
   .btn-build:hover { opacity: 0.9; }
   
   /* Pack Builder Styles */
   #pack-builder-section { display: none; margin-top: 30px; background: var(--surface); border: 1px solid var(--accent2); border-radius: 12px; padding: 20px; }
   .pack-blocks { display: flex; flex-direction: column; gap: 15px; margin-top: 20px;}
-  .pack-block { background: var(--bg); border: 2px solid var(--border); border-radius: 8px; padding: 15px; position: relative;}
+  .pack-block { background: var(--bg); border: 2px solid var(--border); border-radius: 8px; padding: 15px; position: relative; direction: ltr;}
   .pack-block::after { content: 'Negative Terminals Aligned Bottom'; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--muted); white-space: nowrap;}
   .block-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: 5px;}
   .block-cells { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;}
@@ -66,67 +66,148 @@ String buildTriagePage() {
 </head>
 <body>
   <div class="header">
-    <h2>🧠 AI Parallel Matcher & Builder</h2>
-    <a href="/" class="btn-back">← Dashboard</a>
+    <h2>🧠 <span data-i18n="title_main">AI Parallel Matcher & Builder</span></h2>
+    <a href="/" class="btn-back" id="btnBack" data-i18n="back_dash">→ بازگشت به داشبورد</a>
   </div>
 
   <div class="engine-card">
-    <div class="engine-title"><span style="color:var(--accent)">1. Cell Clustering Engine</span></div>
-    <div class="engine-desc">باتری‌های Triage شده بر اساس مقاومت دینامیک و گراف ولتاژ کلاستربندی می‌شوند.</div>
+    <div class="engine-title"><span style="color:var(--accent)" data-i18n="engine1_title">1. Cell Clustering Engine</span></div>
+    <div class="engine-desc" data-i18n="engine1_desc">باتری‌های Triage شده بر اساس مقاومت دینامیک و گراف ولتاژ کلاستربندی می‌شوند.</div>
     <div class="input-row">
       <div class="input-group">
-        <label>Target Parallel Clusters</label>
+        <label data-i18n="lbl_parallel">تعداد کلاستر موازی (P)</label>
         <input type="number" id="parallel-p" value="4" min="1" max="20">
       </div>
       
       <div class="input-group" style="flex: 2; min-width: 250px;">
-        <label>Max IR Tolerance (±mΩ)</label>
+        <label data-i18n="lbl_tol">حداکثر تلورانس مقاومت (±mΩ)</label>
         <input type="number" id="tolerance-ir" value="12" min="1" max="50">
-        <div class="tolerance-guide">
+        <div class="tolerance-guide" data-i18n="tol_guide" id="tolGuideDiv">
           <span style="color: var(--warn); font-weight: bold;">±2 تا ±5:</span> High Drain (دریل، نقطه‌جوش)<br>
           <span style="color: var(--accent); font-weight: bold;">±10 تا ±15:</span> Medium Drain (پاوربانک، لپ‌تاپ)<br>
           <span style="color: var(--text); font-weight: bold;">±20 تا ±30:</span> Low Drain (پاوروال، روشنایی)
         </div>
       </div>
       
-      <button class="btn-run" onclick="runParallelMatcher()">Execute AI Matcher 🚀</button>
+      <button class="btn-run" onclick="runParallelMatcher()" data-i18n="btn_run">اجرای موتور هوشمند 🚀</button>
     </div>
   </div>
 
-  <div id="loader">Scanning Logs & Processing ML...</div>
+  <div id="loader" data-i18n="loader_txt">در حال اسکن لاگ‌ها و پردازش...</div>
 
   <div id="master-container" class="master-graph-container">
-    <div class="master-title">📊 Cluster vs Cluster (Average Behavior Overlay)</div>
+    <div class="master-title" data-i18n="master_title">📊 Cluster vs Cluster (Average Behavior Overlay)</div>
     <canvas id="master-canvas" width="800" height="150" style="width:100%; height:150px;"></canvas>
   </div>
 
   <div class="clusters-grid" id="clusters-container">
-    <div id="welcome-msg" style="color:var(--muted); grid-column: 1 / -1; text-align:center; padding: 40px;">
-      دیتای تمام تست‌های تریاژ به صورت خودکار خوانده می‌شود.<br>برای شروع، روی Execute کلیک کنید.
+    <div id="welcome-msg" style="color:var(--muted); grid-column: 1 / -1; text-align:center; padding: 40px;" data-i18n="welcome_msg">
+      دیتای تمام تست‌های تریاژ به صورت خودکار خوانده می‌شود.<br>برای شروع، روی اجرای موتور هوشمند کلیک کنید.
     </div>
   </div>
 
   <div id="pack-builder-section">
-    <div class="engine-title"><span style="color:var(--accent2)">2. Pack Assembler (Balanced Fill + Local Optimization)</span></div>
-    <div class="engine-desc">یک کلاستر تایید شده انتخاب شده است. تنظیمات پک نهایی را وارد کنید تا ظرفیت‌ها دقیقاً بالانس شوند.</div>
+    <div class="engine-title"><span style="color:var(--accent2)" data-i18n="engine2_title">2. Pack Assembler (Balanced Fill + Local Optimization)</span></div>
+    <div class="engine-desc" data-i18n="engine2_desc">یک کلاستر تایید شده انتخاب شده است. تنظیمات پک نهایی را وارد کنید تا ظرفیت‌ها دقیقاً بالانس شوند.</div>
     
     <div class="input-row">
       <div class="input-group">
-        <label>Series (S)</label>
+        <label data-i18n="lbl_pack_s">تعداد سری (S)</label>
         <input type="number" id="pack-s" value="4" min="1" max="20">
       </div>
       <div class="input-group">
-        <label>Parallel (P)</label>
+        <label data-i18n="lbl_pack_p">تعداد موازی (P)</label>
         <input type="number" id="pack-p" value="3" min="1" max="20">
       </div>
-      <button class="btn-run" style="background: var(--accent2);" onclick="generatePack()">Assemble Final Pack ⚙️</button>
+      <button class="btn-run" style="background: var(--accent2);" onclick="generatePack()" data-i18n="btn_pack">مونتاژ پک نهایی ⚙️</button>
     </div>
     
-    <div id="pack-stats" style="display:flex; justify-content:space-around; background:var(--bg); padding:15px; border-radius:8px; font-weight:bold; margin-bottom:15px; display:none;"></div>
+    <div id="pack-stats" style="display:flex; justify-content:space-around; background:var(--bg); padding:15px; border-radius:8px; font-weight:bold; margin-bottom:15px; display:none; direction:ltr;"></div>
     <div id="pack-layout" class="pack-blocks"></div>
   </div>
 
 <script>
+const dict = {
+  'fa': {
+    'back_dash': '→ بازگشت به داشبورد',
+    'title_main': 'موتور هوش مصنوعی و ساخت پک',
+    'engine1_title': '۱. موتور کلاستربندی سلول‌ها',
+    'engine1_desc': 'باتری‌های Triage شده بر اساس مقاومت دینامیک و گراف ولتاژ کلاستربندی می‌شوند.',
+    'lbl_parallel': 'تعداد کلاستر موازی (P)',
+    'lbl_tol': 'حداکثر تلورانس مقاومت (±mΩ)',
+    'tol_guide': '<span style="color: var(--warn); font-weight: bold;">±2 تا ±5:</span> High Drain (دریل، نقطه‌جوش)<br><span style="color: var(--accent); font-weight: bold;">±10 تا ±15:</span> Medium Drain (پاوربانک، لپ‌تاپ)<br><span style="color: var(--text); font-weight: bold;">±20 تا ±30:</span> Low Drain (پاوروال، روشنایی)',
+    'btn_run': 'اجرای موتور هوشمند 🚀',
+    'loader_txt': 'در حال اسکن لاگ‌ها و پردازش...',
+    'master_title': '📊 مقایسه گرافیکال کلاسترها (میانگین رفتار)',
+    'welcome_msg': 'دیتای تمام تست‌های تریاژ به صورت خودکار خوانده می‌شود.<br>برای شروع، روی اجرای موتور هوشمند کلیک کنید.',
+    'engine2_title': '۲. اسمبل پک (بالانس ظرفیت + بهینه‌سازی محلی)',
+    'engine2_desc': 'یک کلاستر تایید شده انتخاب شده است. تنظیمات پک نهایی را وارد کنید تا ظرفیت‌ها دقیقاً بالانس شوند.',
+    'lbl_pack_s': 'تعداد سری (S)',
+    'lbl_pack_p': 'تعداد موازی (P)',
+    'btn_pack': 'مونتاژ پک نهایی ⚙️',
+    'alert_no_cell': 'هیچ سلول معتبری از نوع تست Triage یافت نشد.',
+    'alert_not_enough': 'تعداد باتری کافی نیست! شما {need} باتری نیاز دارید اما این کلاستر فقط {have} باتری دارد.',
+    'sim_warn': '⚠️ سلول‌های با علامت <b>~ ... *</b> ظرفیت اندازه‌گیری‌شده ندارند — عدد نمایشی صرفاً شبیه‌سازی‌شده است تا مسیر کد قابل تست باشد و نباید برای بالانس واقعی پک به آن اعتماد کرد.',
+    'btn_build_cluster': '🛠️ ساخت پک از این کلاستر',
+    'outlier_title': '⚠️ سلول‌های ناسازگار (Outliers)',
+    'outlier_sub': 'سلول‌های خارج از تلورانس (Skipped)',
+    'sim_pack_warn': '⚠️ این بالانس بر اساس ظرفیت شبیه‌سازی‌شده (~) است، نه اندازه‌گیری واقعی - فقط برای تست مسیر کد',
+    'lbl_cells': 'Cells'
+  },
+  'en': {
+    'back_dash': '← Back Dashboard',
+    'title_main': 'AI Parallel Matcher & Builder',
+    'engine1_title': '1. Cell Clustering Engine',
+    'engine1_desc': 'Triaged batteries are clustered based on Dynamic IR and voltage graphs.',
+    'lbl_parallel': 'Target Parallel Clusters (P)',
+    'lbl_tol': 'Max IR Tolerance (±mΩ)',
+    'tol_guide': '<span style="color: var(--warn); font-weight: bold;">±2 to ±5:</span> High Drain (Drill, Spot Welder)<br><span style="color: var(--accent); font-weight: bold;">±10 to ±15:</span> Medium Drain (Powerbank, Laptop)<br><span style="color: var(--text); font-weight: bold;">±20 to ±30:</span> Low Drain (Powerwall, Lighting)',
+    'btn_run': 'Execute AI Matcher 🚀',
+    'loader_txt': 'Scanning Logs & Processing ML...',
+    'master_title': '📊 Cluster vs Cluster (Average Behavior Overlay)',
+    'welcome_msg': 'All Triage test data is read automatically.<br>Click Execute to begin.',
+    'engine2_title': '2. Pack Assembler (Balanced Fill + Local Optimization)',
+    'engine2_desc': 'An approved cluster is selected. Enter the final pack settings for exact capacity balancing.',
+    'lbl_pack_s': 'Series (S)',
+    'lbl_pack_p': 'Parallel (P)',
+    'btn_pack': 'Assemble Final Pack ⚙️',
+    'alert_no_cell': 'No valid Triage test cells found.',
+    'alert_not_enough': 'Not enough batteries! You need {need} but this cluster only has {have}.',
+    'sim_warn': '⚠️ Cells with <b>~ ... *</b> have no measured capacity — the number is simulated to test code paths and should not be trusted for real pack balancing.',
+    'btn_build_cluster': '🛠️ Build Pack from this Cluster',
+    'outlier_title': '⚠️ No-Match (Outliers)',
+    'outlier_sub': 'Incompatible cells (Skipped)',
+    'sim_pack_warn': '⚠️ This balance uses simulated capacity (~), not real measurements - for testing only.',
+    'lbl_cells': 'Cells'
+  }
+};
+
+let currentLang = localStorage.getItem('sysLang') || 'fa';
+
+function applyLanguage() {
+  if (currentLang === 'fa') {
+    document.body.style.direction = 'rtl';
+    document.body.style.textAlign = 'right';
+    document.getElementById('btnBack').style.direction = 'rtl';
+  } else {
+    document.body.style.direction = 'ltr';
+    document.body.style.textAlign = 'left';
+    document.getElementById('btnBack').style.direction = 'ltr';
+  }
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    let key = el.getAttribute('data-i18n');
+    if (dict[currentLang][key]) {
+      if (key === 'tol_guide') {
+         el.innerHTML = dict[currentLang][key];
+      } else {
+         el.innerText = dict[currentLang][key];
+      }
+    }
+  });
+}
+
+window.onload = applyLanguage;
+
 let allCells = [];
 let savedClusters = [];
 let activeClusterForPack = -1;
@@ -142,7 +223,7 @@ async function fetchDeviceLogs() {
         const lines = text.trim().split('\n');
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(',');
-          if (cols.length < 12) continue; // هدرهای جدید حداقل 12 ستون دارند
+          if (cols.length < 12) continue;
           
           let name = cols[0];
           let action = cols[4] || "";
@@ -160,7 +241,6 @@ async function fetchDeviceLogs() {
           let vStart = parseFloat(cols[10]) || 0;
           let vEnd = parseFloat(cols[11]) || 0;
           
-          // ---> ایندکس گراف از 11 به 12 اصلاح شد <---
           let curve = [];
           for(let j = 12; j < cols.length; j++) {
               if(cols[j] !== undefined && cols[j].trim() !== "") {
@@ -180,11 +260,8 @@ async function fetchDeviceLogs() {
   }
 }
 
-// ==========================================
-// AI Parallel Matcher (Updated for DCIR)
-// ==========================================
 const IR_WEIGHT = 50.0;
-const DCIR_WEIGHT = 15.0; // جایگزین VDrop
+const DCIR_WEIGHT = 15.0; 
 
 function weightedDistance(cell, cent) {
   let baseDist = (Math.pow(cell.nIr - cent.nIr, 2) * IR_WEIGHT) + 
@@ -407,7 +484,7 @@ async function runParallelMatcher() {
   let validCells = allCells.filter(c => c.grade !== 'D' && c.grade !== 'Unknown' && c.grade !== 'N/A');
 
   if(validCells.length === 0) {
-    container.innerHTML = '<div style="color:var(--warn); grid-column: 1/-1; text-align:center;">هیچ سلول معتبری از نوع تست Triage یافت نشد.</div>';
+    container.innerHTML = `<div style="color:var(--warn); grid-column: 1/-1; text-align:center;">${dict[currentLang]['alert_no_cell']}</div>`;
     document.getElementById('loader').style.display = 'none';
     return;
   }
@@ -444,7 +521,7 @@ async function runParallelMatcher() {
 
     if (validCells.some(c => c.simulatedCap)) {
       htmlOutput += `<div style="grid-column: 1/-1; font-size:12px; color:var(--warn); background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; margin-bottom:5px;">
-        ⚠️ سلول‌های با علامت <b>~ ... *</b> ظرفیت اندازه‌گیری‌شده ندارند (تست Triage دشارژ کامل انجام نمی‌دهد) — عدد نمایشی صرفاً شبیه‌سازی‌شده است تا مسیر کد قابل تست باشد و نباید برای بالانس واقعی پک به آن اعتماد کرد.
+        ${dict[currentLang]['sim_warn']}
       </div>`;
     }
     
@@ -455,12 +532,12 @@ async function runParallelMatcher() {
       htmlOutput += `<div class="cluster-card">
         <div class="cluster-header">
           <span style="color: ${themeColor}">Parallel Match #${idx+1}</span>
-          <span style="font-size:12px; color:var(--text); font-weight:normal; background:var(--bg); padding:2px 8px; border-radius:10px;">${group.length} Cells</span>
+          <span style="font-size:12px; color:var(--text); font-weight:normal; background:var(--bg); padding:2px 8px; border-radius:10px;">${group.length} ${dict[currentLang]['lbl_cells']}</span>
         </div>
         
         <canvas id="graph-cluster-${idx}" class="cluster-graph" width="300" height="90"></canvas>
         
-        <div style="font-size:12px; margin-bottom:12px; display:flex; justify-content:space-between; font-weight:bold; color:var(--muted)">
+        <div style="font-size:12px; margin-bottom:12px; display:flex; justify-content:space-between; font-weight:bold; color:var(--muted); direction: ltr;">
             <span style="color:var(--warn)">Avg IR: ${avgIr} mΩ</span>
             <span style="color:var(--accent)">Similarity Overlay</span>
         </div>
@@ -471,14 +548,14 @@ async function runParallelMatcher() {
         let capLabel = cell.simulatedCap ? `~${cell.cap}mAh*` : `${cell.cap}mAh`;
         let details = `${cell.ir.toFixed(1)}Ω | ${capLabel}`;
             
-        htmlOutput += `<div class="cell-item ${gClass}" ${cell.simulatedCap ? 'title="ظرفیت شبیه‌سازی‌شده - اندازه‌گیری واقعی نیست"' : ''}>
+        htmlOutput += `<div class="cell-item ${gClass}" ${cell.simulatedCap ? 'title="Simulated"' : ''}>
           <span>${cell.id}</span>
           <span>${details}</span>
         </div>`;
       });
       
       htmlOutput += `</div>
-        <button class="btn-build" onclick="initPackBuilder(${idx})">🛠️ Build Pack from this Cluster</button>
+        <button class="btn-build" onclick="initPackBuilder(${idx})">${dict[currentLang]['btn_build_cluster']}</button>
       </div>`;
     });
 
@@ -486,11 +563,11 @@ async function runParallelMatcher() {
       outliers.sort((a,b) => a.ir - b.ir);
       htmlOutput += `<div class="cluster-card" style="border-color: var(--danger);">
         <div class="cluster-header">
-          <span style="color: var(--danger)">⚠️ No-Match (Outliers)</span>
-          <span style="font-size:12px; color:var(--text); font-weight:normal; background:var(--bg); padding:2px 8px; border-radius:10px;">${outliers.length} Cells</span>
+          <span style="color: var(--danger)">${dict[currentLang]['outlier_title']}</span>
+          <span style="font-size:12px; color:var(--text); font-weight:normal; background:var(--bg); padding:2px 8px; border-radius:10px;">${outliers.length} ${dict[currentLang]['lbl_cells']}</span>
         </div>
-        <div style="font-size:12px; margin-bottom:12px; display:flex; justify-content:space-between; font-weight:bold; color:var(--muted)">
-            <span>سلول‌های ناسازگار با گروه‌ها</span>
+        <div style="font-size:12px; margin-bottom:12px; display:flex; justify-content:space-between; font-weight:bold; color:var(--muted);">
+            <span>${dict[currentLang]['outlier_sub']}</span>
             <span style="color:var(--danger)">Skipped</span>
         </div>
         <div style="max-height: 180px; overflow-y: auto; padding-right: 5px;">`;
@@ -538,7 +615,8 @@ function generatePack() {
     let pool = savedClusters[activeClusterForPack];
     
     if(pool.length < totalNeeded) {
-        alert(`تعداد باتری کافی نیست! شما ${totalNeeded} باتری نیاز دارید اما این کلاستر فقط ${pool.length} باتری دارد.`);
+        let msg = dict[currentLang]['alert_not_enough'].replace('{need}', totalNeeded).replace('{have}', pool.length);
+        alert(msg);
         return;
     }
     
@@ -585,7 +663,7 @@ function generatePack() {
       <span style="color:var(--warn)">Max Capacity Deviation: ${deviation.toFixed(0)} mAh</span>
     `;
     if (anySimulated) {
-      statsHtml += `<span style="color:var(--danger); flex-basis:100%; text-align:center; margin-top:6px; font-size:12px;">⚠️ این بالانس بر اساس ظرفیت شبیه‌سازی‌شده (~) است، نه اندازه‌گیری واقعی - فقط برای تست مسیر کد</span>`;
+      statsHtml += `<span style="color:var(--danger); flex-basis:100%; text-align:center; margin-top:6px; font-size:12px;">${dict[currentLang]['sim_pack_warn']}</span>`;
     }
     
     let layoutHtml = "";

@@ -14,7 +14,7 @@ String buildIndexPage() {
 <style>
   :root { --bg: #0d0d0f; --surface: #161619; --surface2: #1e1e23; --border: #2a2a32; --accent: #00d4aa; --accent2: #0096ff; --warn: #ff6b35; --ok: #00e676; --text: #e8e8f0; --muted: #6b6b80; --mono: 'Consolas', monospace; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; min-height: 100vh; direction: rtl; text-align: right; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; min-height: 100vh; direction: rtl; text-align: right; transition: all 0.3s ease; }
   header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; direction: ltr; }
   
   .logo { display: flex; align-items: center; gap: 10px; }
@@ -37,11 +37,10 @@ String buildIndexPage() {
   .panel-label { font-size: 13px; color: var(--text); font-weight: 700; }
   .info-btn { cursor: pointer; color: var(--accent); background: rgba(0,212,170,0.1); border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; border: 1px solid rgba(0,212,170,0.3); transition: 0.2s; }
   .info-btn:hover { background: var(--accent); color: #000; }
-  .panel-select { background: #0a0a0c; color: var(--text); border: 1px solid var(--border); padding: 12px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; cursor: pointer; font-family: inherit; width: 100%; direction: rtl; }
+  .panel-select { background: #0a0a0c; color: var(--text); border: 1px solid var(--border); padding: 12px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; cursor: pointer; font-family: inherit; width: 100%; direction: inherit; }
   .panel-select:focus { border-color: var(--accent); }
-  .panel-desc { font-size: 12px; color: #a1a1aa; line-height: 1.6; margin-top: 4px; }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; padding: 20px; max-width: 1500px; margin: 0 auto; direction: rtl;}
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; padding: 20px; max-width: 1500px; margin: 0 auto; direction: inherit;}
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.3s;}
   
   .card-header { padding: 14px 18px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); direction: ltr; }
@@ -69,10 +68,9 @@ String buildIndexPage() {
   .card-footer { padding: 14px 18px; background: var(--surface2); border-top: 1px solid var(--border); }
   .form-row { display: flex; gap: 8px; margin-bottom: 10px; }
   
-  .input-name { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 8px; font-size: 13px; outline: none; transition: border-color 0.2s; text-align: right; font-family: inherit; }
+  .input-name { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 8px; font-size: 13px; outline: none; transition: border-color 0.2s; font-family: inherit; direction: inherit; }
   .input-name:focus { border-color: var(--accent); }
   
-  /* گرید ۵ دکمه‌ای */
   .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .action-grid .full-width { grid-column: span 2; }
   
@@ -84,7 +82,8 @@ String buildIndexPage() {
   .btn-big.chg.active-btn { border-color: #00ffff; color: #00ffff; background: rgba(0,255,255,0.1); box-shadow: 0 0 16px rgba(0,255,255,0.2); }
   .btn-big.d500.active-btn { border-color: #ffff00; color: #ffff00; background: rgba(255,255,0,0.1); box-shadow: 0 0 16px rgba(255,255,0,0.2); }
   .btn-big.d1000.active-btn { border-color: #ffa500; color: #ffa500; background: rgba(255,165,0,0.1); box-shadow: 0 0 16px rgba(255,165,0,0.2); }
-  .btn-big.d1500.active-btn { border-color: #ff0000; color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 16px rgba(255,0,0,0.2); }  .btn-big.trg.active-btn { border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.1); box-shadow: 0 0 16px rgba(255,0,255,0.2); }
+  .btn-big.d1500.active-btn { border-color: #ff0000; color: #ff0000; background: rgba(255,0,0,0.1); box-shadow: 0 0 16px rgba(255,0,0,0.2); }  
+  .btn-big.trg.active-btn { border-color: #ff00ff; color: #ff00ff; background: rgba(255,0,255,0.1); box-shadow: 0 0 16px rgba(255,0,255,0.2); }
 
   .btn { padding: 0 12px; height: 42px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 1; transition: all 0.2s; font-family: inherit; }
   .btn-stop { background: rgba(255, 107, 53, 0.1); color: var(--warn); border: 1px solid var(--warn); width: 100%; }
@@ -94,8 +93,8 @@ String buildIndexPage() {
   .btn-reset:hover { border-color: var(--text); color: var(--text); }
   
   .log-container { background: #0a0a0c; border-top: 1px solid var(--border); flex-grow: 1; }
-  .log-header { font-size: 12px; padding: 10px 18px; color: var(--muted); border-bottom: 1px solid #1e1e23; display: flex; justify-content: space-between; align-items: center; direction: rtl;}
-  .log-btn { background: #1e1e23; border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 2px 12px; cursor: pointer; font-size: 13px; margin-right: 4px; font-family: inherit;}
+  .log-header { font-size: 12px; padding: 10px 18px; color: var(--muted); border-bottom: 1px solid #1e1e23; display: flex; justify-content: space-between; align-items: center; direction: inherit;}
+  .log-btn { background: #1e1e23; border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 2px 12px; cursor: pointer; font-size: 13px; margin: 0 4px; font-family: inherit;}
   .log-btn:hover { border-color: var(--accent); color: var(--accent); }
   
   .log-content { padding: 10px 18px; font-family: var(--mono); font-size: 13px; color: #a1a1aa; height: 160px; overflow: auto; direction: ltr; text-align: left; }
@@ -109,7 +108,6 @@ String buildIndexPage() {
   #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent); color: var(--text); padding: 12px 24px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-weight: bold; }
   #toast.show { opacity: 1; }
 
-  /* استایل مربوط به مودال‌های پاپ‌آپ */
   .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
   .modal-content { background: var(--surface); padding: 24px; border-radius: 16px; border: 1px solid var(--accent); width: 90%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
   .modal h3 { color: var(--accent); margin-bottom: 12px; font-size: 18px; display: flex; align-items: center; gap: 8px;}
@@ -141,36 +139,35 @@ String buildIndexPage() {
   </div>
   <div class="header-right">
     <nav class="nav-links">
-      <a href="/triage" class="special" title="Triage Manager">⚕️ <span>تریاژ</span></a>
-      <a href="/logs" title="CSV Manager">📋 <span>فایل‌ها</span></a>
-      <a href="/settings" title="Settings">⚙️ <span>تنظیمات</span></a>
+      <a href="/triage" class="special" title="Triage Manager">⚕️ <span data-i18n="nav_triage">تریاژ</span></a>
+      <a href="/logs" title="CSV Manager">📋 <span data-i18n="nav_logs">فایل‌ها</span></a>
+      <a href="/settings" title="Settings">⚙️ <span data-i18n="nav_settings">تنظیمات</span></a>
     </nav>
     <div class="sys-time" id="sysTime">--:--:--</div>
   </div>
 </header>
 
-<!-- پنل کنترل سراسری -->
 <div class="global-panel">
   <div class="panel-col">
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-      <label class="panel-label">حالت کارکرد دستگاه (Mode)</label>
+      <label class="panel-label" data-i18n="mode_lbl">حالت کارکرد دستگاه (Mode)</label>
       <span class="info-btn" onclick="showInfo('mode')">ℹ️</span>
     </div>
     <select class="panel-select" id="globalMode" onchange="updateModeUI()">
-      <option value="auto">اتوماتیک (اجرای متوالی مراحل)</option>
-      <option value="manual">دستی (اجرای یک مرحله و توقف)</option>
+      <option id="opt_auto" value="auto">اتوماتیک (اجرای متوالی مراحل)</option>
+      <option id="opt_manual" value="manual">دستی (اجرای یک مرحله و توقف)</option>
     </select>
   </div>
   <div class="panel-col">
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-      <label class="panel-label">پروفایل تریاژ (Triage Thresholds)</label>
+      <label class="panel-label" data-i18n="prof_lbl">پروفایل تریاژ (Triage Thresholds)</label>
       <span class="info-btn" onclick="showInfo('profile')">ℹ️</span>
     </div>
     <select class="panel-select" id="triageProfile" onchange="checkProfileChange()">
-      <option value="0">باتری‌های High Drain (پاور تولز / ویپ)</option>
-      <option value="1">باتری‌های معمولی (لپ‌تاپ / پاوربانک)</option>
-      <option value="2">استاندارد ترکیبی (پیش‌فرض)</option>
-      <option value="3">کاستوم (ورود مقادیر دستی)</option>
+      <option id="prof_0" value="0">باتری‌های High Drain (پاور تولز / ویپ)</option>
+      <option id="prof_1" value="1">باتری‌های معمولی (لپ‌تاپ / پاوربانک)</option>
+      <option id="prof_2" value="2">استاندارد ترکیبی (پیش‌فرض)</option>
+      <option id="prof_3" value="3">کاستوم (ورود مقادیر دستی)</option>
     </select>
   </div>
 </div>
@@ -181,37 +178,112 @@ String buildIndexPage() {
 <!-- مودال اخطار مقادیر کاستوم -->
 <div id="customModal" class="modal">
   <div class="modal-content">
-    <h3>⚙️ تنظیمات پروفایل کاستوم</h3>
-    <p>لطفاً حداکثر مقاومت قابل قبول (میلی‌اهم) را برای هر گرید وارد کرده و تأیید کنید:</p>
+    <h3 data-i18n="cust_title">⚙️ تنظیمات پروفایل کاستوم</h3>
+    <p data-i18n="cust_desc">لطفاً حداکثر مقاومت قابل قبول (میلی‌اهم) را وارد کنید:</p>
     <div class="custom-grid">
-       <div><label>گرید A (عالی)</label><input type="number" id="valA" placeholder="mΩ"></div>
-       <div><label>گرید B (خوب)</label><input type="number" id="valB" placeholder="mΩ"></div>
-       <div><label>گرید C (متوسط)</label><input type="number" id="valC" placeholder="mΩ"></div>
+       <div><label data-i18n="lbl_ga">گرید A (عالی)</label><input type="number" id="valA" placeholder="mΩ"></div>
+       <div><label data-i18n="lbl_gb">گرید B (خوب)</label><input type="number" id="valB" placeholder="mΩ"></div>
+       <div><label data-i18n="lbl_gc">گرید C (متوسط)</label><input type="number" id="valC" placeholder="mΩ"></div>
     </div>
     <div style="display:flex; gap:10px;">
-       <button class="btn" style="background:var(--accent); width:100%;" onclick="confirmCustom()">تأیید و ذخیره</button>
-       <button class="btn" style="background:#1e1e23; color:#fff;" onclick="cancelCustom()">انصراف</button>
+       <button class="btn" style="background:var(--accent); width:100%;" onclick="confirmCustom()" data-i18n="btn_conf">تأیید و ذخیره</button>
+       <button class="btn" style="background:#1e1e23; color:#fff;" onclick="cancelCustom()" data-i18n="btn_canc">انصراف</button>
     </div>
   </div>
 </div>
 
-<!-- مودال پاپ‌آپ راهنما (Info) -->
+<!-- مودال پاپ‌آپ راهنما -->
 <div id="infoModal" class="modal">
    <div class="modal-content">
       <h3 id="infoTitle">راهنما</h3>
-      <p id="infoText" style="white-space: pre-wrap;"></p>
-      <button class="btn" style="background:var(--surface2); color:var(--text); border:1px solid var(--border); width:100%; margin-top:10px;" onclick="closeInfo()">متوجه شدم</button>
+      <p id="infoText" style="white-space: pre-wrap; direction: inherit;"></p>
+      <button class="btn" style="background:var(--surface2); color:var(--text); border:1px solid var(--border); width:100%; margin-top:10px;" onclick="closeInfo()" data-i18n="info_ok">متوجه شدم</button>
    </div>
 </div>
 
 <script>
+// دیکشنری دو زبانه
+const dict = {
+  'fa': {
+     nav_triage: 'تریاژ', nav_logs: 'فایل‌ها', nav_settings: 'تنظیمات',
+     mode_lbl: 'حالت کارکرد دستگاه (Mode)',
+     mode_auto: 'اتوماتیک (اجرای متوالی مراحل)', mode_manual: 'دستی (اجرای یک مرحله و توقف)',
+     prof_lbl: 'پروفایل تریاژ (Triage Thresholds)',
+     prof_0: 'باتری‌های High Drain (پاور تولز / ویپ)', prof_1: 'باتری‌های معمولی (لپ‌تاپ / پاوربانک)', prof_2: 'استاندارد ترکیبی (پیش‌فرض)', prof_3: 'کاستوم (ورود مقادیر دستی)',
+     cust_title: '⚙️ تنظیمات پروفایل کاستوم', cust_desc: 'لطفاً حداکثر مقاومت قابل قبول (میلی‌اهم) را برای هر گرید وارد کرده و تأیید کنید:',
+     lbl_ga: 'گرید A (عالی)', lbl_gb: 'گرید B (خوب)', lbl_gc: 'گرید C (متوسط)',
+     btn_conf: 'تأیید و ذخیره', btn_canc: 'انصراف', info_ok: 'متوجه شدم',
+     toast_prof: 'پروفایل با موفقیت تغییر کرد.', toast_cust: 'مقادیر کاستوم ذخیره شدند.', toast_cmd: 'دستور با موفقیت به دستگاه ارسال شد.',
+     err_cust: 'اخطار امنیتی ⚠️\n\nشما پروفایل کاستوم را انتخاب کرده‌اید اما مقادیر آن را وارد نکرده‌اید. ابتدا تأیید کنید.',
+     btn_stop: '⏹ توقف', btn_chg: '⚡ شارژ', btn_chg_m: '⚡ شارژ (دستی)', btn_500: '🔋 دشارژ 0.5A', btn_500_m: '🔋 0.5A (دستی)',
+     btn_1000: '🔥 دشارژ 1.0A', btn_1000_m: '🔥 1.0A (دستی)', btn_1500: '💥 دشارژ 1.5A', btn_1500_m: '💥 1.5A (دستی)',
+     btn_trg: '⚕️ تریاژ خودکار', btn_trg_m: '⚕️ تریاژ دستی', btn_stop_rest: '■ توقف آنالیز (در حال استراحت)',
+     btn_dl: '📥 دانلود CSV', btn_graph: '📸 خروجی گراف', btn_rst: '↺ ریست',
+     lbl_prev: 'پیش‌نمایش لاگ', lbl_no_data: 'هیچ لاگی یافت نشد.', plc_id: 'شناسه باتری (اختیاری)',
+     info_mode_t: '⚙️ راهنمای حالت کارکرد', info_mode_d: 'حالت اتوماتیک (Auto):\nدر این حالت دستگاه تمام مراحل استاندارد را متوالی اجرا می‌کند.\n\nحالت دستی (Manual):\nتنها همان فازی که انتخاب می‌کنید یک‌بار اجرا می‌شود.',
+     info_prof_t: '⚕️ راهنمای پروفایل تریاژ', info_prof_d: 'باتری‌ها بر اساس مقاومت داخلی دسته‌بندی می‌شوند.\n- برای ابزارآلات مقاومت باید پایین باشد.\n- می‌توانید با انتخاب گزینه "کاستوم"، سقف مجاز را خودتان تعیین کنید.'
+  },
+  'en': {
+     nav_triage: 'Triage', nav_logs: 'Logs', nav_settings: 'Settings',
+     mode_lbl: 'Operation Mode',
+     mode_auto: 'Automatic (Sequential Phases)', mode_manual: 'Manual (Single Phase)',
+     prof_lbl: 'Triage Thresholds Profile',
+     prof_0: 'High Drain (Power Tools / Vape)', prof_1: 'Normal (Laptop / Powerbank)', prof_2: 'Standard Mix (Default)', prof_3: 'Custom (Manual Entry)',
+     cust_title: '⚙️ Custom Profile Settings', cust_desc: 'Please enter the maximum acceptable resistance (mΩ) for each grade:',
+     lbl_ga: 'Grade A (Excellent)', lbl_gb: 'Grade B (Good)', lbl_gc: 'Grade C (Average)',
+     btn_conf: 'Save & Confirm', btn_canc: 'Cancel', info_ok: 'Got it',
+     toast_prof: 'Profile updated successfully.', toast_cust: 'Custom values saved.', toast_cmd: 'Command sent to device.',
+     err_cust: 'Security Warning ⚠️\n\nYou selected Custom Profile but have not confirmed the values.',
+     btn_stop: '⏹ Stop', btn_chg: '⚡ Charge', btn_chg_m: '⚡ Charge (Manual)', btn_500: '🔋 0.5A Disch.', btn_500_m: '🔋 0.5A (Manual)',
+     btn_1000: '🔥 1.0A Disch.', btn_1000_m: '🔥 1.0A (Manual)', btn_1500: '💥 1.5A Disch.', btn_1500_m: '💥 1.5A (Manual)',
+     btn_trg: '⚕️ Auto Triage', btn_trg_m: '⚕️ Manual Triage', btn_stop_rest: '■ Stop Analysis (Resting)',
+     btn_dl: '📥 Down. CSV', btn_graph: '📸 Export Graph', btn_rst: '↺ Reset',
+     lbl_prev: 'Log Preview', lbl_no_data: 'No log data yet.', plc_id: 'Battery ID (Optional)',
+     info_mode_t: '⚙️ Operation Mode Guide', info_mode_d: 'Auto Mode:\nExecutes all standard testing phases sequentially.\n\nManual Mode:\nRuns only the selected phase and stops completely.',
+     info_prof_t: '⚕️ Triage Profile Guide', info_prof_d: 'Sorts batteries by internal resistance classes.\n- Power Tools require very low resistance.\n- Choose "Custom" to set manual limits for each grade.'
+  }
+};
+
+let currentLang = 'fa';
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  if(lang === 'fa') {
+      document.body.style.direction = 'rtl';
+      document.body.style.textAlign = 'right';
+      document.querySelector('.header-right').style.direction = 'rtl';
+  } else {
+      document.body.style.direction = 'ltr';
+      document.body.style.textAlign = 'left';
+      document.querySelector('.header-right').style.direction = 'ltr';
+  }
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+      let key = el.getAttribute('data-i18n');
+      if(dict[lang][key]) el.innerText = dict[lang][key];
+  });
+
+  if(document.getElementById('opt_auto')) document.getElementById('opt_auto').innerText = dict[lang]['mode_auto'];
+  if(document.getElementById('opt_manual')) document.getElementById('opt_manual').innerText = dict[lang]['mode_manual'];
+  if(document.getElementById('prof_0')) document.getElementById('prof_0').innerText = dict[lang]['prof_0'];
+  if(document.getElementById('prof_1')) document.getElementById('prof_1').innerText = dict[lang]['prof_1'];
+  if(document.getElementById('prof_2')) document.getElementById('prof_2').innerText = dict[lang]['prof_2'];
+  if(document.getElementById('prof_3')) document.getElementById('prof_3').innerText = dict[lang]['prof_3'];
+  
+  fetchData(); 
+}
+
+window.onload = () => {
+  currentLang = localStorage.getItem('sysLang') || 'fa';
+  applyLanguage(currentLang);
+};
+
 const STATE = {IDLE:0, CHARGING:1, D500:2, D1000:3, D1500:4, IR:5, TRIAGE:6, DONE:7};
 const CH_COLORS = ['#00d4aa','#0096ff','#ff6b35'];
 let globalMode = 'auto'; 
 let customConfirmed = true; 
 let previousProfile = "2"; 
 
-// راه‌اندازی اولیه و گرفتن تنظیمات ذخیره شده
 fetch('/getprofile').then(r=>r.json()).then(d=>{
   document.getElementById('triageProfile').value = d.p;
   document.getElementById('valA').value = d.a;
@@ -228,7 +300,6 @@ function updateModeUI() {
   fetchData();
 }
 
-// مدیریت تغییر پروفایل
 function checkProfileChange() {
   const sel = document.getElementById('triageProfile');
   if (sel.value === '3') {
@@ -237,7 +308,7 @@ function checkProfileChange() {
   } else {
       previousProfile = sel.value;
       fetch('/setprofile', {method: 'POST', body: `p=${sel.value}&a=80&b=150&c=300`});
-      showToast('پروفایل با موفقیت به حالت استاندارد تغییر کرد.');
+      showToast(dict[currentLang]['toast_prof']);
   }
 }
 
@@ -249,7 +320,7 @@ function confirmCustom() {
       customConfirmed = true;
       previousProfile = '3';
       document.getElementById('customModal').style.display = 'none';
-      showToast('مقادیر کاستوم با موفقیت ذخیره شدند.');
+      showToast(dict[currentLang]['toast_cust']);
   });
 }
 
@@ -259,16 +330,15 @@ function cancelCustom() {
   if (previousProfile == 3) customConfirmed = true;
 }
 
-// مدیریت پاپ‌آپ راهنما
 function showInfo(type) {
     const title = document.getElementById('infoTitle');
     const text = document.getElementById('infoText');
     if (type === 'mode') {
-        title.innerHTML = '⚙️ راهنمای حالت کارکرد';
-        text.innerHTML = 'حالت اتوماتیک (Auto):<br>در این حالت با انتخاب یک گزینه، دستگاه تمام مراحل استاندارد شامل شارژ، استراحت و دشارژ را به‌صورت کاملاً هوشمند و متوالی برای استخراج ظرفیت دقیق انجام می‌دهد.<br><br><strong style="color: var(--warn); font-size: 14px;">⚠️ توجه مهم: اگر منبع تغذیه (شارژر) به دستگاه متصل نباشد، حالت اتوماتیک کار نخواهد کرد!</strong><br><br>حالت دستی (Manual):<br>تنها همان فازی که انتخاب می‌کنید (مثلاً فقط شارژ کردن) یک‌بار اجرا شده و سپس دستگاه به طور کامل متوقف می‌شود.';
+        title.innerHTML = dict[currentLang]['info_mode_t'];
+        text.innerHTML = dict[currentLang]['info_mode_d'];
     } else {
-        title.innerHTML = '⚕️ راهنمای پروفایل تریاژ';
-        text.innerHTML = 'الگوریتم هوشمند دستگاه، باتری‌ها را بر اساس مقاومت داخلی در کلاس‌های A (عالی), B (خوب), C (متوسط) و D (ضعیف) دسته‌بندی می‌کند.<br><br>- برای باتری‌های ابزارآلات (Power Tools) مقاومت باید بسیار پایین باشد.<br>- می‌توانید با انتخاب گزینه "کاستوم"، سقف مجاز مقاومت برای هر گرید را به دلخواه خود وارد کنید تا دستگاه بر همان اساس تصمیم بگیرد.';
+        title.innerHTML = dict[currentLang]['info_prof_t'];
+        text.innerHTML = dict[currentLang]['info_prof_d'];
     }
     document.getElementById('infoModal').style.display = 'flex';
 }
@@ -340,7 +410,7 @@ async function fetchLogCSV(i) {
     
     if(logBox) {
       if(txt === "Empty" || txt.trim() === "") {
-        logBox.innerHTML = "No log data yet.";
+        logBox.innerHTML = dict[currentLang]['lbl_no_data'];
       } else {
         const isScrolledToBottom = logBox.scrollHeight - logBox.clientHeight <= logBox.scrollTop + 5;
         const rows = txt.trim().split('\n');
@@ -441,16 +511,14 @@ function renderCards(data) {
 
       let footerHtml = '';
       if (ch.state === STATE.DONE) {
-        footerHtml = `<div class="form-row" style="direction:ltr;"><a href="/log${i+1}" class="btn" style="background:#333; color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center; flex:1;" download>📥 دانلود CSV</a><button class="btn btn-report" onclick="downloadGraph(${i})">📸 خروجی گراف</button><button class="btn btn-reset" onclick="resetCh(${i})">↺ ریست</button></div>`;
+        footerHtml = `<div class="form-row" style="direction:ltr;"><a href="/log${i+1}" class="btn" style="background:#333; color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center; flex:1;" download>${dict[currentLang]['btn_dl']}</a><button class="btn btn-report" onclick="downloadGraph(${i})">${dict[currentLang]['btn_graph']}</button><button class="btn btn-reset" onclick="resetCh(${i})">${dict[currentLang]['btn_rst']}</button></div>`;
       } else {
-        // کلاس‌های اکتیو برای رنگی شدن دکمه‌های روشن
         let bCharge = (ch.state === STATE.CHARGING) ? 'active-btn chg' : '';
         let b500 = (ch.state === STATE.D500) ? 'active-btn d500' : '';
         let b1000 = (ch.state === STATE.D1000) ? 'active-btn d1000' : '';
         let b1500 = (ch.state === STATE.D1500) ? 'active-btn d1500' : '';
         let bTrg = (ch.state === STATE.TRIAGE) ? 'active-btn trg' : '';
 
-        // مسیر دستورات API وابسته به انتخاب مد دستی یا اتو
         let actCharge = 'charge'; 
         let act500 = (globalMode === 'auto') ? 'auto500' : 'd500';
         let act1000 = (globalMode === 'auto') ? 'auto1000' : 'd1000';
@@ -463,15 +531,14 @@ function renderCards(data) {
         let on1500 = (ch.state === STATE.D1500) ? `stopTest(${i})` : `startAct(${i}, '${act1500}')`;
         let onTrg = (ch.state === STATE.TRIAGE) ? `stopTest(${i})` : `startAct(${i}, '${actTrg}')`;
 
-        // متون دکمه‌ها کاملا اختصاصی طبق درخواست
-        let lblCharge = ch.state === STATE.CHARGING ? '⏹ توقف' : (globalMode === 'auto' ? '⚡ شارژ' : '⚡ شارژ (دستی)');
-        let lbl500 = ch.state === STATE.D500 ? '⏹ توقف' : (globalMode === 'auto' ? '🔋 دشارژ 0.5 آمپر' : '🔋 0.5 آمپر (دستی)');
-        let lbl1000 = ch.state === STATE.D1000 ? '⏹ توقف' : (globalMode === 'auto' ? '🔥 دشارژ 1 آمپر' : '🔥 1 آمپر (دستی)');
-        let lbl1500 = ch.state === STATE.D1500 ? '⏹ توقف' : (globalMode === 'auto' ? '💥 دشارژ 1.5 آمپر' : '💥 1.5 آمپر (دستی)');
-        let lblTrg = ch.state === STATE.TRIAGE ? '⏹ توقف' : (globalMode === 'auto' ? '⚕️ تریاژ خودکار' : '⚕️ تریاژ دستی');
+        let lblCharge = ch.state === STATE.CHARGING ? dict[currentLang]['btn_stop'] : (globalMode === 'auto' ? dict[currentLang]['btn_chg'] : dict[currentLang]['btn_chg_m']);
+        let lbl500 = ch.state === STATE.D500 ? dict[currentLang]['btn_stop'] : (globalMode === 'auto' ? dict[currentLang]['btn_500'] : dict[currentLang]['btn_500_m']);
+        let lbl1000 = ch.state === STATE.D1000 ? dict[currentLang]['btn_stop'] : (globalMode === 'auto' ? dict[currentLang]['btn_1000'] : dict[currentLang]['btn_1000_m']);
+        let lbl1500 = ch.state === STATE.D1500 ? dict[currentLang]['btn_stop'] : (globalMode === 'auto' ? dict[currentLang]['btn_1500'] : dict[currentLang]['btn_1500_m']);
+        let lblTrg = ch.state === STATE.TRIAGE ? dict[currentLang]['btn_stop'] : (globalMode === 'auto' ? dict[currentLang]['btn_trg'] : dict[currentLang]['btn_trg_m']);
 
         footerHtml = `
-          ${(ch.state === STATE.IDLE && !isResting) ? `<div class="form-row"><input class="input-name" id="name-${i}" type="text" placeholder="شناسه باتری (اختیاری)"></div>` : ''}
+          ${(ch.state === STATE.IDLE && !isResting) ? `<div class="form-row"><input class="input-name" id="name-${i}" type="text" placeholder="${dict[currentLang]['plc_id']}"></div>` : ''}
           <div class="action-grid">
             <button class="btn-big ${bCharge}" onclick="${onCharge}">${lblCharge}</button>
             <button class="btn-big ${b500}" onclick="${on500}">${lbl500}</button>
@@ -482,7 +549,7 @@ function renderCards(data) {
         `;
         
         if (isResting) {
-          footerHtml += `<div class="form-row" style="margin-top:10px;"><button class="btn btn-stop" onclick="stopTest(${i})">■ توقف آنالیز (در حال استراحت)</button></div>`;
+          footerHtml += `<div class="form-row" style="margin-top:10px;"><button class="btn btn-stop" onclick="stopTest(${i})">${dict[currentLang]['btn_stop_rest']}</button></div>`;
         }
       }
 
@@ -519,7 +586,7 @@ function renderCards(data) {
               <button class="log-btn" onclick="zoomLog(${i}, 1)">A+</button>
               <button class="log-btn" onclick="zoomLog(${i}, -1)">A-</button>
             </div>
-            <span>پیش‌نمایش لاگ (CH${i+1})</span>
+            <span>${dict[currentLang]['lbl_prev']} (CH${i+1})</span>
           </div>
           <div class="log-content" id="csv-log-${i}">Loading...</div>
         </div>
@@ -575,7 +642,7 @@ function renderCards(data) {
 function downloadGraph(i) {
   const data = window['graphData_'+i];
   if(!data || data.length === 0) {
-    alert('دیتا برای رسم نمودار موجود نیست.');
+    alert('No data for graph / دیتا برای رسم نمودار موجود نیست.');
     return;
   }
   
@@ -667,16 +734,15 @@ function downloadGraph(i) {
 async function fetchData() { try { const r=await fetch('/data'); const d=await r.json(); renderCards(d); document.getElementById('sysTime').textContent=d.time; } catch(e){} }
 
 async function startAct(i, act) { 
-  // جلوگیری از اجرای دستگاه در صورتی که مقادیر کاستوم تأیید نشده باشد
   if (document.getElementById('triageProfile').value === '3' && !customConfirmed) {
-      alert("اخطار امنیتی ⚠️\n\nشما پروفایل کاستوم را انتخاب کرده‌اید اما مقادیر آن را وارد یا تأیید نکرده‌اید. لطفاً ابتدا مقادیر را از منوی بالا تأیید کنید.");
+      alert(dict[currentLang]['err_cust']);
       return;
   }
   
   const el = document.getElementById(`name-${i}`); 
   let name = el ? el.value.trim() : '';
   const r = await fetch('/action',{method:'POST',body:`ch=${i}&act=${act}&name=${encodeURIComponent(name)}`}); 
-  if(r.ok) { showToast('دستور با موفقیت به دستگاه ارسال شد.'); if(el) el.value = ''; }
+  if(r.ok) { showToast(dict[currentLang]['toast_cmd']); if(el) el.value = ''; }
   fetchData(); 
 }
 
