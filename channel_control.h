@@ -220,7 +220,7 @@ void stopChannel(uint8_t c) {
   
   ch[c].state = lastState; 
   
-  bool isFinalStop = (ch[c].autoMode == AUTO_OFF) || (ch[c].autoPhase == PHASE_FINAL_CHG) || (ch[c].hasFault) || (lastState == Triage);
+  bool isFinalStop = (ch[c].autoMode == AUTO_OFF) || (ch[c].autoPhase == PHASE_FINAL_CHG) || (ch[c].hasFault) || (ch[c].isCanceled) || (lastState == Triage);
   
   if (isFinalStop) {
     saveCSV(c); 

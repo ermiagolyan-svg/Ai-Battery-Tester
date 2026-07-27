@@ -89,6 +89,12 @@ void saveCSV(uint8_t c) {
   else if(ch[c].autoMode == AUTO_1500) actStr = "Auto Cycle 1.5A";
   else if(ch[c].autoMode == AUTO_TRIAGE) actStr = "Auto Smart Triage";
 
+   if (ch[c].isCanceled) {
+      actStr = "Canceled (" + actStr + ")";
+  } else if (ch[c].hasFault) {
+      actStr = "Fault/Error (" + actStr + ")";
+  }
+
   float finalCapacity = (ch[c].autoMode != AUTO_OFF) ? ch[c].recordedCapacity : ch[c].mAh;
 
   // مدیریت خالی بودن متغیرهای تریاژ در تست‌های معمولی

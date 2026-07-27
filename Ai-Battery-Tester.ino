@@ -116,6 +116,7 @@ struct Channel {
 
   bool         hasFault    = false;
   String       faultMsg    = "";
+  bool         isCanceled  = false;
 };
 
 Channel ch[NUM_CHANNELS];
