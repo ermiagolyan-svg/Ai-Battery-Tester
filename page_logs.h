@@ -233,13 +233,15 @@ String buildLogPage() {
         doc.setTextColor(0);
         doc.setFontSize(9);
         doc.setFont("helvetica", "bold");
-        doc.text(`Cap: ${cap} mAh`, 20, y + 17);
-        doc.text(`IR / DCIR: ${ir} / ${dcir} mΩ`, 65, y + 17);
+        
+        // اصلاح مختصات X و حذف فاصله‌های اضافه برای جلوگیری از تداخل متن‌ها
+        doc.text(`Cap: ${cap} mAh`, 18, y + 17);
+        doc.text(`IR/DCIR: ${ir}/${dcir} mΩ`, 48, y + 17);
         
         if(grade !== "N/A" && grade !== "Unknown") {
-            doc.text(`Grade: ${grade}`, 125, y + 17);
+            doc.text(`Grade: ${grade}`, 108, y + 17);
         }
-        doc.text(`V-End: ${vEnd} V`, 165, y + 17);
+        doc.text(`V-End: ${vEnd} V`, 168, y + 17);
         
         const pts = cols.slice(12).map(Number).filter(n => !isNaN(n));
         if (pts.length > 0) {
