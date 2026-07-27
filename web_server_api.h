@@ -13,6 +13,9 @@ extern int current_triage_profile;
 extern float custom_a, custom_b, custom_c;
 extern float triage_grade_a_mohm, triage_grade_b_mohm, triage_grade_c_mohm;
 
+// دسترسی به آرایه اضافه شده در بک‌اند
+extern int topUpRetries[3];
+
 // ─── Forward Declarations برای توابعی که در فایل اصلی هستند ───
 void startChannel(uint8_t ch_idx, const String& name, ChannelState act);
 void startAuto(uint8_t c, const String& name, AutoMode mode);
@@ -70,6 +73,9 @@ void setupWebServer() {
       chObj["elapsed"] = durationStr(elapsed);
       chObj["vstart"] = String(ch[c].voltStart, 3);
       chObj["health"] = String(health, 0);
+      
+      // اضافه کردن مقدار topUpRetries به خروجی JSON
+      chObj["topup"] = topUpRetries[c]; 
     }
     
     doc["time"] = timeStr(nowEpoch());

@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 
+// دسترسی به آرایه اضافه شده در بک‌اند
+extern int topUpRetries[3];
+
 // ─── تابع آپدیت TFT با فرمت و پدینگ‌های درخواستی شما ───
 void updateTFT() {
   static bool firstDraw = true;
@@ -46,7 +49,15 @@ void updateTFT() {
         }
     }
     else if(ch[i].state == MEASURING_IR) { stateColor = TFT_YELLOW; stateStr = "IR.."; }
-    else if(ch[i].state == CHARGING) { stateColor = TFT_CYAN; stateStr = "CHRG"; }
+    else if(ch[i].state == CHARGING) { 
+        stateColor = TFT_CYAN; 
+        // تغییرات منطق شارژ تکمیلی
+        if(topUpRetries[i] > 0) {
+            stateStr = "TOP-UP";
+        } else {
+            stateStr = "CHRG"; 
+        }
+    }
     else if(ch[i].state == DISCHARGE_500) { stateColor = TFT_ORANGE; stateStr = "D.5A"; } 
     else if(ch[i].state == DISCHARGE_1000) { stateColor = TFT_RED; stateStr = "D1A"; }
     else if(ch[i].state == DISCHARGE_1500) { stateColor = TFT_MAROON; stateStr = "D1.5A"; }
