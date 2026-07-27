@@ -256,30 +256,67 @@ void setupWebServer() {
   });
 
 server.on("/scanwifi", HTTP_GET, []() {
-    int n = WiFi.scanNetworks();
-    JsonDocument doc;
-    JsonArray nets = doc["networks"].to<JsonArray>();
-    for (int i = 0; i < n; ++i) {
-      JsonObject obj = nets.add<JsonObject>();
-      obj["ssid"] = WiFi.SSID(i);
-      obj["rssi"] = WiFi.RSSI(i);
+    int n = WiFi.scanComplete();
+    
+    if (n == WIFI_SCAN_FAILED) {
+      // شروع اسکن غیرمسدودکننده (Async) در بک‌گراند
+      WiFi.scanNetworks(true); 
+      server.send(202, "application/json", "{\"status\":\"scanning\"}");
+    } 
+    else if (n == WIFI_SCAN_RUNNING) {
+      // اسکن هنوز در حال انجام است
+      server.send(202, "application/json", "{\"status\":\"scanning\"}");
+    } 
+    else {
+      // نتایج آماده است
+      JsonDocument doc;
+      JsonArray nets = doc["networks"].to<JsonArray>();
+      for (int i = 0; i < n; ++i) {
+        JsonObject obj = nets.add<JsonObject>();
+        obj["ssid"] = WiFi.SSID(i);
+        obj["rssi"] = WiFi.RSSI(i);
+      }
+      WiFi.scanDelete(); // پاکسازی حافظه اسکن
+      String res;
+      serializeJson(doc, res);
+      server.send(200, "application/json", res);
     }
-    String res;
-    serializeJson(doc, res);
-    server.send(200, "application/json", res);
   });
 
   server.on("/setwifi", HTTP_POST, []() {
     String ssid = server.arg("ssid");
     String pass = server.arg("pass");
+    
     if (ssid.length() > 0) {
-      prefs.putString("wifi_ssid", ssid);
-      prefs.putString("wifi_pass", pass);
-      server.send(200, "text/plain", "WiFi Saved! Rebooting in 3 seconds...");
-      delay(1500);
-      ESP.restart(); // ریستارت خودکار برای اتصال به شبکه جدید
+      WiFi.disconnect();
+      delay(100);
+      
+      // تلاش برای اتصال تستی
+      WiFi.begin(ssid.c_str(), pass.c_str());
+      int tries = 0;
+      // حداکثر ۷.۵ ثانیه منتظر می‌ماند تا وضعیت اتصال را بررسی کند
+      while (WiFi.status() != WL_CONNECTED && tries < 15) {
+        delay(500); 
+        tries++;
+      }
+      
+      if (WiFi.status() == WL_CONNECTED) {
+        // اتصال موفقیت‌آمیز بود
+        prefs.putString("wifi_ssid", ssid);
+        prefs.putString("wifi_pass", pass);
+        server.send(200, "text/plain", "اتصال موفق! دستگاه در حال ریستارت است...");
+        delay(1500);
+        ESP.restart(); 
+      } else {
+        // عدم موفقیت در اتصال، بازگشت به شبکه هات‌اسپات دستگاه
+        WiFi.disconnect();
+        delay(100);
+        WiFi.mode(WIFI_AP);
+        WiFi.softAP("Portable-Tester");
+        server.send(400, "text/plain", "خطا: رمز عبور اشتباه است یا مودم خارج از برد است!");
+      }
     } else {
-      server.send(400, "text/plain", "Invalid SSID");
+      server.send(400, "text/plain", "SSID نامعتبر است");
     }
   });
 }

@@ -102,26 +102,50 @@ function saveTriage() {
 function scanWiFi() {
   const btn = document.getElementById('btnScan');
   btn.textContent = 'Scanning...';
-  fetch('/scanwifi').then(r=>r.json()).then(d => {
-    const sel = document.getElementById('wifiSSID');
-    sel.innerHTML = '<option value="">Select a network...</option>';
-    d.networks.forEach(nw => { sel.innerHTML += `<option value="${nw.ssid}">${nw.ssid} (${nw.rssi}dBm)</option>`; });
-    sel.style.display = 'block';
-    document.getElementById('wifiPass').style.display = 'block';
-    document.getElementById('btnSaveWifi').style.display = 'block';
-    btn.textContent = 'Scan Networks';
-  }).catch(e => { btn.textContent = 'Scan Failed!'; setTimeout(() => btn.textContent = 'Scan Networks', 2000); });
+  
+  const pollScan = () => {
+    fetch('/scanwifi').then(r => {
+      if (r.status === 202) {
+        setTimeout(pollScan, 1000); // در صورت ادامه داشتن اسکن، ۱ ثانیه دیگر تلاش می‌کند
+      } else if (r.status === 200) {
+        return r.json();
+      } else {
+        throw new Error('Scan Failed');
+      }
+    }).then(d => {
+      if(!d) return;
+      const sel = document.getElementById('wifiSSID');
+      sel.innerHTML = '<option value="">Select a network...</option>';
+      d.networks.forEach(nw => { sel.innerHTML += `<option value="${nw.ssid}">${nw.ssid} (${nw.rssi}dBm)</option>`; });
+      sel.style.display = 'block';
+      document.getElementById('wifiPass').style.display = 'block';
+      document.getElementById('btnSaveWifi').style.display = 'block';
+      btn.textContent = 'Scan Networks';
+    }).catch(e => { 
+      btn.textContent = 'Scan Failed!'; 
+      setTimeout(() => btn.textContent = 'Scan Networks', 2000); 
+    });
+  };
+  
+  pollScan();
 }
 
 function saveWiFi() {
   const ssid = document.getElementById('wifiSSID').value;
   const pass = document.getElementById('wifiPass').value;
   if(!ssid) return alert('شبکه‌ای انتخاب نشده است!');
+  
+  const res = document.getElementById('resWifi');
+  res.style.color = 'var(--accent)';
+  res.textContent = 'در حال بررسی اتصال، لطفاً چند ثانیه صبر کنید...';
+  
   fetch('/setwifi', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `ssid=${encodeURIComponent(ssid)}&pass=${encodeURIComponent(pass)}` })
-    .then(r=>r.text()).then(t=>{
-       const res = document.getElementById('resWifi');
-       res.textContent = t;
-       setTimeout(() => res.textContent = '', 4000);
+    .then(r => r.text().then(t => ({status: r.status, text: t})))
+    .then(obj => {
+       // تغییر رنگ پیام در صورت بروز خطا
+       res.style.color = obj.status === 200 ? 'var(--accent)' : '#ff6b35';
+       res.textContent = obj.text;
+       setTimeout(() => res.textContent = '', 5000);
     });
 }
 
