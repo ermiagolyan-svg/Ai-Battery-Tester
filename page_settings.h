@@ -22,6 +22,21 @@ String buildSettingsPage() {
 <a href="/" style="color:var(--accent); text-decoration:none;">← Back Dashboard</a>
 
 <div class="card">
+  <h3>📡 WiFi Network</h3>
+  <p style="font-size:13px; color:var(--muted); margin: 8px 0;">شبکه وای‌فای دستگاه را تغییر دهید. (با ذخیره اطلاعات، دستگاه ریست می‌شود)</p>
+  
+  <button class="btn" style="background:var(--surface); color:var(--accent); border:1px solid var(--accent); margin-bottom: 10px;" onclick="scanWiFi()" id="btnScan">Scan Networks</button>
+  
+  <select class="input-field" id="wifiSSID" style="display:none; margin-bottom: 10px;">
+    <option value="">Select a network...</option>
+  </select>
+  
+  <input type="password" class="input-field" id="wifiPass" placeholder="Password" style="display:none;">
+  <button class="btn" id="btnSaveWifi" onclick="saveWiFi()" style="display:none;">Save & Connect</button>
+  <div id="resWifi" style="margin-top:10px; color:var(--accent); font-size:13px; text-align:center;"></div>
+</div>
+
+<div class="card">
   <h3>⚡ Smart Triage Profile</h3>
   <p style="font-size:13px; color:var(--muted); margin: 8px 0;">استاندارد گریددهی باتری‌ها را مشخص کنید. این تنظیمات در حافظه ذخیره می‌شوند.</p>
   
@@ -63,7 +78,6 @@ String buildSettingsPage() {
 </div>
 
 <script>
-// تابع لود کردن تنظیمات از سرور هنگام باز شدن صفحه
 fetch('/getprofile').then(r=>r.json()).then(d=>{
   document.getElementById('triageProfile').value = d.p;
   document.getElementById('valA').value = d.a;
@@ -81,13 +95,34 @@ function saveTriage() {
   const a = document.getElementById('valA').value || 80;
   const b = document.getElementById('valB').value || 150;
   const c = document.getElementById('valC').value || 300;
-  
   fetch('/setprofile', {method: 'POST', body: `p=${p}&a=${a}&b=${b}&c=${c}`})
+    .then(r=>r.text()).then(t=>{ const res = document.getElementById('resTriage'); res.textContent = t; setTimeout(() => res.textContent = '', 3000); }); 
+}
+
+function scanWiFi() {
+  const btn = document.getElementById('btnScan');
+  btn.textContent = 'Scanning...';
+  fetch('/scanwifi').then(r=>r.json()).then(d => {
+    const sel = document.getElementById('wifiSSID');
+    sel.innerHTML = '<option value="">Select a network...</option>';
+    d.networks.forEach(nw => { sel.innerHTML += `<option value="${nw.ssid}">${nw.ssid} (${nw.rssi}dBm)</option>`; });
+    sel.style.display = 'block';
+    document.getElementById('wifiPass').style.display = 'block';
+    document.getElementById('btnSaveWifi').style.display = 'block';
+    btn.textContent = 'Scan Networks';
+  }).catch(e => { btn.textContent = 'Scan Failed!'; setTimeout(() => btn.textContent = 'Scan Networks', 2000); });
+}
+
+function saveWiFi() {
+  const ssid = document.getElementById('wifiSSID').value;
+  const pass = document.getElementById('wifiPass').value;
+  if(!ssid) return alert('شبکه‌ای انتخاب نشده است!');
+  fetch('/setwifi', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `ssid=${encodeURIComponent(ssid)}&pass=${encodeURIComponent(pass)}` })
     .then(r=>r.text()).then(t=>{
-       const res = document.getElementById('resTriage');
+       const res = document.getElementById('resWifi');
        res.textContent = t;
-       setTimeout(() => res.textContent = '', 3000);
-    }); 
+       setTimeout(() => res.textContent = '', 4000);
+    });
 }
 
 function sync() { const epoch = Math.floor(Date.now() / 1000); fetch('/settime',{method:'POST',body:`epoch=${epoch}`}).then(r=>r.text()).then(t=>{ const res = document.getElementById('res'); res.textContent = t; setTimeout(() => res.textContent = '', 3000);}); }

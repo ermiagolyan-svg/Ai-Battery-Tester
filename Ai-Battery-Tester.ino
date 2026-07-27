@@ -42,8 +42,6 @@ TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite spr = TFT_eSprite(&tft);
 XPT2046_Touchscreen ts(TOUCH_CS, TOUCH_IRQ);
 
-const char* WIFI_SSID = "Ermia";
-const char* WIFI_PASS = "8641682Ermia";
 WebServer server(80);
 
 IPAddress local_IP(192, 168, 1, 66);
@@ -210,9 +208,29 @@ void setup() {
   tft.setCursor(5, 55); 
   tft.println("Initializing...");
 
+  // ---> شروع خواندن اطلاعات از حافظه <---
+  prefs.begin("triage", false);
+  String current_ssid = prefs.getString("wifi_ssid", "Ermia"); // پسورد و نام پیش‌فرض
+  String current_pass = prefs.getString("wifi_pass", "8641682Ermia");
+
+  current_triage_profile = prefs.getInt("profile", 2); 
+  custom_a = prefs.getFloat("cust_a", 80.0);
+  custom_b = prefs.getFloat("cust_b", 150.0);
+  custom_c = prefs.getFloat("cust_c", 300.0);
+  
+  if (current_triage_profile == 3) {
+    triage_grade_a_mohm = custom_a;
+    triage_grade_b_mohm = custom_b;
+    triage_grade_c_mohm = custom_c;
+  } else {
+    setTriageProfile((BatteryProfile)current_triage_profile);
+  }
+  // ---> پایان خواندن حافظه <---
+
   WiFi.mode(WIFI_STA);
-  WiFi.config(local_IP, gateway, subnet, primaryDNS, primaryDNS);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  // تنظیم IP ثابت حذف شد تا در شبکه‌های مختلف بتونه با DHCP وصل بشه
+  
+  WiFi.begin(current_ssid.c_str(), current_pass.c_str());
   
   tft.setTextFont(4); 
   tft.setTextSize(1); 
@@ -220,7 +238,9 @@ void setup() {
   tft.setCursor(5, 90);
   tft.println("Connecting WiFi...");
 
-  Serial.print("Connecting to WiFi ");
+  Serial.print("Connecting to WiFi: ");
+  Serial.println(current_ssid);
+
   int wifi_tries = 0;
   while (WiFi.status() != WL_CONNECTED && wifi_tries < 20) {
     delay(500);
@@ -255,21 +275,6 @@ void setup() {
     WiFi.softAP("Portable-Tester"); 
     currentIP = WiFi.softAPIP().toString();
     delay(1000);
-  }
-
-  // ---> خواندن تنظیمات تریاژ از حافظه سیستم <---
-  prefs.begin("triage", false);
-  current_triage_profile = prefs.getInt("profile", 2); 
-  custom_a = prefs.getFloat("cust_a", 80.0);
-  custom_b = prefs.getFloat("cust_b", 150.0);
-  custom_c = prefs.getFloat("cust_c", 300.0);
-  
-  if (current_triage_profile == 3) {
-    triage_grade_a_mohm = custom_a;
-    triage_grade_b_mohm = custom_b;
-    triage_grade_c_mohm = custom_c;
-  } else {
-    setTriageProfile((BatteryProfile)current_triage_profile);
   }
   
   setupWebServer();

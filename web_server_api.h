@@ -254,6 +254,34 @@ void setupWebServer() {
     }
     server.send(200, "text/plain", "Log Cleared");
   });
+
+server.on("/scanwifi", HTTP_GET, []() {
+    int n = WiFi.scanNetworks();
+    JsonDocument doc;
+    JsonArray nets = doc["networks"].to<JsonArray>();
+    for (int i = 0; i < n; ++i) {
+      JsonObject obj = nets.add<JsonObject>();
+      obj["ssid"] = WiFi.SSID(i);
+      obj["rssi"] = WiFi.RSSI(i);
+    }
+    String res;
+    serializeJson(doc, res);
+    server.send(200, "application/json", res);
+  });
+
+  server.on("/setwifi", HTTP_POST, []() {
+    String ssid = server.arg("ssid");
+    String pass = server.arg("pass");
+    if (ssid.length() > 0) {
+      prefs.putString("wifi_ssid", ssid);
+      prefs.putString("wifi_pass", pass);
+      server.send(200, "text/plain", "WiFi Saved! Rebooting in 3 seconds...");
+      delay(1500);
+      ESP.restart(); // ریستارت خودکار برای اتصال به شبکه جدید
+    } else {
+      server.send(400, "text/plain", "Invalid SSID");
+    }
+  });
 }
 
 #endif
