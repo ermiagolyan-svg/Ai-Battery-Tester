@@ -30,25 +30,16 @@ String buildIndexPage() {
   .nav-links a.special:hover { background: var(--accent); color: #000; }
   
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; padding: 20px; max-width: 1200px; margin: 0 auto; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;}
-  .card.running { border-color: var(--accent); }
-  .card.done { border-color: var(--ok); }
-  .card.resting { border-color: #00bfff; } 
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.3s;}
   
   .card-header { padding: 14px 18px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
   .ch-label { display: flex; align-items: center; gap: 8px; }
-  .ch-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
-  .ch-dot.running { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: p 1.5s infinite; }
-  .ch-dot.resting { background: #00bfff; box-shadow: 0 0 8px #00bfff; animation: p 2s infinite; }
-  .ch-dot.done { background: var(--ok); }
+  .ch-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: all 0.3s; }
   @keyframes p { 0%,100%{opacity:1} 50%{opacity:.4} }
   .ch-name { font-weight: 700; font-size: 16px; }
-  .ch-num { font-size: 12px; color: var(--muted); font-family: var(--mono); }
-  .badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
-  .badge.idle { background: #2a2a32; color: var(--muted); }
-  .badge.running { background: rgba(0,212,170,.15); color: var(--accent); }
-  .badge.resting { background: rgba(0,191,255,.15); color: #00bfff; }
-  .badge.done { background: rgba(0,230,118,.15); color: var(--ok); }
+  .ch-num { font-size: 12px; color: var(--muted); font-family: var(--mono); font-weight: bold; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; transition: all 0.3s; }
+  
   .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
   .metric { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
   .metric-label { font-size: 11px; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; }
@@ -66,18 +57,21 @@ String buildIndexPage() {
   .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
   .form-row:last-child { margin-bottom: 0; }
   
-  /* استایل‌های جدید برای ورودی‌ها و دکمه‌ها */
   .input-name { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 13px; outline: none; transition: border-color 0.2s; }
   .input-name:focus { border-color: var(--accent); }
   
-  .input-mode { flex: 2; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0 10px; border-radius: 8px; font-size: 13px; outline: none; cursor: pointer; height: 38px; }
-  .input-mode:focus { border-color: var(--accent); }
-  .input-mode optgroup { background: var(--surface2); color: var(--muted); font-weight: bold; }
-  .input-mode option { background: var(--bg); color: var(--text); }
-  
+  /* گرید اختصاصی دکمه‌های کنترلی بجای دراپ‌داون */
+  .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .btn-act { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 4px; font-size: 11px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .btn-act:hover { background: #2a2a32; transform: translateY(-1px); }
+  .btn-act:active { transform: translateY(1px); }
+  .btn-act.chg { color: #00ffff; border-color: rgba(0,255,255,0.25); }
+  .btn-act.dis { color: #ffa500; border-color: rgba(255,165,0,0.25); }
+  .btn-act.dis-high { color: #ff0000; border-color: rgba(255,0,0,0.25); }
+  .btn-act.auto { color: #00bfff; border-color: rgba(0,191,255,0.25); }
+  .btn-act.trg { color: #ff00ff; border-color: rgba(255,0,255,0.25); }
+
   .btn { padding: 0 12px; height: 38px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 1; transition: all 0.2s; }
-  .btn-start { background: var(--accent); color: #000; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(0, 212, 170, 0.15); }
-  .btn-start:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0, 212, 170, 0.25); }
   .btn-stop { background: rgba(255, 107, 53, 0.1); color: var(--warn); border: 1px solid var(--warn); }
   .btn-stop:hover { background: var(--warn); color: #fff; }
   .btn-report { background: var(--accent2); color: #fff; }
@@ -101,7 +95,6 @@ String buildIndexPage() {
   #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent); color: var(--text); padding: 10px 20px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999; }
   #toast.show { opacity: 1; }
 
-  /* مدیا کوئری برای ریسپانسیو کردن هدر در موبایل */
   @media (max-width: 700px) {
     .logo-sub { display: none; }
     .sys-time { display: none; }
@@ -165,12 +158,36 @@ async function fetchAndDrawGraph(i) {
     let ptsEl = document.getElementById(`points-val-${i}`);
     if(ptsEl) ptsEl.textContent = data.length + " pts";
     
-    if(!data || data.length < 2) return;
     const minV = 2.5; const maxV = 4.3;
+    const paddingLeft = 40; // فضا برای رسم ولتاژها
+    
+    // رسم خطوط و اعداد ولتاژ (محور عمودی)
+    ctx.fillStyle = '#6b6b80';
+    ctx.font = '11px Consolas, monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    
+    [2.5, 3.0, 3.5, 4.0, 4.2].forEach(v => {
+        let y = h - ((v - minV) / (maxV - minV)) * h;
+        let textY = Math.max(6, Math.min(y, h - 6)); // جلوگیری از بیرون زدن متن
+        
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(42, 42, 50, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.moveTo(paddingLeft - 5, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+
+        ctx.fillText(v.toFixed(1) + 'V', 0, textY);
+    });
+
+    if(!data || data.length < 2) return;
+    
+    // رسم نمودار اصلی
     ctx.beginPath();
     ctx.strokeStyle = CH_COLORS[i]; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     for(let j=0; j<data.length; j++) {
-      let x = (j / Math.max(1, data.length - 1)) * w;
+      let x = paddingLeft + (j / Math.max(1, data.length - 1)) * (w - paddingLeft);
       let y = h - ((data[j] - minV) / (maxV - minV)) * h;
       if(j===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
@@ -212,14 +229,6 @@ async function fetchLogCSV(i) {
   } catch(e) {}
 }
 
-// تابع واسط برای خواندن مد انتخاب شده از دراپ‌داون
-window.startActMode = function(i) {
-  const modeDropdown = document.getElementById(`mode-${i}`);
-  if (modeDropdown) {
-    startAct(i, modeDropdown.value);
-  }
-}
-
 function renderCards(data) {
   const grid = document.getElementById('channelGrid');
   
@@ -228,17 +237,30 @@ function renderCards(data) {
     
     const isResting = (ch.state === STATE.IDLE && (ch.autophase === 2 || ch.autophase === 4));
     const isRunning = (ch.state >= STATE.CHARGING && ch.state <= STATE.TRIAGE);
-    const sc = isResting ? 'resting' : (ch.state === STATE.IDLE ? 'idle' : isRunning ? 'running' : 'done');
     const isTriage = (ch.state === STATE.TRIAGE) || (ch.state === STATE.DONE && ch.qt_grade && ch.qt_grade !== "");
     
     let sn = 'IDLE';
-    let modeLabel = (ch.auto > 0) ? ' [Auto]' : ' [Manual]';
+    let modeLabel = (ch.auto > 0) ? ' [Auto]' : '';
     
+    // تعریف رنگ‌های وضعیت کاملا منطبق با TFT فیزیکی دستگاه
+    let stateColor = '#6b6b80'; // STBY
+    if (isResting) stateColor = '#87ceeb'; // TFT_SKYBLUE
+    else if (ch.state === STATE.IR) stateColor = '#ffff00'; // TFT_YELLOW
+    else if (ch.state === STATE.CHARGING) stateColor = '#00ffff'; // TFT_CYAN
+    else if (ch.state === STATE.D500) stateColor = '#ffa500'; // TFT_ORANGE
+    else if (ch.state === STATE.D1000) stateColor = '#ff0000'; // TFT_RED
+    else if (ch.state === STATE.D1500) stateColor = '#800000'; // TFT_MAROON
+    else if (ch.state === STATE.TRIAGE) stateColor = '#ff00ff'; // TFT_MAGENTA
+    else if (ch.state === STATE.DONE) stateColor = '#00ff00'; // TFT_GREEN
+
     if(isResting) {
       if (ch.autophase === 2) sn = (ch.auto === 4) ? 'RESTING (45s)' : 'RESTING (5 MIN)';
       else sn = 'RESTING (1 MIN)';
     }
-    else if(ch.state===STATE.CHARGING) sn = 'CHARGING' + modeLabel;
+    else if(ch.state===STATE.CHARGING) {
+        // تغییر لیبل وضعیت بر اساس متغیر topup
+        sn = (ch.topup > 0 ? 'TOP-UP' : 'CHARGING') + modeLabel;
+    }
     else if(ch.state===STATE.D500) sn = 'TEST 0.5A' + modeLabel;
     else if(ch.state===STATE.D1000) sn = 'TEST 1.0A' + modeLabel;
     else if(ch.state===STATE.D1500) sn = 'TEST 1.5A' + modeLabel;
@@ -252,18 +274,21 @@ function renderCards(data) {
       let m = Math.floor(ch.rest_rem / 60);
       let s = ch.rest_rem % 60;
       displayElapsed = `-${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-      elapsedStyle = "font-size:20px; color:#00bfff;";
+      elapsedStyle = "font-size:20px; color:#87ceeb;";
     }
     
     const vPct = Math.max(0, Math.min(100, ((parseFloat(ch.v) - 2.8) / (4.2 - 2.8)) * 100));
     const isFocused = (document.activeElement && document.activeElement.id === `name-${i}`);
-    
     const currentTriageState = card ? card.getAttribute('data-istriage') : null;
     const forceRebuild = (currentTriageState !== String(isTriage));
 
+    // رنگ بورد کارت کاملا اختصاصی هر کانال
+    let cardBorderColor = isRunning ? CH_COLORS[i] : (isResting ? '#87ceeb' : (ch.state===STATE.DONE ? '#00ff00' : '#2a2a32'));
+
     if (!card || forceRebuild || (card.getAttribute('data-state') != ch.state && !isFocused) || (isResting && card.getAttribute('data-resting') !== 'true')) {
       if (!card) { card = document.createElement('div'); card.id = id; grid.appendChild(card); }
-      card.className = `card ${sc}`;
+      card.className = `card`;
+      card.style.borderColor = cardBorderColor;
       card.setAttribute('data-state', ch.state);
       card.setAttribute('data-resting', isResting ? 'true' : 'false');
       card.setAttribute('data-istriage', String(isTriage));
@@ -281,7 +306,14 @@ function renderCards(data) {
       let metric4Unit  = 'mΩ';
 
       card.innerHTML = `
-        <div class="card-header"><div class="ch-label"><div class="ch-dot ${sc}"></div><div><div class="ch-name" id="name-label-${i}">${ch.name || 'Channel '+(i+1)}</div><div class="ch-num">CH${i+1} · #${i+1}-</div></div></div><span class="badge ${sc}" id="badge-val-${i}">${sn}</span></div>
+        <div id="state-bar-${i}" style="height: 4px; width: 100%; background: ${stateColor}; box-shadow: 0 0 8px ${stateColor}; transition: background 0.3s;"></div>
+        <div class="card-header">
+            <div class="ch-label">
+                <div class="ch-dot" id="dot-${i}" style="background: ${cardBorderColor}; box-shadow: 0 0 8px ${cardBorderColor}; ${isRunning||isResting ? 'animation: p 1.5s infinite;' : ''}"></div>
+                <div><div class="ch-name" id="name-label-${i}">${ch.name || 'Channel '+(i+1)}</div><div class="ch-num" style="color:${CH_COLORS[i]}">CH${i+1} · #${i+1}-</div></div>
+            </div>
+            <span class="badge" style="background: rgba(0,0,0,0.3); border: 1px solid ${stateColor}; color: ${stateColor};" id="badge-val-${i}">${sn}</span>
+        </div>
         <div class="metrics">
           <div class="metric"><span class="metric-label">Voltage</span><span class="metric-value ${(isRunning||isResting)?'accent':''}" id="v-val-${i}">${ch.v}<span class="metric-unit">V</span></span></div>
           <div class="metric"><span class="metric-label">${metric2Label}</span><span class="metric-value" id="i-val-${i}">${metric2Value}<span class="metric-unit">${metric2Unit}</span></span></div>
@@ -292,34 +324,27 @@ function renderCards(data) {
         </div>
         <div class="graph-wrap">
           <div class="graph-header"><span>Live Voltage Curve</span><span id="points-val-${i}">0 pts</span></div>
-          <canvas id="graph-val-${i}" width="400" height="80" style="width:100%; height:60px; background:var(--surface2); border-radius:6px;"></canvas>
+          <canvas id="graph-val-${i}" width="400" height="120" style="width:100%; height:110px; background:var(--surface2); border-radius:6px;"></canvas>
         </div>
         <div class="voltage-bar-wrap"><div class="voltage-bar-row"><span style="font-size:11px;color:var(--muted)">Voltage level</span><span style="font-size:11px;color:var(--muted)" id="vpct-val-${i}">${vPct.toFixed(0)}%</span></div><div class="voltage-bar"><div class="voltage-bar-fill" id="vbar-val-${i}" style="width:${vPct}%"></div></div></div>
         
         <div class="card-footer">
           ${(ch.state===STATE.IDLE && !isResting)?`
-          <div class="form-row">
+          <div class="form-row" style="margin-bottom: 12px;">
             <input class="input-name" id="name-${i}" type="text" placeholder="Battery ID (Blank for Auto-Naming)">
           </div>
-          <div class="form-row">
-            <select class="input-mode" id="mode-${i}">
-              <optgroup label="Smart Analysis">
-                <option value="autotriage">🤖 Auto Smart Triage</option>
-                <option value="triage">⚡ Manual Triage</option>
-              </optgroup>
-              <optgroup label="Auto Capacity (Chg > Dis > Chg)">
-                <option value="auto1000">♻️ Auto Cycle (1.0A)</option>
-                <option value="auto500">♻️ Auto Cycle (0.5A)</option>
-                <option value="auto1500">♻️ Auto Cycle (1.5A)</option>
-              </optgroup>
-              <optgroup label="Manual Operations">
-                <option value="charge">🔋 Charge Only</option>
-                <option value="d500">📉 Discharge (0.5A)</option>
-                <option value="d1000">📉 Discharge (1.0A)</option>
-                <option value="d1500">📉 Discharge (1.5A)</option>
-              </optgroup>
-            </select>
-            <button class="btn btn-start" onclick="startActMode(${i})">▶ START</button>
+          <div class="action-grid">
+            <button class="btn-act chg" onclick="startAct(${i}, 'charge')">Charge</button>
+            <button class="btn-act dis" onclick="startAct(${i}, 'd500')">D-0.5A</button>
+            <button class="btn-act auto" onclick="startAct(${i}, 'auto500')">Auto-0.5A</button>
+            
+            <button class="btn-act trg" onclick="startAct(${i}, 'triage')">Triage</button>
+            <button class="btn-act dis-high" onclick="startAct(${i}, 'd1000')">D-1.0A</button>
+            <button class="btn-act auto" onclick="startAct(${i}, 'auto1000')">Auto-1.0A</button>
+            
+            <button class="btn-act trg" onclick="startAct(${i}, 'autotriage')">A-Triage</button>
+            <button class="btn-act dis-high" onclick="startAct(${i}, 'd1500')">D-1.5A</button>
+            <button class="btn-act auto" onclick="startAct(${i}, 'auto1500')">Auto-1.5A</button>
           </div>
           `:''}
           ${(isRunning || isResting)?`<div class="form-row"><button class="btn btn-stop" onclick="stopTest(${i})">■ Stop Analyzer</button></div>`:''}
@@ -338,6 +363,22 @@ function renderCards(data) {
         </div>
       `;
     } else {
+      card.style.borderColor = cardBorderColor;
+      
+      let sBar = document.getElementById(`state-bar-${i}`);
+      sBar.style.background = stateColor;
+      sBar.style.boxShadow = `0 0 8px ${stateColor}`;
+      
+      let dot = document.getElementById(`dot-${i}`);
+      dot.style.background = cardBorderColor;
+      dot.style.boxShadow = `0 0 8px ${cardBorderColor}`;
+      dot.style.animation = (isRunning || isResting) ? 'p 1.5s infinite' : 'none';
+
+      let badge = document.getElementById(`badge-val-${i}`);
+      badge.textContent = sn;
+      badge.style.borderColor = stateColor;
+      badge.style.color = stateColor;
+
       document.getElementById(`v-val-${i}`).innerHTML = `${ch.v}<span class="metric-unit">V</span>`;
       
       if(isTriage) {
@@ -356,12 +397,11 @@ function renderCards(data) {
       
       const elpEl = document.getElementById(`elapsed-val-${i}`);
       elpEl.textContent = displayElapsed;
-      if (isResting) elpEl.style.color = '#00bfff'; else elpEl.style.color = '';
+      if (isResting) elpEl.style.color = '#87ceeb'; else elpEl.style.color = '';
       
       document.getElementById(`vstart-val-${i}`).textContent = `${ch.vstart}V`;
       document.getElementById(`vpct-val-${i}`).textContent = `${vPct.toFixed(0)}%`;
       document.getElementById(`vbar-val-${i}`).style.width = `${vPct}%`;
-      document.getElementById(`badge-val-${i}`).textContent = sn;
       if (!isFocused && ch.name) document.getElementById(`name-label-${i}`).textContent = ch.name;
     }
 
@@ -370,7 +410,6 @@ function renderCards(data) {
   });
 }
 
-// تولید گزارش گرافیکی با کیفیت HD به صورت بومی
 function downloadGraph(i) {
   const data = window['graphData_'+i];
   if(!data || data.length === 0) {
