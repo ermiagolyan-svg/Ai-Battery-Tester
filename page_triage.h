@@ -147,11 +147,9 @@ const dict = {
     'btn_pack': 'مونتاژ پک نهایی ⚙️',
     'alert_no_cell': 'هیچ سلول معتبری از نوع تست Triage یافت نشد.',
     'alert_not_enough': 'تعداد باتری کافی نیست! شما {need} باتری نیاز دارید اما این کلاستر فقط {have} باتری دارد.',
-    'sim_warn': '⚠️ سلول‌های با علامت <b>~ ... *</b> ظرفیت اندازه‌گیری‌شده ندارند — عدد نمایشی صرفاً شبیه‌سازی‌شده است تا مسیر کد قابل تست باشد و نباید برای بالانس واقعی پک به آن اعتماد کرد.',
     'btn_build_cluster': '🛠️ ساخت پک از این کلاستر',
     'outlier_title': '⚠️ سلول‌های ناسازگار (Outliers)',
     'outlier_sub': 'سلول‌های خارج از تلورانس (Skipped)',
-    'sim_pack_warn': '⚠️ این بالانس بر اساس ظرفیت شبیه‌سازی‌شده (~) است، نه اندازه‌گیری واقعی - فقط برای تست مسیر کد',
     'lbl_cells': 'Cells'
   },
   'en': {
@@ -173,11 +171,9 @@ const dict = {
     'btn_pack': 'Assemble Final Pack ⚙️',
     'alert_no_cell': 'No valid Triage test cells found.',
     'alert_not_enough': 'Not enough batteries! You need {need} but this cluster only has {have}.',
-    'sim_warn': '⚠️ Cells with <b>~ ... *</b> have no measured capacity — the number is simulated to test code paths and should not be trusted for real pack balancing.',
     'btn_build_cluster': '🛠️ Build Pack from this Cluster',
     'outlier_title': '⚠️ No-Match (Outliers)',
     'outlier_sub': 'Incompatible cells (Skipped)',
-    'sim_pack_warn': '⚠️ This balance uses simulated capacity (~), not real measurements - for testing only.',
     'lbl_cells': 'Cells'
   }
 };
@@ -231,9 +227,6 @@ async function fetchDeviceLogs() {
           if (!action.includes("Triage")) continue;
           
           let cap = parseFloat(cols[5]) || 0;
-          let simulatedCap = false;
-          if(cap === 0) { cap = Math.floor(Math.random() * 600) + 2000; simulatedCap = true; }
-
           let ir = parseFloat(cols[6]) || 0;
           let grade = cols[7] ? cols[7].trim() : "Unknown";
           let dcir = parseFloat(cols[8]) || 0;
@@ -250,7 +243,7 @@ async function fetchDeviceLogs() {
           
           if(ir > 0 || curve.length > 0) {
               allCells.push({ 
-                  id: name, cap: cap, simulatedCap: simulatedCap, ir: ir, dcir: dcir, 
+                  id: name, cap: cap, ir: ir, dcir: dcir, 
                   recRate: recRate, curve: curve, grade: grade, ch: c 
               });
           }
@@ -518,12 +511,6 @@ async function runParallelMatcher() {
     savedClusters.sort((a, b) => (a.reduce((s,c)=>s+c.ir,0)/Math.max(1, a.length)) - (b.reduce((s,c)=>s+c.ir,0)/Math.max(1, b.length)));
 
     let htmlOutput = "";
-
-    if (validCells.some(c => c.simulatedCap)) {
-      htmlOutput += `<div style="grid-column: 1/-1; font-size:12px; color:var(--warn); background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; margin-bottom:5px;">
-        ${dict[currentLang]['sim_warn']}
-      </div>`;
-    }
     
     savedClusters.forEach((group, idx) => {
       let avgIr = (group.reduce((s,c)=>s+c.ir,0)/group.length).toFixed(1);
@@ -545,10 +532,9 @@ async function runParallelMatcher() {
       
       group.sort((a,b) => a.ir - b.ir).forEach(cell => {
         let gClass = cell.grade === 'A' ? 'grade-a' : (cell.grade === 'B' ? 'grade-b' : 'grade-c');
-        let capLabel = cell.simulatedCap ? `~${cell.cap}mAh*` : `${cell.cap}mAh`;
-        let details = `${cell.ir.toFixed(1)}Ω | ${capLabel}`;
+        let details = `${cell.ir.toFixed(1)}Ω | ${cell.cap}mAh`;
             
-        htmlOutput += `<div class="cell-item ${gClass}" ${cell.simulatedCap ? 'title="Simulated"' : ''}>
+        htmlOutput += `<div class="cell-item ${gClass}">
           <span>${cell.id}</span>
           <span>${details}</span>
         </div>`;
@@ -573,8 +559,7 @@ async function runParallelMatcher() {
         <div style="max-height: 180px; overflow-y: auto; padding-right: 5px;">`;
       
       outliers.forEach(cell => {
-        let capLabel = cell.simulatedCap ? `~${cell.cap}mAh*` : `${cell.cap}mAh`;
-        let details = `${cell.ir.toFixed(1)}Ω | ${capLabel}`;
+        let details = `${cell.ir.toFixed(1)}Ω | ${cell.cap}mAh`;
         htmlOutput += `<div class="cell-item grade-outlier">
           <span>${cell.id}</span>
           <span>${details}</span>
@@ -656,15 +641,11 @@ function generatePack() {
     let minCap = Math.min(...blocks.map(b => blockCap(b)));
     let deviation = maxCap - minCap;
     let avgPackIr = blocks.reduce((sum, b) => sum + (b.cells.reduce((s,c)=>s+c.ir,0) / b.cells.length), 0);
-    let anySimulated = sortedPool.some(c => c.simulatedCap);
     
     let statsHtml = `
       <span style="color:var(--accent2)">Total Pack IR: ${avgPackIr.toFixed(1)} mΩ</span>
       <span style="color:var(--warn)">Max Capacity Deviation: ${deviation.toFixed(0)} mAh</span>
     `;
-    if (anySimulated) {
-      statsHtml += `<span style="color:var(--danger); flex-basis:100%; text-align:center; margin-top:6px; font-size:12px;">${dict[currentLang]['sim_pack_warn']}</span>`;
-    }
     
     let layoutHtml = "";
     blocks.forEach(block => {
@@ -678,10 +659,9 @@ function generatePack() {
             <div class="block-cells">`;
         
         block.cells.forEach(cell => {
-            let capLabel = cell.simulatedCap ? `~${cell.cap}mAh*` : `${cell.cap}mAh`;
             layoutHtml += `<div class="cell-pill">
                 <div style="font-weight:bold; color:var(--text)">${cell.id}</div>
-                <div style="color:var(--muted); font-family:var(--mono); font-size:10px;">${capLabel} | ${cell.ir.toFixed(1)}Ω</div>
+                <div style="color:var(--muted); font-family:var(--mono); font-size:10px;">${cell.cap}mAh | ${cell.ir.toFixed(1)}Ω</div>
             </div>`;
         });
         
