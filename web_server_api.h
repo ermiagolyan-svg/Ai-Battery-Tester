@@ -140,7 +140,7 @@ void setupWebServer() {
         server.send(200, "text/plain", "Stopped");
         return; // خروج از تابع
       }
-    }
+    } 
 
     // ---> بررسی وضعیت برای شروع تست‌های جدید <---
     if (chIdx >= 0 && chIdx < 3 && ch[chIdx].state == IDLE && ch[chIdx].autoPhase == PHASE_NONE) {
