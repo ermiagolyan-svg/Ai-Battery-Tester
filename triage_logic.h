@@ -3,23 +3,17 @@
 
 #include <Arduino.h>
 
-// برای اینکه این فایل بتواند تابع stopChannel که در فایل اصلی است را صدا بزند:
 void stopChannel(uint8_t c);
 
-// حداقل جریانی که زیر بار باید ببینیم
 const float TRIAGE_MIN_VALID_CURRENT_A = 0.1f;
 
 // ==============================================================================
 // 🧠 مدل شبکه عصبی (AI TinyML / MLP)
-// آموزش دیده روی 2000 نمونه باتری لیتیوم-یون
-// ساختار: 4 ورودی -> 8 نورون مخفی (ReLU) -> 4 خروجی کلاس (ArgMax)
 // ==============================================================================
 
-// پارامترهای نرمال‌سازی (Standard Scaler) استخراج شده از پایتون
 const float ai_input_mean[4] = {173.5880, 219.9374, 1.2423, 0.4123};
 const float ai_input_scale[4] = {153.8867, 184.9004, 0.9352, 0.2976};
 
-// لایه اول: وزن‌ها و بایاس‌های 8 نورون مخفی
 const float ai_W1[4][8] = {
     {1.2494, 1.2423, 0.4054, 0.8977, 1.0386, -1.3105, -2.2269, -0.2796},
     {0.9774, 0.6648, -0.4494, 1.0569, 1.2002, -1.1553, -1.8880, -0.5959},
@@ -28,7 +22,6 @@ const float ai_W1[4][8] = {
 };
 const float ai_b1[8] = {-0.9863, 2.3486, 0.9161, 0.4711, 1.6583, -1.8947, -0.1112, 1.6201};
 
-// لایه دوم: وزن‌ها و بایاس‌های 4 کلاس خروجی
 const float ai_W2[8][4] = {
     {-1.0577, -0.6978, -2.9391, 2.4081},
     {-2.9198, 0.4057, 0.7282, 0.2029},
@@ -41,29 +34,28 @@ const float ai_W2[8][4] = {
 };
 const float ai_b2[4] = {-0.5272, 0.9210, 1.1192, -0.3202};
 
-// ─── موتور استنتاج (Inference Engine) ───────────────
 String predictBatteryGrade(float ir, float dcir, float rec, float vDrop) {
-    if (ir <= 0 || dcir <= 0) return "N/A"; // محافظت دیتای نامعتبر
+    if (ir <= 0 || dcir <= 0) return "N/A"; 
     
-    // ۱. نرمال‌سازی ورودی‌ها به مقیاس قابل درک برای شبکه عصبی
+    // 💡 رفع باگ: تبدیل نرخ ریکاوری دستگاه به مقیاس قابل فهم برای شبکه عصبی
+    float scaled_rec = rec / 18.0f;
+    
     float x[4] = {
         (ir - ai_input_mean[0]) / ai_input_scale[0],
         (dcir - ai_input_mean[1]) / ai_input_scale[1],
-        (rec - ai_input_mean[2]) / ai_input_scale[2],
+        (scaled_rec - ai_input_mean[2]) / ai_input_scale[2],
         (vDrop - ai_input_mean[3]) / ai_input_scale[3]
     };
     
-    // ۲. محاسبه لایه مخفی (همراه با تابع فعال‌ساز ReLU)
     float h[8] = {0};
     for (int j = 0; j < 8; j++) {
         h[j] = ai_b1[j];
         for (int i = 0; i < 4; i++) {
             h[j] += x[i] * ai_W1[i][j];
         }
-        if (h[j] < 0) h[j] = 0; // اکتیویشن ReLU (حذف مقادیر منفی)
+        if (h[j] < 0) h[j] = 0; 
     }
     
-    // ۳. محاسبه لایه خروجی نهایی
     float out[4] = {0};
     for (int j = 0; j < 4; j++) {
         out[j] = ai_b2[j];
@@ -72,7 +64,6 @@ String predictBatteryGrade(float ir, float dcir, float rec, float vDrop) {
         }
     }
     
-    // ۴. پیدا کردن کلاسی که بیشترین امتیاز (احتمال) را دارد (ArgMax)
     int bestClass = 0;
     float maxVal = out[0];
     for (int j = 1; j < 4; j++) {
@@ -82,7 +73,6 @@ String predictBatteryGrade(float ir, float dcir, float rec, float vDrop) {
         }
     }
     
-    // ۵. ترجمه نتیجه شبکه عصبی به متن
     if (bestClass == 0) return "A (High Drain)";
     if (bestClass == 1) return "B (Standard/Laptop)";
     if (bestClass == 2) return "C (Weak/Low Drain)";
@@ -90,7 +80,6 @@ String predictBatteryGrade(float ir, float dcir, float rec, float vDrop) {
 }
 // ==============================================================================
 
-// ─── خروج زودهنگام از پله‌های باقی‌مانده ───
 void triageAbortNoLoad(uint8_t c, const char* stageLabel) {
   ch[c].qt_dcir = 0.0f;
   ch[c].qt_thermalStatus = String("No Current @ ") + stageLabel;
@@ -103,7 +92,6 @@ void triageAbortNoLoad(uint8_t c, const char* stageLabel) {
   ch[c].qtPhaseStartMillis = millis();
 }
 
-// ─── تابع مدیریت فازهای هوشمند تریاژ ───────────────────────────
 void processTriage(uint8_t c) {
   unsigned long elapsedTriage = millis() - ch[c].qtPhaseStartMillis;
 
@@ -199,7 +187,6 @@ void processTriage(uint8_t c) {
          else ch[c].qt_thermalStatus = "Danger (Overheat)";
          Serial.printf("|- Thermal Prediction: %s (%.2f W)\n", ch[c].qt_thermalStatus.c_str(), thermalWatts);
 
-         // --- [استفاده از هوش مصنوعی برای پیش‌بینی گرید] ---
          ch[c].qt_grade = predictBatteryGrade(ch[c].IR, ch[c].qt_dcir, ch[c].qt_recoveryRate, ch[c].qt_voltDrop1500);
          Serial.printf("|- AI Grade Prediction: %s\n", ch[c].qt_grade.c_str());
          

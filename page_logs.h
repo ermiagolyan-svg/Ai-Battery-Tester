@@ -34,8 +34,11 @@ String buildLogPage() {
   .btn-csv { background: #1e1e23; color: var(--text); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 13.3px; font-family: inherit;}
   .btn-csv:hover { background: #2a2a32; }
   
-  pre { background: #0a0a0c; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 12px; overflow-x: auto; height: 140px; color: #a1a1aa; white-space: pre-wrap; direction: ltr; text-align: left;}
-  .unified pre { color: #e8e8f0; height: 180px;}
+  .btn-ai { background: linear-gradient(135deg, #8e44ad, #9b59b6); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: inherit; font-size: 13px;}
+  .btn-ai:hover { opacity: 0.9; box-shadow: 0 0 10px rgba(155, 89, 182, 0.5); }
+  
+  pre { background: #0a0a0c; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 12px; overflow-x: auto; height: 140px; color: #a1a1aa; white-space: pre; direction: ltr; text-align: left;}
+  .unified pre { color: #e8e8f0; height: 220px;}
   
   #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 10px 20px; border-radius: 8px; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 9999;}
 </style>
@@ -46,13 +49,13 @@ String buildLogPage() {
     <h2 data-i18n="page_title">📋 گزارش‌ها و لاگ‌ها</h2>
   </div>
 
-  <!-- بخش گزارش یکپارچه -->
-  <div class="section-title" data-i18n="sec_unified">🌍 پایگاه داده یکپارچه (ادغام هوشمند)</div>
+  <div class="section-title" data-i18n="sec_unified">🌍 پایگاه داده یکپارچه (ادغام هوشمند Triage و ظرفیت)</div>
   <div id="unified-container">
     <div class="ch-card unified">
       <div class="ch-header">
         <div class="ch-title">Global Unified Database</div>
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button id="btn-ai-regrade" class="btn-ai" style="display:none;" onclick="runAiRegrade()">🤖 ارزیابی مجدد با AI</button>
           <a id="btn-unified-csv" class="btn-csv" style="display:none;" download="Unified_Battery_Report.csv" data-i18n="btn_csv_uni">دانلود CSV نهایی</a>
           <button id="btn-unified-pdf" class="btn-pdf btn-uni" style="display:none;" onclick="generateUnifiedPDF()" data-i18n="btn_pdf_uni">📄 خروجی PDF جامع</button>
         </div>
@@ -61,18 +64,6 @@ String buildLogPage() {
     </div>
   </div>
 
-  <!-- بخش موارد نیازمند بررسی -->
-  <div id="issues-section" style="display:none;">
-    <div class="section-title" data-i18n="sec_issues">⚠ موارد نیازمند بررسی</div>
-    <div class="ch-card" style="border-color:#ff6b35;">
-      <div class="ch-header">
-        <div class="ch-title" style="color:#ff6b35;">⚠ <span data-i18n="sec_issues">Data Issues</span></div>
-      </div>
-      <pre id="issues-preview"></pre>
-    </div>
-  </div>
-
-  <!-- بخش گزارش‌های خام -->
   <div class="section-title" data-i18n="sec_raw">📂 لاگ‌های خام مجزا (Raw Data)</div>
   <div id="channels-container"></div>
   
@@ -84,36 +75,30 @@ String buildLogPage() {
       'back_dash': '→ بازگشت به داشبورد',
       'page_title': '📋 گزارش‌ها و لاگ‌ها',
       'sec_unified': '🌍 پایگاه داده یکپارچه (ادغام هوشمند Triage و ظرفیت)',
-      'sec_issues': '⚠ موارد نیازمند بررسی (شناسه نامعتبر یا تست ناقص)',
-      'issue_badid': 'شناسه نامعتبر (فرمت اشتباه)',
-      'issue_orphan': 'شارژ/دشارژ بدون Triage متناظر',
       'sec_raw': '📂 لاگ‌های خام مجزا (بدون فیلتر)',
       'loading': 'در حال اسکن کانال‌ها...',
       'no_data': 'هیچ رکوردی یافت نشد.',
-      'no_uni_data': 'هیچ باتری معتبری (دارای تست Triage + ظرفیت کامل) یافت نشد.',
+      'no_uni_data': 'هیچ باتری معتبری (دارای تست Triage + ظرفیت کامل > 400mAh) یافت نشد.',
       'btn_csv_uni': 'دانلود CSV نهایی',
       'btn_pdf_uni': '📄 PDF یکپارچه',
       'btn_csv_raw': 'دانلود CSV',
       'btn_pdf_raw': '📄 PDF خام',
-      'toast_pdf': 'در حال ساخت فایل PDF، لطفاً صبر کنید...',
+      'toast_pdf': 'در حال پردازش، لطفاً صبر کنید...',
       'trunc': '\n... [لیست برای پیش‌نمایش کوتاه شده است]'
     },
     'en': {
       'back_dash': '← Dashboard',
       'page_title': '📋 Mass Reports & Logs',
       'sec_unified': '🌍 Global Unified Database (Smart Merge)',
-      'sec_issues': '⚠ Needs Attention (invalid ID or incomplete test)',
-      'issue_badid': 'Invalid ID (wrong format)',
-      'issue_orphan': 'Charge/Discharge with no matching Triage',
       'sec_raw': '📂 Raw Channel Logs (Unfiltered)',
       'loading': 'Scanning channels...',
       'no_data': 'No records discovered.',
-      'no_uni_data': 'No valid matched batteries found.',
+      'no_uni_data': 'No valid matched batteries (> 400mAh) found.',
       'btn_csv_uni': 'Unified CSV',
       'btn_pdf_uni': '📄 Unified PDF',
       'btn_csv_raw': 'Download CSV',
       'btn_pdf_raw': '📄 Raw PDF',
-      'toast_pdf': 'Generating PDF, Please wait...',
+      'toast_pdf': 'Processing, Please wait...',
       'trunc': '\n... [List truncated for preview]'
     }
   };
@@ -121,6 +106,7 @@ String buildLogPage() {
   let currentLang = localStorage.getItem('sysLang') || 'fa';
   let rawLogsData = { 1: '', 2: '', 3: '' };
   let unifiedCells = [];
+  let isAiRegraded = false; 
 
   function applyLanguage() {
     if (currentLang === 'fa') {
@@ -184,11 +170,8 @@ String buildLogPage() {
     }
   }
 
-  const ID_PATTERN = /^CH\d+-\d+$/;
-
   function processUnifiedLogs() {
     let rawData = [];
-    let invalidRows = [];
     
     for (let c = 1; c <= 3; c++) {
       if(!rawLogsData[c]) continue;
@@ -199,14 +182,20 @@ String buildLogPage() {
         if (cols.length < 12) continue;
         
         let rawId = cols[0].trim();
-        let cleanId = rawId.replace(/^#/, ''); 
-        let date = cols[2] ? cols[2].trim() : ""; 
+        let cleanId = rawId.replace(/^#/, '').trim(); 
+        if (cleanId === "") continue; 
+        
+        let start = cols[1] ? cols[1].trim() : "";
+        let end = cols[2] ? cols[2].trim() : "";
+        let duration = cols[3] ? cols[3].trim() : "";
+        
         let mode = cols[4] ? cols[4].trim() : "";
         let cap = parseFloat(cols[5]) || 0;
         let ir = parseFloat(cols[6]) || 0;
         let grade = cols[7] ? cols[7].trim() : "Unknown";
         let dcir = parseFloat(cols[8]) || 0;
         let recRate = parseFloat(cols[9]) || 0;
+        let vStart = parseFloat(cols[10]) || 0;
         let vEnd = parseFloat(cols[11]) || 0;
         
         let curve = [];
@@ -215,92 +204,107 @@ String buildLogPage() {
                 curve.push(parseFloat(cols[j]));
             }
         }
-
-        if (!ID_PATTERN.test(cleanId)) {
-          invalidRows.push({ rawId, cleanId, date, mode, ch: c });
-          continue;
-        }
-
-        rawData.push({ cleanId, date, mode, cap, ir, grade, dcir, recRate, vEnd, curve, ch: c });
+        
+        let timeVal = new Date(start).getTime();
+        if (isNaN(timeVal)) timeVal = 0; 
+        
+        rawData.push({ cleanId, start, end, duration, mode, cap, ir, grade, dcir, recRate, vStart, vEnd, curve, ch: c, timeVal });
       }
     }
 
-    let grouped = {};
+    rawData.sort((a, b) => a.timeVal - b.timeVal);
+
+    let allSessions = [];
+    let currentSessionForId = {}; 
+
     rawData.forEach(row => {
-        if (!grouped[row.cleanId]) {
-            grouped[row.cleanId] = { triage: null, capTests: [] };
-        }
+        let id = row.cleanId;
         if (row.mode.includes("Triage")) {
-            grouped[row.cleanId].triage = row;
+            let newSession = { triage: row, capTests: [] };
+            allSessions.push(newSession);
+            currentSessionForId[id] = newSession; 
         } else if (row.cap > 0) {
-            grouped[row.cleanId].capTests.push(row);
+            if (currentSessionForId[id]) {
+                currentSessionForId[id].capTests.push(row);
+            }
         }
     });
 
     unifiedCells = [];
-    let orphanCharge = [];
+    isAiRegraded = false;
     
-    for (let id in grouped) {
-        let g = grouped[id];
-        if (!g.triage) {
-            if (g.capTests.length > 0) orphanCharge.push(...g.capTests.map(r => ({ ...r, cleanId: id })));
-            continue; 
-        }
-        if (g.capTests.length === 0) continue; 
+    allSessions.forEach(session => {
+        if (!session.triage) return;
+        if (session.capTests.length === 0) return;
 
-        g.capTests.sort((a, b) => b.cap - a.cap);
-        let bestCapTest = g.capTests[0];
+        session.capTests.sort((a, b) => b.cap - a.cap);
+        let bestCapTest = session.capTests[0];
 
-        if (bestCapTest.cap < 400) continue; 
+        if (bestCapTest.cap < 400) return; 
 
         unifiedCells.push({ 
-            id: id, 
-            date: bestCapTest.date,
+            id: session.triage.cleanId, 
+            start: bestCapTest.start,
+            end: bestCapTest.end,
+            duration: bestCapTest.duration,
             cap: bestCapTest.cap, 
             ir: bestCapTest.ir, 
-            dcir: g.triage.dcir, 
-            recRate: g.triage.recRate, 
-            grade: g.triage.grade, 
+            grade: session.triage.grade, 
+            dcir: session.triage.dcir, 
+            recRate: session.triage.recRate, 
+            vStart: bestCapTest.vStart,
             vEnd: bestCapTest.vEnd,
-            triageCurve: g.triage.curve,      
+            triageCurve: session.triage.curve,       
             dischargeCurve: bestCapTest.curve, 
             ch: bestCapTest.ch 
         });
-    }
+    });
 
-    renderIssues(invalidRows, orphanCharge);
+    updateUnifiedUI();
+  }
 
+  function updateUnifiedUI() {
     const previewEl = document.getElementById('unified-preview');
     if(unifiedCells.length === 0) {
         previewEl.innerText = dict[currentLang]['no_uni_data'];
         return;
     }
 
-    let previewText = "ID\t\tCap(mAh)\tIR(mΩ)\tDCIR\tGrade\tV-End\n";
-    previewText += "-----------------------------------------------------------------------\n";
+    let previewText = "ID        Cap(mAh)  IR(mΩ)  DCIR    Grade                 V-End\n";
+    previewText += "-------------------------------------------------------------------\n";
     let limit = Math.min(unifiedCells.length, 8);
     for(let i=0; i<limit; i++) {
         let c = unifiedCells[i];
-        previewText += `${c.id}\t\t${c.cap}\t\t${c.ir}\t${c.dcir}\t${c.grade}\t${c.vEnd}\n`;
+        let idPad = c.id.padEnd(10, ' ');
+        let capPad = c.cap.toString().padEnd(10, ' ');
+        let irPad = c.ir.toString().padEnd(8, ' ');
+        let dcirPad = c.dcir.toString().padEnd(8, ' ');
+        let grPad = c.grade.padEnd(22, ' ');
+        previewText += `${idPad}${capPad}${irPad}${dcirPad}${grPad}${c.vEnd}\n`;
     }
     if(unifiedCells.length > limit) previewText += dict[currentLang]['trunc'];
-    previewText += `\n\nTotal Valid Batteries Processed: ${unifiedCells.length}`;
+    previewText += `\n\nTotal Matched Batteries Ready for K-Means: ${unifiedCells.length}`;
+    if (isAiRegraded) previewText += `\n✅ (Dataset Updated via AI MLP Model)`;
+    
     previewEl.innerText = previewText;
 
     document.getElementById('btn-unified-csv').style.display = 'inline-block';
     document.getElementById('btn-unified-pdf').style.display = 'inline-block';
+    
+    if(!isAiRegraded) {
+        document.getElementById('btn-ai-regrade').style.display = 'inline-block';
+    } else {
+        document.getElementById('btn-ai-regrade').style.display = 'none';
+    }
 
-    // تغییرات اضافه شده: الصاق داده‌های هر دو گراف (تریاژ و دشارژ) به فایل CSV
-    let csvContent = "Battery ID,Date,Merged Action,Capacity (mAh),IR (mOhm),Triage Grade,DCIR (mOhm),Recovery (mV/s),V_End,Triage_Graph_Points... ,|, Discharge_Graph_Points...\n";
+    let csvContent = "Battery ID,Start Time,End Time,Duration,Test Mode,Capacity (mAh),IR (mOhm),Triage Grade,DCIR (mOhm),Recovery (mV/s),V_Start,V_End,Triage_Graph_Points... ,|, Discharge_Graph_Points...\n";
     unifiedCells.forEach(c => {
-        let row = `${c.id},${c.date},Unified Test,${c.cap},${c.ir},${c.grade},${c.dcir},${c.recRate},${c.vEnd}`;
+        let row = `${c.id},${c.start},${c.end},${c.duration},Unified Match,${c.cap},${c.ir},${c.grade},${c.dcir},${c.recRate},${c.vStart},${c.vEnd}`;
         
         if (c.triageCurve && c.triageCurve.length > 0) {
             c.triageCurve.forEach(pt => row += `,${pt}`);
         } else { row += `,0`; }
-        
         row += `,|`;
-        
         if (c.dischargeCurve && c.dischargeCurve.length > 0) {
             c.dischargeCurve.forEach(pt => row += `,${pt}`);
         }
@@ -313,42 +317,110 @@ String buildLogPage() {
     document.getElementById('btn-unified-csv').href = url;
   }
 
-  function renderIssues(invalidRows, orphanCharge) {
-    const section = document.getElementById('issues-section');
-    const el = document.getElementById('issues-preview');
-    const total = invalidRows.length + orphanCharge.length;
+  // =========================================================
+  // 🧠 موتور هوش مصنوعی جاوااسکریپت (رفع باگ مقیاس‌بندی)
+  // =========================================================
+  function runAiRegrade() {
+    const ai_input_mean = [173.5880, 219.9374, 1.2423, 0.4123];
+    const ai_input_scale = [153.8867, 184.9004, 0.9352, 0.2976];
+    
+    const ai_W1 = [
+        [1.2494, 1.2423, 0.4054, 0.8977, 1.0386, -1.3105, -2.2269, -0.2796],
+        [0.9774, 0.6648, -0.4494, 1.0569, 1.2002, -1.1553, -1.8880, -0.5959],
+        [-1.4156, 0.0225, -0.1108, -1.0251, -1.2015, 0.1093, 0.9053, -0.5753],
+        [0.6062, 0.3953, -0.3037, 0.0040, 0.9054, -0.8111, -1.0623, 0.0448]
+    ];
+    const ai_b1 = [-0.9863, 2.3486, 0.9161, 0.4711, 1.6583, -1.8947, -0.1112, 1.6201];
+    
+    const ai_W2 = [
+        [-1.0577, -0.6978, -2.9391, 2.4081],
+        [-2.9198, 0.4057, 0.7282, 0.2029],
+        [0.1835, 0.1213, 0.8910, -0.0787],
+        [0.2873, 0.1396, 0.4838, 1.0104],
+        [-1.7485, -2.3899, 1.0196, 0.2499],
+        [2.1276, -2.2884, -0.0097, -0.4578],
+        [0.8960, -0.1261, -2.1067, -0.3912],
+        [-0.8978, 2.0714, 0.8680, -1.5481]
+    ];
+    const ai_b2 = [-0.5272, 0.9210, 1.1192, -0.3202];
 
-    if (total === 0) {
-        section.style.display = 'none';
-        return;
+    function predictGradeJS(ir, dcir, rec, vDrop) {
+        if (ir <= 0 || dcir <= 0) return "N/A";
+        
+        // 💡 رفع باگ مقیاس‌بندی: تبدیل به مقیاس نرمال‌شده مدل
+        let scaled_rec = rec / 18.0;
+        
+        let x = [
+            (ir - ai_input_mean[0]) / ai_input_scale[0],
+            (dcir - ai_input_mean[1]) / ai_input_scale[1],
+            (scaled_rec - ai_input_mean[2]) / ai_input_scale[2],
+            (vDrop - ai_input_mean[3]) / ai_input_scale[3]
+        ];
+        
+        let h = [0,0,0,0,0,0,0,0];
+        for (let j = 0; j < 8; j++) {
+            h[j] = ai_b1[j];
+            for (let i = 0; i < 4; i++) {
+                h[j] += x[i] * ai_W1[i][j];
+            }
+            if (h[j] < 0) h[j] = 0; 
+        }
+        
+        let out = [0,0,0,0];
+        for (let j = 0; j < 4; j++) {
+            out[j] = ai_b2[j];
+            for (let i = 0; i < 8; i++) {
+                out[j] += h[i] * ai_W2[i][j];
+            }
+        }
+        
+        let bestClass = 0;
+        let maxVal = out[0];
+        for (let j = 1; j < 4; j++) {
+            if (out[j] > maxVal) { maxVal = out[j]; bestClass = j; }
+        }
+        
+        if (bestClass === 0) return "A (High Drain)";
+        if (bestClass === 1) return "B (Std/Laptop)";
+        if (bestClass === 2) return "C (Weak)";
+        return "D (Dead/Heater)";
     }
-    section.style.display = 'block';
 
-    let lines = [];
-    invalidRows.forEach(r => {
-        lines.push(`[${dict[currentLang]['issue_badid']}] "${r.rawId}" — CH${r.ch} — ${r.mode} — ${r.date}`);
+    let previewEl = document.getElementById('unified-preview');
+    let text = "ID        Old Legacy Grade    ➔   New AI Grade\n";
+    text += "-------------------------------------------------------------------\n";
+    
+    let count = 0;
+    unifiedCells.forEach(c => {
+        // 💡 بازسازی دقیق ولتاژ دراپ بر اساس فرمول فیزیک (مقاومت * جریان 1.5 آمپر)
+        let triageVdrop = (c.dcir / 1000.0) * 1.5;
+        
+        let aiGrade = predictGradeJS(c.ir, c.dcir, c.recRate, triageVdrop);
+        
+        let idPad = c.id.padEnd(10, ' ');
+        let oldPad = c.grade.padEnd(20, ' ');
+        text += `${idPad}${oldPad}➔   ${aiGrade}\n`;
+        
+        c.grade = aiGrade;
+        count++;
     });
-    orphanCharge.forEach(r => {
-        lines.push(`[${dict[currentLang]['issue_orphan']}] ${r.cleanId} — CH${r.ch} — ${r.mode} (${r.cap} mAh) — ${r.date}`);
-    });
-    el.innerText = lines.join('\n');
+    
+    text += `\n✅ ${count} Batteries Re-Graded Using Triage MLP Neural Network!\n(دیتابیس در مرورگر آپدیت شد. در صورت دانلود PDF یا CSV، گریدهای جدید ذخیره خواهند شد)`;
+    previewEl.innerText = text;
+    
+    isAiRegraded = true; 
+    updateUnifiedUI(); 
   }
+  // =========================================================
 
-  function renderPrintGraph(pts, chIndex) {
+  function renderRawPrintGraph(pts, chIndex) {
     const canvas = document.createElement('canvas');
-    canvas.width = 1600; 
-    canvas.height = 600; 
+    canvas.width = 1600; canvas.height = 600; 
     const ctx = canvas.getContext('2d');
     
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
     const minV = 2.5, maxV = 4.3;
-    
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#f0f0f0';
-    ctx.font = '26px sans-serif';
-    ctx.fillStyle = '#888888';
+    ctx.lineWidth = 2; ctx.strokeStyle = '#f0f0f0'; ctx.font = '26px sans-serif'; ctx.fillStyle = '#888888';
     
     [2.5, 3.0, 3.5, 4.0, 4.3].forEach(v => {
       let y = 550 - ((v - minV) / (maxV - minV)) * 500;
@@ -359,11 +431,8 @@ String buildLogPage() {
     const colors = ['#00d4aa', '#0096ff', '#ff6b35'];
     const themeColor = colors[(chIndex - 1) % 3];
 
-    ctx.beginPath();
-    ctx.strokeStyle = themeColor;
-    ctx.lineWidth = 8;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.strokeStyle = themeColor; ctx.lineWidth = 8;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     
     for(let i = 0; i < pts.length; i++) {
       let x = 80 + (i / Math.max(1, pts.length - 1)) * 1500;
@@ -371,17 +440,12 @@ String buildLogPage() {
       if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
-
-    ctx.lineTo(1580, 550);
-    ctx.lineTo(80, 550);
-    ctx.closePath();
-    ctx.fillStyle = themeColor + '25'; 
-    ctx.fill();
     
+    ctx.lineTo(1580, 550); ctx.lineTo(80, 550); ctx.closePath();
+    ctx.fillStyle = themeColor + '25'; ctx.fill();
     return canvas.toDataURL('image/png');
   }
 
-  // رسم گراف دو تکه (Triage + Discharge) برای خروجی یکپارچه PDF
   function renderUnifiedGraph(triagePts, dischargePts, chIndex) {
     const canvas = document.createElement('canvas');
     canvas.width = 1600; canvas.height = 600; 
@@ -438,7 +502,6 @@ String buildLogPage() {
     return canvas.toDataURL('image/png');
   }
 
-  // پرینت گرفتن از دیتاهای خام (بدون مرج)
   async function generateMassPDF(c) {
     if(!rawLogsData[c]) return;
     const toast = document.getElementById('toast');
@@ -454,13 +517,10 @@ String buildLogPage() {
         const pageHeight = doc.internal.pageSize.getHeight();
         let y = 15;
         
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16); doc.setFont("helvetica", "bold");
         doc.text(`Li-ion RAW Test Report - Channel ${c}`, 15, y);
         y += 8;
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(100);
+        doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
         doc.text(`Generated automatically by ESP32 Battery Analyzer`, 15, y);
         y += 12;
 
@@ -479,42 +539,33 @@ String buildLogPage() {
           const dcir = cols[8] ? cols[8].trim() : "N/A";
           const vEnd = cols[11];    
           
-          doc.setDrawColor(200);
-          doc.setFillColor(248, 249, 250);
+          doc.setDrawColor(200); doc.setFillColor(248, 249, 250);
           doc.roundedRect(15, y, pageWidth - 30, 64, 2, 2, 'FD');
           
-          doc.setTextColor(0);
-          doc.setFontSize(11);
-          doc.setFont("helvetica", "bold");
+          doc.setTextColor(0); doc.setFontSize(11); doc.setFont("helvetica", "bold");
           doc.text(`ID: ${name}`, 20, y + 7);
           
-          doc.setFontSize(10);
-          doc.setTextColor(50);
+          doc.setFontSize(10); doc.setTextColor(50);
           doc.text(`Test: ${action}`, 75, y + 7);
           
-          doc.setFontSize(9);
-          doc.setFont("helvetica", "normal");
-          doc.setTextColor(100);
+          doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
           doc.text(`Date: ${date}`, pageWidth - 55, y + 7);
           
-          doc.setDrawColor(220);
-          doc.line(20, y + 11, pageWidth - 20, y + 11);
+          doc.setDrawColor(220); doc.line(20, y + 11, pageWidth - 20, y + 11);
           
-          doc.setTextColor(0);
-          doc.setFontSize(9);
-          doc.setFont("helvetica", "bold");
+          doc.setTextColor(0); doc.setFontSize(9); doc.setFont("helvetica", "bold");
           
           doc.text(`Cap: ${cap} mAh`, 18, y + 17);
-          doc.text(`IR/DCIR: ${ir}/${dcir} mΩ`, 48, y + 17);
+          doc.text(`IR/DCIR: ${ir}/${dcir} mΩ`, 55, y + 17);
           
           if(grade !== "N/A" && grade !== "Unknown" && grade !== "") {
-              doc.text(`Grade: ${grade}`, 108, y + 17);
+              doc.text(`Grade: ${grade}`, 115, y + 17);
           }
-          doc.text(`V-End: ${vEnd} V`, 168, y + 17);
+          doc.text(`V-End: ${vEnd} V`, 160, y + 17);
           
           const pts = cols.slice(12).map(Number).filter(n => !isNaN(n));
           if (pts.length > 0) {
-            const graphImg = renderPrintGraph(pts, c);
+            const graphImg = renderRawPrintGraph(pts, c);
             doc.addImage(graphImg, 'PNG', 20, y + 21, pageWidth - 40, 40);
           }
           y += 68; 
@@ -526,7 +577,6 @@ String buildLogPage() {
     }, 100);
   }
 
-  // پرینت گرفتن از دیتای یکپارچه و فیلتر شده
   async function generateUnifiedPDF() {
     if(unifiedCells.length === 0) return;
     const toast = document.getElementById('toast');
@@ -541,14 +591,12 @@ String buildLogPage() {
         const pageHeight = doc.internal.pageSize.getHeight();
         let y = 15;
         
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16); doc.setFont("helvetica", "bold");
         doc.text(`Li-ion Unified Mass Test Report`, 15, y);
         y += 8;
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(100);
-        doc.text(`Generated by ESP32 AI Analyzer - Valid Batteries: ${unifiedCells.length}`, 15, y);
+        doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
+        let aiNote = isAiRegraded ? " (AI ML Re-Graded)" : "";
+        doc.text(`Generated by ESP32 AI Analyzer - Valid Matched Batteries: ${unifiedCells.length}${aiNote}`, 15, y);
         y += 12;
 
         for(let i = 0; i < unifiedCells.length; i++) {
@@ -556,38 +604,29 @@ String buildLogPage() {
           
           if (y > pageHeight - 68) { doc.addPage(); y = 15; }
           
-          doc.setDrawColor(200);
-          doc.setFillColor(248, 249, 250);
+          doc.setDrawColor(200); doc.setFillColor(248, 249, 250);
           doc.roundedRect(15, y, pageWidth - 30, 64, 2, 2, 'FD');
           
-          doc.setTextColor(0);
-          doc.setFontSize(11);
-          doc.setFont("helvetica", "bold");
+          doc.setTextColor(0); doc.setFontSize(11); doc.setFont("helvetica", "bold");
           doc.text(`ID: ${cell.id}`, 20, y + 7);
           
-          doc.setFontSize(10);
-          doc.setTextColor(50);
-          doc.text(`Test: Unified Cycle`, 75, y + 7);
+          doc.setFontSize(10); doc.setTextColor(50);
+          doc.text(`Test: Chronological Match`, 75, y + 7);
           
-          doc.setFontSize(9);
-          doc.setFont("helvetica", "normal");
-          doc.setTextColor(100);
-          doc.text(`Date: ${cell.date}`, pageWidth - 60, y + 7);
+          doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
+          doc.text(`Date: ${cell.end}`, pageWidth - 60, y + 7);
           
-          doc.setDrawColor(220);
-          doc.line(20, y + 11, pageWidth - 20, y + 11);
+          doc.setDrawColor(220); doc.line(20, y + 11, pageWidth - 20, y + 11);
           
-          doc.setTextColor(0);
-          doc.setFontSize(9);
-          doc.setFont("helvetica", "bold");
+          doc.setTextColor(0); doc.setFontSize(9); doc.setFont("helvetica", "bold");
           
           doc.text(`Cap: ${cell.cap} mAh`, 18, y + 17);
-          doc.text(`IR/DCIR: ${cell.ir}/${cell.dcir} mΩ`, 48, y + 17);
+          doc.text(`IR/DCIR: ${cell.ir}/${cell.dcir} mΩ`, 55, y + 17);
           
           if(cell.grade !== "N/A" && cell.grade !== "Unknown") {
-              doc.text(`Grade: ${cell.grade}`, 108, y + 17);
+              doc.text(`Grade: ${cell.grade}`, 115, y + 17);
           }
-          doc.text(`V-End: ${cell.vEnd} V`, 168, y + 17);
+          doc.text(`V-End: ${cell.vEnd} V`, 160, y + 17);
           
           if ((cell.dischargeCurve && cell.dischargeCurve.length > 0) || (cell.triageCurve && cell.triageCurve.length > 0)) {
             const graphImg = renderUnifiedGraph(cell.triageCurve, cell.dischargeCurve, cell.ch);

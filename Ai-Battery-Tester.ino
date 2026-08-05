@@ -126,13 +126,9 @@ time_t nowEpoch() {
   return time(NULL); 
 }
 
-// متغیرهای ذخیره‌سازی دائمی تنظیمات تریاژ
 Preferences prefs;
-int current_triage_profile = 2; // پیش‌فرض: Unknown
-float custom_a = 80.0, custom_b = 150.0, custom_c = 300.0;
 
 // ─── Custom Modules (Dependencies Order) ───────────
-// ⚠️ اخطار: ترتیب این هدرها حیاتی است و نباید جابجا شوند
 #include "bale_bot.h"
 #include "sensor_ina3221.h"
 #include "logger_csv.h"
@@ -169,14 +165,6 @@ void setup() {
     tft.setTextColor(TFT_RED, TFT_BLACK); 
     tft.setCursor(10, 30); 
     tft.println("Storage Error!");
-    
-    tft.setTextFont(2); 
-    tft.setTextColor(TFT_WHITE, TFT_BLACK); 
-    tft.setCursor(10, 70); 
-    tft.println("LittleFS mount failed.");
-    tft.setTextColor(TFT_YELLOW, TFT_BLACK); 
-    tft.setCursor(10, 90); 
-    tft.println("Logs will not be saved!");
     delay(4000); 
   }
 
@@ -200,7 +188,7 @@ void setup() {
   tft.setTextSize(1); 
   tft.setTextColor(TFT_LIGHTGREY, TFT_BLACK); 
   tft.setCursor(185, 15); 
-  tft.println("V6.8.1");
+  tft.println("V6.8.2"); // ورژن آپدیت شد
   tft.drawLine(5, 42, 235, 42, TFT_DARKGREY); 
 
   tft.setTextFont(4); 
@@ -209,28 +197,13 @@ void setup() {
   tft.setCursor(5, 55); 
   tft.println("Initializing...");
 
-  // ---> شروع خواندن اطلاعات از حافظه <---
+  // ---> شروع خواندن اطلاعات وای‌فای از حافظه <---
   prefs.begin("triage", false);
-  String current_ssid = prefs.getString("wifi_ssid", "Ermia"); // پسورد و نام پیش‌فرض
+  String current_ssid = prefs.getString("wifi_ssid", "Ermia"); 
   String current_pass = prefs.getString("wifi_pass", "8641682Ermia");
-
-  current_triage_profile = prefs.getInt("profile", 2); 
-  custom_a = prefs.getFloat("cust_a", 80.0);
-  custom_b = prefs.getFloat("cust_b", 150.0);
-  custom_c = prefs.getFloat("cust_c", 300.0);
-  
-  if (current_triage_profile == 3) {
-    triage_grade_a_mohm = custom_a;
-    triage_grade_b_mohm = custom_b;
-    triage_grade_c_mohm = custom_c;
-  } else {
-    setTriageProfile((BatteryProfile)current_triage_profile);
-  }
   // ---> پایان خواندن حافظه <---
 
   WiFi.mode(WIFI_STA);
-  // تنظیم IP ثابت حذف شد تا در شبکه‌های مختلف بتونه با DHCP وصل بشه
-  
   WiFi.begin(current_ssid.c_str(), current_pass.c_str());
   
   tft.setTextFont(4); 
@@ -257,21 +230,6 @@ void setup() {
     Serial.println("NTP Time Sync Initiated.");
   } else {
     Serial.println("\nWiFi Failed! Starting AP...");
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextFont(4);
-    tft.setTextSize(1);
-    tft.setTextColor(TFT_ORANGE, TFT_BLACK);
-    tft.setCursor(10, 40);
-    tft.println("WiFi Timeout!");
-    tft.setTextFont(2);
-    tft.setTextSize(1);
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    tft.setCursor(10, 75);
-    tft.println("Starting AP Mode:");
-    tft.setTextColor(TFT_CYAN, TFT_BLACK);
-    tft.setCursor(10, 95);
-    tft.println("Portable-Tester...");
-    
     WiFi.mode(WIFI_AP);
     WiFi.softAP("Portable-Tester"); 
     currentIP = WiFi.softAPIP().toString();

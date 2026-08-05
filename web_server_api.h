@@ -9,9 +9,6 @@
 // این متغیر در فایل اصلی تعریف شده است، در اینجا فقط به آن اشاره می‌کنیم
 extern WebServer server;
 extern Preferences prefs;
-extern int current_triage_profile;
-extern float custom_a, custom_b, custom_c;
-extern float triage_grade_a_mohm, triage_grade_b_mohm, triage_grade_c_mohm;
 
 // دسترسی به آرایه اضافه شده در بک‌اند
 extern uint8_t topUpRetries[3];
@@ -85,46 +82,10 @@ void setupWebServer() {
     server.send(200, "application/json", response);
   });
 
-  // ۳. API مربوط به پروفایل تریاژ
+  // ۳. API مربوط به پروفایل تریاژ (منسوخ شده - توسط هوش مصنوعی جایگزین شد، صرفاً دیتای فیک می‌فرستد تا فرانت‌اند خطا ندهد)
   server.on("/getprofile", HTTP_GET, []() {
-    String json = "{\"p\":" + String(current_triage_profile) + 
-                  ",\"a\":" + String(custom_a, 1) + 
-                  ",\"b\":" + String(custom_b, 1) + 
-                  ",\"c\":" + String(custom_c, 1) + "}";
+    String json = "{\"p\":2,\"a\":80.0,\"b\":150.0,\"c\":300.0}";
     server.send(200, "application/json", json);
-  });
-
-  server.on("/setprofile", HTTP_POST, []() {
-    String body = server.arg("plain");
-    int p_val = 2; float a_val = 80, b_val = 150, c_val = 300;
-    
-    int pos = body.indexOf("p=");
-    if(pos >= 0) p_val = body.substring(pos+2, body.indexOf('&', pos)).toInt();
-    pos = body.indexOf("a=");
-    if(pos >= 0) a_val = body.substring(pos+2, body.indexOf('&', pos)).toFloat();
-    pos = body.indexOf("b=");
-    if(pos >= 0) b_val = body.substring(pos+2, body.indexOf('&', pos)).toFloat();
-    pos = body.indexOf("c=");
-    if(pos >= 0) c_val = body.substring(pos+2).toFloat();
-    
-    // ذخیره در حافظه دائمی
-    prefs.putInt("profile", p_val);
-    prefs.putFloat("cust_a", a_val);
-    prefs.putFloat("cust_b", b_val);
-    prefs.putFloat("cust_c", c_val);
-    
-    current_triage_profile = p_val;
-    custom_a = a_val; custom_b = b_val; custom_c = c_val;
-    
-    if (p_val == 3) {
-       triage_grade_a_mohm = custom_a;
-       triage_grade_b_mohm = custom_b;
-       triage_grade_c_mohm = custom_c;
-    } else {
-       setTriageProfile((BatteryProfile)current_triage_profile);
-    }
-    
-    server.send(200, "text/plain", "Profile Saved & Applied Successfully!");
   });
 
   // ۴. API مربوط به گراف هوشمند
