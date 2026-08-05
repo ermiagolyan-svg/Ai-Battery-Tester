@@ -6,59 +6,94 @@
 // برای اینکه این فایل بتواند تابع stopChannel که در فایل اصلی است را صدا بزند:
 void stopChannel(uint8_t c);
 
-// ─── تعریف پروفایل‌های باتری 18650 ────────────────────────────
-enum BatteryProfile {
-  PROFILE_HIGH_DRAIN, 
-  PROFILE_LAPTOP,     
-  PROFILE_UNKNOWN,    
-  PROFILE_CUSTOM      
-};
-
-// متغیرهای دینامیک برای آستانه‌های گریددهی (پیش‌فرض روی پروفایل ناشناخته)
-float triage_grade_a_mohm = 80.0f;
-float triage_grade_b_mohm = 150.0f;
-float triage_grade_c_mohm = 300.0f;
-
-// تابع تغییر پروفایل بر اساس استانداردهای جهانی
-void setTriageProfile(BatteryProfile profile) {
-  switch (profile) {
-    case PROFILE_HIGH_DRAIN:
-      triage_grade_a_mohm = 40.0f;
-      triage_grade_b_mohm = 70.0f;
-      triage_grade_c_mohm = 120.0f;
-      break;
-    case PROFILE_LAPTOP:
-      triage_grade_a_mohm = 100.0f;
-      triage_grade_b_mohm = 180.0f;
-      triage_grade_c_mohm = 350.0f;
-      break;
-    case PROFILE_UNKNOWN:
-      triage_grade_a_mohm = 80.0f;
-      triage_grade_b_mohm = 150.0f;
-      triage_grade_c_mohm = 300.0f;
-      break;
-    case PROFILE_CUSTOM:
-      break;
-  }
-}
-
 // حداقل جریانی که زیر بار باید ببینیم
 const float TRIAGE_MIN_VALID_CURRENT_A = 0.1f;
 
-// ─── تبدیل مقاومت اندازه‌گیری‌شده (mΩ) به حرف گرید ───────────────
-String gradeFromMohm(float mohm) {
-  if (mohm <= 0.0f) return "N/A"; // محافظت در برابر نویز و اعداد نامعتبر
-  if (mohm <= triage_grade_a_mohm) return "A (Excellent)";
-  if (mohm <= triage_grade_b_mohm) return "B (Good)";
-  if (mohm <= triage_grade_c_mohm) return "C (Acceptable)";
-  return "D (Weak/Dead)";
+// ==============================================================================
+// 🧠 مدل شبکه عصبی (AI TinyML / MLP)
+// آموزش دیده روی 2000 نمونه باتری لیتیوم-یون
+// ساختار: 4 ورودی -> 8 نورون مخفی (ReLU) -> 4 خروجی کلاس (ArgMax)
+// ==============================================================================
+
+// پارامترهای نرمال‌سازی (Standard Scaler) استخراج شده از پایتون
+const float ai_input_mean[4] = {173.5880, 219.9374, 1.2423, 0.4123};
+const float ai_input_scale[4] = {153.8867, 184.9004, 0.9352, 0.2976};
+
+// لایه اول: وزن‌ها و بایاس‌های 8 نورون مخفی
+const float ai_W1[4][8] = {
+    {1.2494, 1.2423, 0.4054, 0.8977, 1.0386, -1.3105, -2.2269, -0.2796},
+    {0.9774, 0.6648, -0.4494, 1.0569, 1.2002, -1.1553, -1.8880, -0.5959},
+    {-1.4156, 0.0225, -0.1108, -1.0251, -1.2015, 0.1093, 0.9053, -0.5753},
+    {0.6062, 0.3953, -0.3037, 0.0040, 0.9054, -0.8111, -1.0623, 0.0448}
+};
+const float ai_b1[8] = {-0.9863, 2.3486, 0.9161, 0.4711, 1.6583, -1.8947, -0.1112, 1.6201};
+
+// لایه دوم: وزن‌ها و بایاس‌های 4 کلاس خروجی
+const float ai_W2[8][4] = {
+    {-1.0577, -0.6978, -2.9391, 2.4081},
+    {-2.9198, 0.4057, 0.7282, 0.2029},
+    {0.1835, 0.1213, 0.8910, -0.0787},
+    {0.2873, 0.1396, 0.4838, 1.0104},
+    {-1.7485, -2.3899, 1.0196, 0.2499},
+    {2.1276, -2.2884, -0.0097, -0.4578},
+    {0.8960, -0.1261, -2.1067, -0.3912},
+    {-0.8978, 2.0714, 0.8680, -1.5481}
+};
+const float ai_b2[4] = {-0.5272, 0.9210, 1.1192, -0.3202};
+
+// ─── موتور استنتاج (Inference Engine) ───────────────
+String predictBatteryGrade(float ir, float dcir, float rec, float vDrop) {
+    if (ir <= 0 || dcir <= 0) return "N/A"; // محافظت دیتای نامعتبر
+    
+    // ۱. نرمال‌سازی ورودی‌ها به مقیاس قابل درک برای شبکه عصبی
+    float x[4] = {
+        (ir - ai_input_mean[0]) / ai_input_scale[0],
+        (dcir - ai_input_mean[1]) / ai_input_scale[1],
+        (rec - ai_input_mean[2]) / ai_input_scale[2],
+        (vDrop - ai_input_mean[3]) / ai_input_scale[3]
+    };
+    
+    // ۲. محاسبه لایه مخفی (همراه با تابع فعال‌ساز ReLU)
+    float h[8] = {0};
+    for (int j = 0; j < 8; j++) {
+        h[j] = ai_b1[j];
+        for (int i = 0; i < 4; i++) {
+            h[j] += x[i] * ai_W1[i][j];
+        }
+        if (h[j] < 0) h[j] = 0; // اکتیویشن ReLU (حذف مقادیر منفی)
+    }
+    
+    // ۳. محاسبه لایه خروجی نهایی
+    float out[4] = {0};
+    for (int j = 0; j < 4; j++) {
+        out[j] = ai_b2[j];
+        for (int i = 0; i < 8; i++) {
+            out[j] += h[i] * ai_W2[i][j];
+        }
+    }
+    
+    // ۴. پیدا کردن کلاسی که بیشترین امتیاز (احتمال) را دارد (ArgMax)
+    int bestClass = 0;
+    float maxVal = out[0];
+    for (int j = 1; j < 4; j++) {
+        if (out[j] > maxVal) {
+            maxVal = out[j];
+            bestClass = j;
+        }
+    }
+    
+    // ۵. ترجمه نتیجه شبکه عصبی به متن
+    if (bestClass == 0) return "A (High Drain)";
+    if (bestClass == 1) return "B (Standard/Laptop)";
+    if (bestClass == 2) return "C (Weak/Low Drain)";
+    return "D (Dead/Heater)";
 }
+// ==============================================================================
 
 // ─── خروج زودهنگام از پله‌های باقی‌مانده ───
 void triageAbortNoLoad(uint8_t c, const char* stageLabel) {
   ch[c].qt_dcir = 0.0f;
   ch[c].qt_thermalStatus = String("No Current @ ") + stageLabel;
-  // تغییر استرینگ ارور به N/A برای هماهنگی با فیلتر فرانت‌اند و الگوریتم K-Means
   ch[c].qt_grade = "N/A"; 
   Serial.printf("|- ERROR: Current near 0 at %s pulse. Battery disconnected or BMS protected. Aborting remaining steps.\n", stageLabel);
 
@@ -164,12 +199,13 @@ void processTriage(uint8_t c) {
          else ch[c].qt_thermalStatus = "Danger (Overheat)";
          Serial.printf("|- Thermal Prediction: %s (%.2f W)\n", ch[c].qt_thermalStatus.c_str(), thermalWatts);
 
-         ch[c].qt_grade = gradeFromMohm(ch[c].qt_dcir);
-         Serial.printf("|- Final Grade: %s (based on %.1f mOhm)\n", ch[c].qt_grade.c_str(), ch[c].qt_dcir);
+         // --- [استفاده از هوش مصنوعی برای پیش‌بینی گرید] ---
+         ch[c].qt_grade = predictBatteryGrade(ch[c].IR, ch[c].qt_dcir, ch[c].qt_recoveryRate, ch[c].qt_voltDrop1500);
+         Serial.printf("|- AI Grade Prediction: %s\n", ch[c].qt_grade.c_str());
+         
       } else {
          ch[c].qt_dcir = 0.0f;
          ch[c].qt_thermalStatus = "No Current @ 1500mA";
-         // تغییر استرینگ ارور به N/A برای هماهنگی با فیلتر فرانت‌اند
          ch[c].qt_grade = "N/A"; 
          Serial.println("|- ERROR: Current is near 0. Battery disconnected or BMS protected.");
       }
