@@ -61,6 +61,17 @@ String buildLogPage() {
     </div>
   </div>
 
+  <!-- بخش موارد نیازمند بررسی -->
+  <div id="issues-section" style="display:none;">
+    <div class="section-title" data-i18n="sec_issues">⚠ موارد نیازمند بررسی</div>
+    <div class="ch-card" style="border-color:#ff6b35;">
+      <div class="ch-header">
+        <div class="ch-title" style="color:#ff6b35;">⚠ <span data-i18n="sec_issues">Data Issues</span></div>
+      </div>
+      <pre id="issues-preview"></pre>
+    </div>
+  </div>
+
   <!-- بخش گزارش‌های خام -->
   <div class="section-title" data-i18n="sec_raw">📂 لاگ‌های خام مجزا (Raw Data)</div>
   <div id="channels-container"></div>
@@ -73,6 +84,9 @@ String buildLogPage() {
       'back_dash': '→ بازگشت به داشبورد',
       'page_title': '📋 گزارش‌ها و لاگ‌ها',
       'sec_unified': '🌍 پایگاه داده یکپارچه (ادغام هوشمند Triage و ظرفیت)',
+      'sec_issues': '⚠ موارد نیازمند بررسی (شناسه نامعتبر یا تست ناقص)',
+      'issue_badid': 'شناسه نامعتبر (فرمت اشتباه)',
+      'issue_orphan': 'شارژ/دشارژ بدون Triage متناظر',
       'sec_raw': '📂 لاگ‌های خام مجزا (بدون فیلتر)',
       'loading': 'در حال اسکن کانال‌ها...',
       'no_data': 'هیچ رکوردی یافت نشد.',
@@ -88,6 +102,9 @@ String buildLogPage() {
       'back_dash': '← Dashboard',
       'page_title': '📋 Mass Reports & Logs',
       'sec_unified': '🌍 Global Unified Database (Smart Merge)',
+      'sec_issues': '⚠ Needs Attention (invalid ID or incomplete test)',
+      'issue_badid': 'Invalid ID (wrong format)',
+      'issue_orphan': 'Charge/Discharge with no matching Triage',
       'sec_raw': '📂 Raw Channel Logs (Unfiltered)',
       'loading': 'Scanning channels...',
       'no_data': 'No records discovered.',
@@ -167,8 +184,11 @@ String buildLogPage() {
     }
   }
 
+  const ID_PATTERN = /^CH\d+-\d+$/;
+
   function processUnifiedLogs() {
     let rawData = [];
+    let invalidRows = [];
     
     for (let c = 1; c <= 3; c++) {
       if(!rawLogsData[c]) continue;
@@ -195,6 +215,12 @@ String buildLogPage() {
                 curve.push(parseFloat(cols[j]));
             }
         }
+
+        if (!ID_PATTERN.test(cleanId)) {
+          invalidRows.push({ rawId, cleanId, date, mode, ch: c });
+          continue;
+        }
+
         rawData.push({ cleanId, date, mode, cap, ir, grade, dcir, recRate, vEnd, curve, ch: c });
       }
     }
@@ -212,10 +238,14 @@ String buildLogPage() {
     });
 
     unifiedCells = [];
+    let orphanCharge = [];
     
     for (let id in grouped) {
         let g = grouped[id];
-        if (!g.triage) continue; 
+        if (!g.triage) {
+            if (g.capTests.length > 0) orphanCharge.push(...g.capTests.map(r => ({ ...r, cleanId: id })));
+            continue; 
+        }
         if (g.capTests.length === 0) continue; 
 
         g.capTests.sort((a, b) => b.cap - a.cap);
@@ -223,6 +253,7 @@ String buildLogPage() {
 
         if (bestCapTest.cap < 400) continue; 
 
+        // اینجا گراف‌ها رو هم به آرایه نهایی تزریق می‌کنیم تا برای CSV آماده باشن
         unifiedCells.push({ 
             id: id, 
             date: bestCapTest.date,
@@ -232,10 +263,13 @@ String buildLogPage() {
             recRate: g.triage.recRate, 
             grade: g.triage.grade, 
             vEnd: bestCapTest.vEnd,
-            curve: bestCapTest.curve, 
+            triageCurve: g.triage.curve,      
+            dischargeCurve: bestCapTest.curve, 
             ch: bestCapTest.ch 
         });
     }
+
+    renderIssues(invalidRows, orphanCharge);
 
     const previewEl = document.getElementById('unified-preview');
     if(unifiedCells.length === 0) {
@@ -257,13 +291,48 @@ String buildLogPage() {
     document.getElementById('btn-unified-csv').style.display = 'inline-block';
     document.getElementById('btn-unified-pdf').style.display = 'inline-block';
 
-    let csvContent = "Battery ID,Date,Merged Action,Capacity (mAh),IR (mOhm),Triage Grade,DCIR (mOhm),Recovery (mV/s),V_End\n";
+    // اضافه کردن نقاط هر دو گراف به خروجی CSV برای K-Means
+    let csvContent = "Battery ID,Date,Merged Action,Capacity (mAh),IR (mOhm),Triage Grade,DCIR (mOhm),Recovery (mV/s),V_End,Triage_Graph_Points... ,|, Discharge_Graph_Points...\n";
     unifiedCells.forEach(c => {
-        csvContent += `${c.id},${c.date},Unified Test,${c.cap},${c.ir},${c.grade},${c.dcir},${c.recRate},${c.vEnd}\n`;
+        let row = `${c.id},${c.date},Unified Test,${c.cap},${c.ir},${c.grade},${c.dcir},${c.recRate},${c.vEnd}`;
+        
+        if (c.triageCurve && c.triageCurve.length > 0) {
+            c.triageCurve.forEach(pt => row += `,${pt}`);
+        } else { row += `,0`; }
+        
+        row += `,|`;
+        
+        if (c.dischargeCurve && c.dischargeCurve.length > 0) {
+            c.dischargeCurve.forEach(pt => row += `,${pt}`);
+        }
+        
+        csvContent += row + `\n`;
     });
+    
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     document.getElementById('btn-unified-csv').href = url;
+  }
+
+  function renderIssues(invalidRows, orphanCharge) {
+    const section = document.getElementById('issues-section');
+    const el = document.getElementById('issues-preview');
+    const total = invalidRows.length + orphanCharge.length;
+
+    if (total === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = 'block';
+
+    let lines = [];
+    invalidRows.forEach(r => {
+        lines.push(`[${dict[currentLang]['issue_badid']}] "${r.rawId}" — CH${r.ch} — ${r.mode} — ${r.date}`);
+    });
+    orphanCharge.forEach(r => {
+        lines.push(`[${dict[currentLang]['issue_orphan']}] ${r.cleanId} — CH${r.ch} — ${r.mode} (${r.cap} mAh) — ${r.date}`);
+    });
+    el.innerText = lines.join('\n');
   }
 
   function renderPrintGraph(pts, chIndex) {
@@ -309,6 +378,63 @@ String buildLogPage() {
     ctx.closePath();
     ctx.fillStyle = themeColor + '25'; 
     ctx.fill();
+    
+    return canvas.toDataURL('image/png');
+  }
+
+  // رسم گراف دو تکه (Triage + Discharge) برای خروجی یکپارچه PDF
+  function renderUnifiedGraph(triagePts, dischargePts, chIndex) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1600; canvas.height = 600; 
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const minV = 2.5, maxV = 4.3;
+    ctx.lineWidth = 2; ctx.strokeStyle = '#f0f0f0'; ctx.font = '26px sans-serif'; ctx.fillStyle = '#888888';
+    
+    [2.5, 3.0, 3.5, 4.0, 4.3].forEach(v => {
+      let y = 550 - ((v - minV) / (maxV - minV)) * 500;
+      ctx.beginPath(); ctx.moveTo(80, y); ctx.lineTo(1580, y); ctx.stroke();
+      ctx.fillText(v.toFixed(1) + 'V', 10, y + 10);
+    });
+
+    const colors = ['#00d4aa', '#0096ff', '#ff6b35'];
+    const themeColor = colors[(chIndex - 1) % 3];
+
+    if(triagePts && triagePts.length > 0) {
+      ctx.beginPath();
+      ctx.strokeStyle = '#ff6b35'; 
+      ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for(let i = 0; i < triagePts.length; i++) {
+        let x = 100 + (i / Math.max(1, triagePts.length - 1)) * 650;
+        let y = 550 - ((triagePts[i] - minV) / (maxV - minV)) * 500;
+        if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.fillStyle = '#ff6b35'; ctx.font = 'bold 28px sans-serif';
+      ctx.fillText("Triage Profile", 100, 60);
+    }
+
+    ctx.beginPath(); ctx.moveTo(800, 40); ctx.lineTo(800, 560); 
+    ctx.strokeStyle = '#dddddd'; ctx.lineWidth = 3; ctx.stroke();
+
+    if(dischargePts && dischargePts.length > 0) {
+      ctx.beginPath();
+      ctx.strokeStyle = themeColor;
+      ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for(let i = 0; i < dischargePts.length; i++) {
+        let x = 850 + (i / Math.max(1, dischargePts.length - 1)) * 650;
+        let y = 550 - ((dischargePts[i] - minV) / (maxV - minV)) * 500;
+        if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      
+      ctx.lineTo(1500, 550); ctx.lineTo(850, 550); ctx.closePath();
+      ctx.fillStyle = themeColor + '25'; ctx.fill();
+      
+      ctx.fillStyle = themeColor; ctx.font = 'bold 28px sans-serif';
+      ctx.fillText("Discharge Cycle", 850, 60);
+    }
     
     return canvas.toDataURL('image/png');
   }
@@ -401,7 +527,7 @@ String buildLogPage() {
     }, 100);
   }
 
-  // پرینت گرفتن از دیتای یکپارچه و فیلتر شده
+  // پرینت گرفتن از دیتای یکپارچه و فیلتر شده (همراه با هر دو گراف)
   async function generateUnifiedPDF() {
     if(unifiedCells.length === 0) return;
     const toast = document.getElementById('toast');
@@ -464,8 +590,8 @@ String buildLogPage() {
           }
           doc.text(`V-End: ${cell.vEnd} V`, 168, y + 17);
           
-          if (cell.curve && cell.curve.length > 0) {
-            const graphImg = renderPrintGraph(cell.curve, cell.ch);
+          if ((cell.dischargeCurve && cell.dischargeCurve.length > 0) || (cell.triageCurve && cell.triageCurve.length > 0)) {
+            const graphImg = renderUnifiedGraph(cell.triageCurve, cell.dischargeCurve, cell.ch);
             doc.addImage(graphImg, 'PNG', 20, y + 21, pageWidth - 40, 40);
           }
           y += 68; 
