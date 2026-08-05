@@ -11,6 +11,8 @@ String buildTriagePage() {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Smart Pack Builder</title>
+<!-- 💡 اضافه شدن jsPDF برای تولید خروجی -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root { --bg: #0d0d0f; --surface: #161619; --surface2: #1e1e23; --border: #2a2a32; --accent: #00d4aa; --accent2: #0096ff; --warn: #ff6b35; --danger: #e74c3c; --text: #e8e8f0; --muted: #6b6b80; --mono: 'Consolas', monospace; }
   body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; padding: 20px; max-width: 1100px; margin: 0 auto; direction: rtl; text-align: right; transition: all 0.3s ease; }
@@ -47,7 +49,10 @@ String buildTriagePage() {
   .cell-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px; text-align: center; font-size: 11px;}
   
   .master-graph-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 20px; direction: ltr; }
-  .master-title { font-size: 14px; font-weight: bold; margin-bottom: 10px; color: var(--accent); text-align: center;}
+  .master-title { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: bold; margin-bottom: 10px; color: var(--accent); }
+  
+  .btn-pdf { background: linear-gradient(135deg, #ff3366, #ff6b35); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: inherit; font-size: 12px;}
+  .btn-pdf:hover { opacity: 0.9; transform: translateY(-1px); }
   
   #loader { display: none; color: var(--accent); margin-bottom: 15px; font-weight: bold; text-align: center; width: 100%;}
 </style>
@@ -86,7 +91,10 @@ String buildTriagePage() {
 
   <div id="pack-result-section">
     <div id="master-container" class="master-graph-container">
-      <div class="master-title" data-i18n="master_title">📊 رفتار میانگین گراف تخلیه برای سلول‌های پک</div>
+      <div class="master-title">
+         <span data-i18n="master_title">📊 رفتار میانگین گراف تخلیه برای سلول‌های پک</span>
+         <button class="btn-pdf" onclick="generatePackPDF()">📄 دانلود خروجی PDF</button>
+      </div>
       <canvas id="master-canvas" width="800" height="120" style="width:100%; height:120px;"></canvas>
     </div>
 
@@ -132,8 +140,6 @@ const dict = {
   }
 };
 
-
-
 let currentLang = localStorage.getItem('sysLang') || 'fa';
 function applyLanguage() {
   if (currentLang === 'fa') {
@@ -151,6 +157,9 @@ function applyLanguage() {
 window.onload = applyLanguage;
 
 let allCells = [];
+let globalBestBlocks = null;
+let globalBestStats = null;
+let globalTotalAmps = 0;
 
 async function fetchDeviceLogs() {
   let rawData = [];
@@ -239,7 +248,7 @@ async function runSmartPackBuilder() {
     if (validCells.length < (reqS * origP)) {
         inventoryFallbackTriggered = true;
         currentP = Math.floor(validCells.length / reqS);
-        inventoryMaxP = currentP; // ثبت بالاترین P ممکن از نظر فیزیکی
+        inventoryMaxP = currentP; 
     }
 
     let bestFinalBlocks = null;
@@ -250,21 +259,12 @@ async function runSmartPackBuilder() {
 
         // ۱. حذف ضعیف‌ترین سلول‌ها برای رسیدن دقیق به تعداد مورد نیاز
         let pool = [...validCells].sort((a, b) => {
-            if (a.cap !== b.cap) return a.cap - b.cap; // کمترین ظرفیت‌ها بالا
-            return b.dcir - a.dcir; // بیشترین مقاومت‌ها بالا
+            if (a.cap !== b.cap) return a.cap - b.cap; 
+            return b.dcir - a.dcir; 
         });
         let selectedCells = pool.slice(pool.length - totalNeeded); 
 
-        // ۲. چیدمان اولیه ماری (Snake Draft) برای ظرفیت
-        selectedCells.sort((a, b) => b.cap - a.cap);
-        let blocks = Array.from({length: reqS}, (_, i) => ({ id: `S${i+1}`, cells: [] }));
-        let idx = 0;
-        for (let lap = 0; lap < currentP; lap++) {
-            let order = (lap % 2 === 0) ? blocks : [...blocks].reverse();
-            order.forEach(block => { block.cells.push(selectedCells[idx++]); });
-        }
-
-        // ۳. تابع ارزیابی هزینه (Cost Function) مبتنی بر قانون اهم
+        // ۲. تابع ارزیابی هزینه (Cost Function)
         function evaluate(testBlocks) {
             let caps = testBlocks.map(b => b.cells.reduce((sum, c) => sum + c.cap, 0));
             let capDiff = Math.max(...caps) - Math.min(...caps);
@@ -273,51 +273,76 @@ async function runSmartPackBuilder() {
             testBlocks.forEach(b => {
                 let dcirs = b.cells.map(c => Math.abs(c.dcir));
                 let rp = 1 / dcirs.reduce((sum, r) => sum + (1/r), 0);
-                let vDrop_mV = totalAmps * rp; // محاسبه افت ولتاژ گروه
-                let maxICell = vDrop_mV / Math.min(...dcirs); // جریان بلعیده شده توسط قوی‌ترین سلول
+                let vDrop_mV = totalAmps * rp; 
+                let maxICell = vDrop_mV / Math.min(...dcirs); 
                 if (maxICell > maxIOverall) maxIOverall = maxICell;
             });
             
-            // جریمه سنگین برای عبور از جریان ایمن
             let penalty = maxIOverall > safeCurrent ? (maxIOverall - safeCurrent) * 10000 : 0;
             let cost = (capDiff * 100) + (maxIOverall * 500) + penalty;
-            
             return { cost, capDiff, maxIOverall };
         }
 
-        let currentEval = evaluate(blocks);
-        let bestCost = currentEval.cost;
-        
-        // ۴. الگوریتم Hill Climbing (انجام ۱۰۰,۰۰۰ جابجایی تصادفی)
-        const ITERATIONS = 100000;
-        for (let i = 0; i < ITERATIONS; i++) {
-            let b1 = Math.floor(Math.random() * reqS);
-            let b2 = Math.floor(Math.random() * reqS);
-            if (b1 === b2) continue;
+        let foundSafeForThisP = false;
+        let localBestBlocks = null;
+        let localBestStats = null;
+
+        // ۳. اجرای چندباره الگوریتم با استراتژی‌های شروع مختلف
+        for (let attempt = 1; attempt <= 4; attempt++) {
+            let poolCopy = [...selectedCells];
             
-            let c1 = Math.floor(Math.random() * currentP);
-            let c2 = Math.floor(Math.random() * currentP);
+            if (attempt === 1) poolCopy.sort((a, b) => b.cap - a.cap); 
+            else if (attempt === 2) poolCopy.sort((a, b) => Math.abs(a.dcir) - Math.abs(b.dcir)); 
+            else poolCopy.sort(() => Math.random() - 0.5); 
+
+            let blocks = Array.from({length: reqS}, (_, i) => ({ id: `S${i+1}`, cells: [] }));
+            let idx = 0;
+            for (let lap = 0; lap < currentP; lap++) {
+                let order = (lap % 2 === 0) ? blocks : [...blocks].reverse();
+                order.forEach(block => { block.cells.push(poolCopy[idx++]); });
+            }
+
+            let currentEval = evaluate(blocks);
+            let bestCost = currentEval.cost;
             
-            // Swap (جابجایی موقت)
-            let temp = blocks[b1].cells[c1];
-            blocks[b1].cells[c1] = blocks[b2].cells[c2];
-            blocks[b2].cells[c2] = temp;
-            
-            let ev = evaluate(blocks);
-            if (ev.cost < bestCost) {
-                bestCost = ev.cost;
-                currentEval = ev; // حفظ جابجایی موفق
-            } else {
-                // Revert (بازگردانی جابجایی ناموفق)
-                temp = blocks[b1].cells[c1];
+            const ITERATIONS = 200000;
+            for (let i = 0; i < ITERATIONS; i++) {
+                let b1 = Math.floor(Math.random() * reqS);
+                let b2 = Math.floor(Math.random() * reqS);
+                if (b1 === b2) continue;
+                
+                let c1 = Math.floor(Math.random() * currentP);
+                let c2 = Math.floor(Math.random() * currentP);
+                
+                let temp = blocks[b1].cells[c1];
                 blocks[b1].cells[c1] = blocks[b2].cells[c2];
                 blocks[b2].cells[c2] = temp;
+                
+                let ev = evaluate(blocks);
+                if (ev.cost < bestCost) {
+                    bestCost = ev.cost;
+                    currentEval = ev; 
+                } else {
+                    temp = blocks[b1].cells[c1];
+                    blocks[b1].cells[c1] = blocks[b2].cells[c2];
+                    blocks[b2].cells[c2] = temp;
+                }
+            }
+
+            if (!localBestStats || currentEval.cost < localBestStats.cost) {
+                localBestStats = currentEval;
+                localBestBlocks = blocks.map(b => ({ id: b.id, cells: [...b.cells] }));
+            }
+
+            if (currentEval.maxIOverall <= safeCurrent) {
+                foundSafeForThisP = true;
+                break; 
             }
         }
 
-        if (currentEval.maxIOverall <= safeCurrent) {
-            bestFinalBlocks = blocks;
-            bestFinalStats = currentEval;
+        if (foundSafeForThisP || (localBestStats && localBestStats.maxIOverall <= safeCurrent)) {
+            bestFinalBlocks = localBestBlocks;
+            bestFinalStats = localBestStats;
             break; 
         } else {
             currentP--;
@@ -325,11 +350,10 @@ async function runSmartPackBuilder() {
         }
     }
 
-    // ۵. مدیریت هوشمند خروجی و پیام‌های خطا
     if (!bestFinalBlocks || currentP === 0) {
         alertBox.innerHTML = dict[currentLang]['alert_impossible']
             .replace(/\{S\}/g, reqS)
-            .replace(/\{P_NEW\}/g, inventoryMaxP) // استفاده از مقداری که کاربر واقعاً داشته
+            .replace(/\{P_NEW\}/g, inventoryMaxP) 
             .replace(/\{A\}/g, totalAmps);
         alertBox.style.display = 'block';
     } else {
@@ -355,6 +379,12 @@ async function runSmartPackBuilder() {
                 .replace(/\{P_NEW\}/g, currentP);
             alertBox.style.display = 'block';
         }
+        
+        // ذخیره دیتای نهایی برای PDF
+        globalBestBlocks = bestFinalBlocks;
+        globalBestStats = bestFinalStats;
+        globalTotalAmps = totalAmps;
+        
         renderPackUI(bestFinalBlocks, bestFinalStats, totalAmps);
     }
     
@@ -449,6 +479,82 @@ function drawMasterGraph(pool) {
     if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   }
   ctx.stroke();
+}
+
+// 💡 تابع جدید برای تولید PDF
+function generatePackPDF() {
+    if(!globalBestBlocks || globalBestBlocks.length === 0) return;
+    
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let y = 15;
+        
+        doc.setFontSize(16); doc.setFont("helvetica", "bold");
+        doc.text(`AI Smart Pack Assembly Report`, 15, y);
+        y += 8;
+        doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
+        let sCount = globalBestBlocks.length;
+        let pCount = globalBestBlocks[0].cells.length;
+        doc.text(`Configuration: ${sCount}S${pCount}P | Target Load: ${globalTotalAmps}A`, 15, y);
+        y += 15;
+
+        // اضافه کردن اسکرین‌شات گراف
+        const canvas = document.getElementById('master-canvas');
+        if(canvas) {
+            const imgData = canvas.toDataURL('image/png');
+            doc.addImage(imgData, 'PNG', 15, y, pageWidth - 30, 25);
+            y += 35;
+        }
+
+        // رسم بلاک‌ها
+        globalBestBlocks.forEach((block, index) => {
+            if (y > pageHeight - 50) { doc.addPage(); y = 15; }
+            
+            let blockTotalCap = block.cells.reduce((sum, c) => sum + c.cap, 0);
+            let dcirs = block.cells.map(c => Math.abs(c.dcir));
+            let rp = 1 / dcirs.reduce((s, r) => s + (1/r), 0);
+            let vDrop_mV = globalTotalAmps * rp;
+            
+            doc.setFillColor(240, 240, 245);
+            doc.rect(15, y, pageWidth - 30, 8, 'F');
+            doc.setTextColor(0); doc.setFontSize(11); doc.setFont("helvetica", "bold");
+            doc.text(`Block ${block.id}`, 18, y + 6);
+            
+            doc.setFontSize(9); doc.setTextColor(80);
+            doc.text(`Total Cap: ${blockTotalCap.toFixed(0)} mAh | Eq.IR: ${rp.toFixed(1)} mOhm`, 50, y + 6);
+            y += 12;
+
+            // سرستون‌های سلول
+            doc.setFontSize(8); doc.setTextColor(120); doc.setFont("helvetica", "bold");
+            doc.text("Cell ID", 20, y);
+            doc.text("Cap (mAh)", 60, y);
+            doc.text("DCIR (mOhm)", 100, y);
+            doc.text("Cell Load (A)", 150, y);
+            y += 5;
+
+            // لیست سلول‌ها
+            doc.setFont("helvetica", "normal"); doc.setTextColor(0);
+            block.cells.forEach(cell => {
+                if (y > pageHeight - 15) { doc.addPage(); y = 15; }
+                let cellI = vDrop_mV / Math.abs(cell.dcir);
+                
+                doc.text(cell.id, 20, y);
+                doc.text(cell.cap.toString(), 60, y);
+                doc.text(Math.abs(cell.dcir).toFixed(1), 100, y);
+                doc.text(cellI.toFixed(2), 150, y);
+                y += 5;
+            });
+            y += 5; 
+        });
+
+        doc.save(`Pack_Assembly_${sCount}S${pCount}P_${Date.now()}.pdf`);
+    } catch (err) {
+        alert("Error generating PDF: " + err);
+    }
 }
 </script>
 </body>
