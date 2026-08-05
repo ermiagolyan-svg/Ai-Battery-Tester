@@ -288,6 +288,9 @@ async function fetchDeviceLogs() {
   }
 }
 
+const IR_WEIGHT = 50.0;
+const DCIR_WEIGHT = 15.0; 
+
 // =========================================================
 // آپدیت موتور K-Means برای پردازش همزمان دو گراف (Triage & Discharge)
 // =========================================================
@@ -318,6 +321,20 @@ function cellToCentroid(cell) {
       nTriageCurve: [...cell.nTriageCurve],
       nDischargeCurve: [...cell.nDischargeCurve]
   };
+}
+
+
+function seedCentroidsPlusPlus(data, k) {
+  let centroids = [cellToCentroid(data[Math.floor(Math.random() * data.length)])];
+  while (centroids.length < k) {
+    let dists = data.map(d => Math.pow(Math.min(...centroids.map(c => weightedDistance(d, c))), 2));
+    let sum = dists.reduce((a,b) => a+b, 0);
+    if (sum === 0) { centroids.push(cellToCentroid(data[Math.floor(Math.random() * data.length)])); continue; }
+    let r = Math.random() * sum, acc = 0, chosen = data[data.length - 1];
+    for (let i = 0; i < data.length; i++) { acc += dists[i]; if (acc >= r) { chosen = data[i]; break; } }
+    centroids.push(cellToCentroid(chosen));
+  }
+  return centroids;
 }
 
 function kMeansSingleRun(data, k) {
@@ -392,6 +409,7 @@ function kMeansSingleRun(data, k) {
   return { clusters, inertia };
 }
 
+
 function kMeansDynamicClustering(data, k) {
   if (data.length <= k) return data.map(d => [d]);
   
@@ -406,125 +424,6 @@ function kMeansDynamicClustering(data, k) {
       d.nRec = d.recRate / maxRec; 
       d.nTriageCurve = d.triageCurve.map(v => v / maxCurveV);
       d.nDischargeCurve = d.dischargeCurve.map(v => v / maxCurveV);
-  });
-
-  let best = null;
-  const RESTARTS = 6;
-  for (let r = 0; r < RESTARTS; r++) {
-    let result = kMeansSingleRun(data, k);
-    if (!best || result.inertia < best.inertia) best = result;
-  }
-  return best.clusters;
-}
-
-const IR_WEIGHT = 50.0;
-const DCIR_WEIGHT = 15.0; 
-
-function weightedDistance(cell, cent) {
-  let baseDist = (Math.pow(cell.nIr - cent.nIr, 2) * IR_WEIGHT) + 
-                 (Math.pow(cell.nDCIR - cent.nDCIR, 2) * DCIR_WEIGHT) + 
-                 Math.pow(cell.nRec - cent.nRec, 2);
-  let curveDist = 0;
-  let points = Math.min(cell.nCurve.length, cent.nCurve.length);
-  for(let p = 0; p < points; p++) curveDist += Math.pow(cell.nCurve[p] - cent.nCurve[p], 2);
-  if(points > 0) curveDist = (curveDist / points) * 5.0;
-  return Math.sqrt(baseDist + curveDist);
-}
-
-function cellToCentroid(cell) {
-  return { nIr: cell.nIr, nDCIR: cell.nDCIR, nRec: cell.nRec, nCurve: [...cell.nCurve] };
-}
-
-function seedCentroidsPlusPlus(data, k) {
-  let centroids = [cellToCentroid(data[Math.floor(Math.random() * data.length)])];
-  while (centroids.length < k) {
-    let dists = data.map(d => Math.pow(Math.min(...centroids.map(c => weightedDistance(d, c))), 2));
-    let sum = dists.reduce((a,b) => a+b, 0);
-    if (sum === 0) { centroids.push(cellToCentroid(data[Math.floor(Math.random() * data.length)])); continue; }
-    let r = Math.random() * sum, acc = 0, chosen = data[data.length - 1];
-    for (let i = 0; i < data.length; i++) { acc += dists[i]; if (acc >= r) { chosen = data[i]; break; } }
-    centroids.push(cellToCentroid(chosen));
-  }
-  return centroids;
-}
-
-function kMeansSingleRun(data, k) {
-  let centroids = seedCentroidsPlusPlus(data, k);
-  let clusters = new Array(k).fill(null).map(() => []);
-  let maxIter = 100;
-
-  for(let it=0; it<maxIter; it++) {
-    clusters = new Array(k).fill(null).map(() => []);
-    data.forEach(cell => {
-      let minDist = Infinity, clusterIdx = 0;
-      centroids.forEach((cent, idx) => {
-        let d = weightedDistance(cell, cent);
-        if(d < minDist) { minDist = d; clusterIdx = idx; }
-      });
-      clusters[clusterIdx].push(cell);
-    });
-
-    let hadEmpty = false;
-    clusters.forEach((cluster, idx) => {
-      if(cluster.length > 0) return;
-      hadEmpty = true;
-      let farthestPoint = data[0], farthestDist = -1;
-      data.forEach(d => {
-        let nearest = Math.min(...centroids.map(c => weightedDistance(d, c)));
-        if(nearest > farthestDist) { farthestDist = nearest; farthestPoint = d; }
-      });
-      centroids[idx] = cellToCentroid(farthestPoint);
-    });
-    if (hadEmpty) continue;
-
-    let oldCentroids = JSON.parse(JSON.stringify(centroids));
-    clusters.forEach((cluster, idx) => {
-      let sumIr = 0, sumDCIR = 0, sumRec = 0;
-      let sumCurve = [], countCurve = [];
-      
-      cluster.forEach(c => {
-          sumIr += c.nIr; sumDCIR += c.nDCIR; sumRec += c.nRec;
-          for(let p = 0; p < c.nCurve.length; p++) {
-              sumCurve[p] = (sumCurve[p] || 0) + c.nCurve[p];
-              countCurve[p] = (countCurve[p] || 0) + 1;
-          }
-      });
-      
-      centroids[idx] = { 
-          nIr: sumIr / cluster.length, 
-          nDCIR: sumDCIR / cluster.length, 
-          nRec: sumRec / cluster.length,
-          nCurve: sumCurve.map((v, p) => v / countCurve[p])
-      };
-    });
-
-    let hasChanged = false;
-    for(let i=0; i<k; i++) {
-      if(Math.abs(centroids[i].nIr - oldCentroids[i].nIr) > 0.0001 ||
-         Math.abs(centroids[i].nDCIR - oldCentroids[i].nDCIR) > 0.0001 ||
-         Math.abs(centroids[i].nRec - oldCentroids[i].nRec) > 0.0001) { hasChanged = true; break; }
-    }
-    if(!hasChanged) break;
-  }
-
-  let inertia = 0;
-  clusters.forEach((cluster, idx) => cluster.forEach(cell => { inertia += Math.pow(weightedDistance(cell, centroids[idx]), 2); }));
-  return { clusters, inertia };
-}
-
-function kMeansDynamicClustering(data, k) {
-  if (data.length <= k) return data.map(d => [d]);
-  
-  let maxIr = Math.max(...data.map(d => d.ir)) || 1;
-  let maxDCIR = Math.max(...data.map(d => Math.abs(d.dcir))) || 1;
-  let maxRec = Math.max(...data.map(d => d.recRate)) || 1;
-  let maxCurveV = 4.3; 
-
-  data.forEach(d => { 
-      d.nIr = d.ir / maxIr; 
-      d.nDCIR = Math.abs(d.dcir) / maxDCIR; 
-      d.nRec = d.recRate / maxRec; 
-      d.nCurve = d.curve.map(v => v / maxCurveV);
   });
 
   let best = null;

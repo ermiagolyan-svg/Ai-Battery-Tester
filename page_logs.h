@@ -13,57 +13,97 @@ String buildLogPage() {
 <title>Mass Reports & Logs</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-  :root{--bg:#0d0d0f;--surface:#161619;--border:#2a2a32;--accent:#00d4aa;--text:#e8e8f0;--muted:#6b6b80;--mono:monospace}
-  body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;padding:20px; max-width:800px; margin:0 auto; direction: rtl; text-align: right; transition: all 0.3s ease;}
+  :root{--bg:#0d0d0f;--surface:#161619;--border:#2a2a32;--accent:#00d4aa;--text:#e8e8f0;--muted:#6b6b80;--mono:monospace; --accent2:#0096ff;}
+  body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;padding:20px; max-width:900px; margin:0 auto; direction: rtl; text-align: right; transition: all 0.3s ease;}
   .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; direction: inherit;}
   .btn-back { color: var(--accent); text-decoration: none; font-weight: bold; direction: inherit;}
   
-  .ch-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .section-title { font-size: 16px; font-weight: bold; margin: 30px 0 15px 0; color: var(--muted); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  
+  .ch-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; position: relative;}
+  .ch-card.unified { border-color: var(--accent2); background: #12161a; }
+  
   .ch-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px; direction: ltr;}
   .ch-title { font-size: 18px; font-weight: bold; }
+  .unified .ch-title { color: var(--accent2); }
   
   .btn-pdf { background: linear-gradient(135deg, #ff3366, #ff6b35); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: inherit;}
   .btn-pdf:hover { opacity: 0.9; transform: translateY(-1px); }
-  .btn-csv { background: #1e1e23; color: var(--text); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 13.3px; font-family: inherit;}
+  .btn-pdf.btn-uni { background: linear-gradient(135deg, #008060, var(--accent)); }
   
-  pre { background: #0a0a0c; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 12px; overflow-x: auto; height: 120px; color: #a1a1aa; white-space: pre-wrap; direction: ltr; text-align: left;}
-  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 10px 20px; border-radius: 8px; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; }
+  .btn-csv { background: #1e1e23; color: var(--text); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 13.3px; font-family: inherit;}
+  .btn-csv:hover { background: #2a2a32; }
+  
+  pre { background: #0a0a0c; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 12px; overflow-x: auto; height: 140px; color: #a1a1aa; white-space: pre-wrap; direction: ltr; text-align: left;}
+  .unified pre { color: #e8e8f0; height: 180px;}
+  
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 10px 20px; border-radius: 8px; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 9999;}
 </style>
 </head>
 <body>
   <div class="header">
     <a href="/" class="btn-back" id="btnBack" data-i18n="back_dash">→ بازگشت به داشبورد</a>
-    <h2 data-i18n="page_title">📋 گزارش‌های انبوه و لاگ‌ها</h2>
+    <h2 data-i18n="page_title">📋 گزارش‌ها و لاگ‌ها</h2>
   </div>
 
+  <!-- بخش گزارش یکپارچه -->
+  <div class="section-title" data-i18n="sec_unified">🌍 پایگاه داده یکپارچه (ادغام هوشمند)</div>
+  <div id="unified-container">
+    <div class="ch-card unified">
+      <div class="ch-header">
+        <div class="ch-title">Global Unified Database</div>
+        <div style="display:flex; gap:10px;">
+          <a id="btn-unified-csv" class="btn-csv" style="display:none;" download="Unified_Battery_Report.csv" data-i18n="btn_csv_uni">دانلود CSV نهایی</a>
+          <button id="btn-unified-pdf" class="btn-pdf btn-uni" style="display:none;" onclick="generateUnifiedPDF()" data-i18n="btn_pdf_uni">📄 خروجی PDF جامع</button>
+        </div>
+      </div>
+      <pre id="unified-preview" data-i18n="loading">در حال اسکن کانال‌ها و پردازش ادغام اطلاعات...</pre>
+    </div>
+  </div>
+
+  <!-- بخش گزارش‌های خام -->
+  <div class="section-title" data-i18n="sec_raw">📂 لاگ‌های خام مجزا (Raw Data)</div>
   <div id="channels-container"></div>
+  
   <div id="toast" data-i18n="toast_pdf">در حال ساخت فایل PDF، لطفاً صبر کنید...</div>
 
 <script>
   const dict = {
     'fa': {
       'back_dash': '→ بازگشت به داشبورد',
-      'page_title': '📋 گزارش‌های انبوه و لاگ‌ها',
-      'loading': 'در حال بارگذاری...',
+      'page_title': '📋 گزارش‌ها و لاگ‌ها',
+      'sec_unified': '🌍 پایگاه داده یکپارچه (ادغام هوشمند Triage و ظرفیت)',
+      'sec_raw': '📂 لاگ‌های خام مجزا (بدون فیلتر)',
+      'loading': 'در حال اسکن کانال‌ها...',
       'no_data': 'هیچ رکوردی یافت نشد.',
-      'btn_csv': 'دانلود CSV',
-      'btn_pdf': '📄 خروجی PDF انبوه',
+      'no_uni_data': 'هیچ باتری معتبری (دارای تست Triage + ظرفیت کامل) یافت نشد.',
+      'btn_csv_uni': 'دانلود CSV نهایی',
+      'btn_pdf_uni': '📄 PDF یکپارچه',
+      'btn_csv_raw': 'دانلود CSV',
+      'btn_pdf_raw': '📄 PDF خام',
       'toast_pdf': 'در حال ساخت فایل PDF، لطفاً صبر کنید...',
-      'trunc': '\n... [کوتاه شده برای پیش‌نمایش]'
+      'trunc': '\n... [لیست برای پیش‌نمایش کوتاه شده است]'
     },
     'en': {
-      'back_dash': '← Back Dashboard',
+      'back_dash': '← Dashboard',
       'page_title': '📋 Mass Reports & Logs',
-      'loading': 'Loading...',
+      'sec_unified': '🌍 Global Unified Database (Smart Merge)',
+      'sec_raw': '📂 Raw Channel Logs (Unfiltered)',
+      'loading': 'Scanning channels...',
       'no_data': 'No records discovered.',
-      'btn_csv': 'Download CSV',
-      'btn_pdf': '📄 Export Mass PDF',
+      'no_uni_data': 'No valid matched batteries found.',
+      'btn_csv_uni': 'Unified CSV',
+      'btn_pdf_uni': '📄 Unified PDF',
+      'btn_csv_raw': 'Download CSV',
+      'btn_pdf_raw': '📄 Raw PDF',
       'toast_pdf': 'Generating PDF, Please wait...',
-      'trunc': '\n... [Truncated for preview]'
+      'trunc': '\n... [List truncated for preview]'
     }
   };
 
   let currentLang = localStorage.getItem('sysLang') || 'fa';
+  let rawLogsData = { 1: '', 2: '', 3: '' };
+  let unifiedCells = [];
 
   function applyLanguage() {
     if (currentLang === 'fa') {
@@ -83,37 +123,147 @@ String buildLogPage() {
 
   window.onload = applyLanguage;
 
-  async function loadLogs() {
-    const container = document.getElementById('channels-container');
+  async function fetchAllLogs() {
     for (let c = 1; c <= 3; c++) {
-      let previewText = dict[currentLang]['loading'];
-      let hasData = false;
       try {
         const res = await fetch('/log' + c);
         const text = await res.text();
         if (text !== 'Empty' && text.trim().length > 0) {
-          const lines = text.trim().split('\n');
-          previewText = lines.slice(0, 3).map(l => l.split(',').slice(0,12).join(',')).join('\n');
-          if(lines.length > 3) previewText += dict[currentLang]['trunc'];
-          hasData = true;
-        } else {
-          previewText = dict[currentLang]['no_data'];
+          rawLogsData[c] = text.trim();
         }
-      } catch (e) { previewText = "Error reading log."; }
+      } catch (e) { console.log("Error reading CH" + c); }
+    }
+    renderRawLogs();
+    processUnifiedLogs();
+  }
+
+  function renderRawLogs() {
+    const container = document.getElementById('channels-container');
+    container.innerHTML = '';
+    
+    for (let c = 1; c <= 3; c++) {
+      let text = rawLogsData[c];
+      let hasData = text.length > 0;
+      let previewText = dict[currentLang]['no_data'];
+      
+      if (hasData) {
+        const lines = text.split('\n');
+        previewText = lines.slice(0, 4).map(l => l.split(',').slice(0,12).join(',')).join('\n');
+        if(lines.length > 4) previewText += dict[currentLang]['trunc'];
+      }
 
       container.innerHTML += `
         <div class="ch-card">
           <div class="ch-header">
-            <div class="ch-title">⚡ Channel ${c}</div>
+            <div class="ch-title">⚡ Channel ${c} RAW</div>
             <div style="display:flex; gap:10px;">
-              ${hasData ? `<a href="/log${c}" class="btn-csv" download>${dict[currentLang]['btn_csv']}</a>` : ''}
-              ${hasData ? `<button class="btn-pdf" onclick="generateMassPDF(${c})">${dict[currentLang]['btn_pdf']}</button>` : ''}
+              ${hasData ? `<a href="/log${c}" class="btn-csv" download="CH${c}_RawLog.csv">${dict[currentLang]['btn_csv_raw']}</a>` : ''}
+              ${hasData ? `<button class="btn-pdf" onclick="generateMassPDF(${c})">${dict[currentLang]['btn_pdf_raw']}</button>` : ''}
             </div>
           </div>
           <pre>${previewText}</pre>
         </div>
       `;
     }
+  }
+
+  function processUnifiedLogs() {
+    let rawData = [];
+    
+    for (let c = 1; c <= 3; c++) {
+      if(!rawLogsData[c]) continue;
+      const lines = rawLogsData[c].split('\n');
+      
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length < 12) continue;
+        
+        let rawId = cols[0].trim();
+        let cleanId = rawId.replace(/^#/, ''); 
+        let date = cols[2] ? cols[2].trim() : ""; 
+        let mode = cols[4] ? cols[4].trim() : "";
+        let cap = parseFloat(cols[5]) || 0;
+        let ir = parseFloat(cols[6]) || 0;
+        let grade = cols[7] ? cols[7].trim() : "Unknown";
+        let dcir = parseFloat(cols[8]) || 0;
+        let recRate = parseFloat(cols[9]) || 0;
+        let vEnd = parseFloat(cols[11]) || 0;
+        
+        let curve = [];
+        for(let j = 12; j < cols.length; j++) {
+            if(cols[j] !== undefined && cols[j].trim() !== "") {
+                curve.push(parseFloat(cols[j]));
+            }
+        }
+        rawData.push({ cleanId, date, mode, cap, ir, grade, dcir, recRate, vEnd, curve, ch: c });
+      }
+    }
+
+    let grouped = {};
+    rawData.forEach(row => {
+        if (!grouped[row.cleanId]) {
+            grouped[row.cleanId] = { triage: null, capTests: [] };
+        }
+        if (row.mode.includes("Triage")) {
+            grouped[row.cleanId].triage = row;
+        } else if (row.cap > 0) {
+            grouped[row.cleanId].capTests.push(row);
+        }
+    });
+
+    unifiedCells = [];
+    
+    for (let id in grouped) {
+        let g = grouped[id];
+        if (!g.triage) continue; 
+        if (g.capTests.length === 0) continue; 
+
+        g.capTests.sort((a, b) => b.cap - a.cap);
+        let bestCapTest = g.capTests[0];
+
+        if (bestCapTest.cap < 400) continue; 
+
+        unifiedCells.push({ 
+            id: id, 
+            date: bestCapTest.date,
+            cap: bestCapTest.cap, 
+            ir: bestCapTest.ir, 
+            dcir: g.triage.dcir, 
+            recRate: g.triage.recRate, 
+            grade: g.triage.grade, 
+            vEnd: bestCapTest.vEnd,
+            curve: bestCapTest.curve, 
+            ch: bestCapTest.ch 
+        });
+    }
+
+    const previewEl = document.getElementById('unified-preview');
+    if(unifiedCells.length === 0) {
+        previewEl.innerText = dict[currentLang]['no_uni_data'];
+        return;
+    }
+
+    let previewText = "ID\t\tCap(mAh)\tIR(mΩ)\tDCIR\tGrade\tV-End\n";
+    previewText += "-----------------------------------------------------------------------\n";
+    let limit = Math.min(unifiedCells.length, 8);
+    for(let i=0; i<limit; i++) {
+        let c = unifiedCells[i];
+        previewText += `${c.id}\t\t${c.cap}\t\t${c.ir}\t${c.dcir}\t${c.grade}\t${c.vEnd}\n`;
+    }
+    if(unifiedCells.length > limit) previewText += dict[currentLang]['trunc'];
+    previewText += `\n\nTotal Valid Batteries Processed: ${unifiedCells.length}`;
+    previewEl.innerText = previewText;
+
+    document.getElementById('btn-unified-csv').style.display = 'inline-block';
+    document.getElementById('btn-unified-pdf').style.display = 'inline-block';
+
+    let csvContent = "Battery ID,Date,Merged Action,Capacity (mAh),IR (mOhm),Triage Grade,DCIR (mOhm),Recovery (mV/s),V_End\n";
+    unifiedCells.forEach(c => {
+        csvContent += `${c.id},${c.date},Unified Test,${c.cap},${c.ir},${c.grade},${c.dcir},${c.recRate},${c.vEnd}\n`;
+    });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    document.getElementById('btn-unified-csv').href = url;
   }
 
   function renderPrintGraph(pts, chIndex) {
@@ -163,104 +313,171 @@ String buildLogPage() {
     return canvas.toDataURL('image/png');
   }
 
+  // پرینت گرفتن از دیتاهای خام (بدون مرج)
   async function generateMassPDF(c) {
+    if(!rawLogsData[c]) return;
     const toast = document.getElementById('toast');
     toast.style.opacity = 1;
     
-    try {
-      const res = await fetch('/log' + c);
-      const csv = await res.text();
-      const lines = csv.trim().split('\n');
-      
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      
-      let y = 15;
-      
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text(`Li-ion Mass Test Report - Channel ${c}`, 15, y);
-      y += 8;
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(100);
-      doc.text(`Generated automatically by ESP32 Battery Analyzer`, 15, y);
-      y += 12;
-
-      for(let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',');
-        if(cols.length < 12) continue; 
+    setTimeout(() => {
+      try {
+        const lines = rawLogsData[c].split('\n');
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
         
-        if (y > pageHeight - 68) {
-          doc.addPage();
-          y = 15;
-        }
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let y = 15;
         
-        const name = cols[0];
-        const date = cols[2]; 
-        const action = cols[4];  
-        const cap = cols[5];
-        const ir = cols[6];
-        const grade = cols[7] ? cols[7].trim() : "N/A";
-        const dcir = cols[8] ? cols[8].trim() : "N/A";
-        const vStart = cols[10];  
-        const vEnd = cols[11];    
-        
-        doc.setDrawColor(200);
-        doc.setFillColor(248, 249, 250);
-        doc.roundedRect(15, y, pageWidth - 30, 64, 2, 2, 'FD');
-        
-        doc.setTextColor(0);
-        doc.setFontSize(11);
+        doc.setFontSize(16);
         doc.setFont("helvetica", "bold");
-        doc.text(`ID: ${name}`, 20, y + 7);
-        
+        doc.text(`Li-ion RAW Test Report - Channel ${c}`, 15, y);
+        y += 8;
         doc.setFontSize(10);
-        doc.setTextColor(50);
-        doc.text(`Test: ${action}`, 75, y + 7);
-        
-        doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(100);
-        doc.text(`Date: ${date}`, pageWidth - 55, y + 7);
-        
-        doc.setDrawColor(220);
-        doc.line(20, y + 11, pageWidth - 20, y + 11);
-        
-        doc.setTextColor(0);
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "bold");
-        
-        // اصلاح مختصات X و حذف فاصله‌های اضافه برای جلوگیری از تداخل متن‌ها
-        doc.text(`Cap: ${cap} mAh`, 18, y + 17);
-        doc.text(`IR/DCIR: ${ir}/${dcir} mΩ`, 48, y + 17);
-        
-        if(grade !== "N/A" && grade !== "Unknown") {
-            doc.text(`Grade: ${grade}`, 108, y + 17);
+        doc.text(`Generated automatically by ESP32 Battery Analyzer`, 15, y);
+        y += 12;
+
+        for(let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',');
+          if(cols.length < 12) continue; 
+          
+          if (y > pageHeight - 68) { doc.addPage(); y = 15; }
+          
+          const name = cols[0];
+          const date = cols[2]; 
+          const action = cols[4];  
+          const cap = cols[5];
+          const ir = cols[6];
+          const grade = cols[7] ? cols[7].trim() : "N/A";
+          const dcir = cols[8] ? cols[8].trim() : "N/A";
+          const vEnd = cols[11];    
+          
+          doc.setDrawColor(200);
+          doc.setFillColor(248, 249, 250);
+          doc.roundedRect(15, y, pageWidth - 30, 64, 2, 2, 'FD');
+          
+          doc.setTextColor(0);
+          doc.setFontSize(11);
+          doc.setFont("helvetica", "bold");
+          doc.text(`ID: ${name}`, 20, y + 7);
+          
+          doc.setFontSize(10);
+          doc.setTextColor(50);
+          doc.text(`Test: ${action}`, 75, y + 7);
+          
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(100);
+          doc.text(`Date: ${date}`, pageWidth - 55, y + 7);
+          
+          doc.setDrawColor(220);
+          doc.line(20, y + 11, pageWidth - 20, y + 11);
+          
+          doc.setTextColor(0);
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "bold");
+          
+          doc.text(`Cap: ${cap} mAh`, 18, y + 17);
+          doc.text(`IR/DCIR: ${ir}/${dcir} mΩ`, 48, y + 17);
+          
+          if(grade !== "N/A" && grade !== "Unknown" && grade !== "") {
+              doc.text(`Grade: ${grade}`, 108, y + 17);
+          }
+          doc.text(`V-End: ${vEnd} V`, 168, y + 17);
+          
+          const pts = cols.slice(12).map(Number).filter(n => !isNaN(n));
+          if (pts.length > 0) {
+            const graphImg = renderPrintGraph(pts, c);
+            doc.addImage(graphImg, 'PNG', 20, y + 21, pageWidth - 40, 40);
+          }
+          y += 68; 
         }
-        doc.text(`V-End: ${vEnd} V`, 168, y + 17);
         
-        const pts = cols.slice(12).map(Number).filter(n => !isNaN(n));
-        if (pts.length > 0) {
-          const graphImg = renderPrintGraph(pts, c);
-          doc.addImage(graphImg, 'PNG', 20, y + 21, pageWidth - 40, 40);
-        }
-        
-        y += 68; 
-      }
-      
-      doc.save(`CH${c}_Mass_Report_${Date.now()}.pdf`);
-      
-    } catch (err) {
-      alert("Error generating PDF: " + err);
-    }
-    toast.style.opacity = 0;
+        doc.save(`CH${c}_RAW_Report_${Date.now()}.pdf`);
+      } catch (err) { alert("Error generating PDF: " + err); }
+      toast.style.opacity = 0;
+    }, 100);
   }
 
-  loadLogs();
+  // پرینت گرفتن از دیتای یکپارچه و فیلتر شده
+  async function generateUnifiedPDF() {
+    if(unifiedCells.length === 0) return;
+    const toast = document.getElementById('toast');
+    toast.style.opacity = 1;
+    
+    setTimeout(() => {
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let y = 15;
+        
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text(`Li-ion Unified Mass Test Report`, 15, y);
+        y += 8;
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100);
+        doc.text(`Generated by ESP32 AI Analyzer - Valid Batteries: ${unifiedCells.length}`, 15, y);
+        y += 12;
+
+        for(let i = 0; i < unifiedCells.length; i++) {
+          const cell = unifiedCells[i];
+          
+          if (y > pageHeight - 68) { doc.addPage(); y = 15; }
+          
+          doc.setDrawColor(200);
+          doc.setFillColor(248, 249, 250);
+          doc.roundedRect(15, y, pageWidth - 30, 64, 2, 2, 'FD');
+          
+          doc.setTextColor(0);
+          doc.setFontSize(11);
+          doc.setFont("helvetica", "bold");
+          doc.text(`ID: ${cell.id}`, 20, y + 7);
+          
+          doc.setFontSize(10);
+          doc.setTextColor(50);
+          doc.text(`Test: Unified Cycle`, 75, y + 7);
+          
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(100);
+          doc.text(`Date: ${cell.date}`, pageWidth - 60, y + 7);
+          
+          doc.setDrawColor(220);
+          doc.line(20, y + 11, pageWidth - 20, y + 11);
+          
+          doc.setTextColor(0);
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "bold");
+          
+          doc.text(`Cap: ${cell.cap} mAh`, 18, y + 17);
+          doc.text(`IR/DCIR: ${cell.ir}/${cell.dcir} mΩ`, 48, y + 17);
+          
+          if(cell.grade !== "N/A" && cell.grade !== "Unknown") {
+              doc.text(`Grade: ${cell.grade}`, 108, y + 17);
+          }
+          doc.text(`V-End: ${cell.vEnd} V`, 168, y + 17);
+          
+          if (cell.curve && cell.curve.length > 0) {
+            const graphImg = renderPrintGraph(cell.curve, cell.ch);
+            doc.addImage(graphImg, 'PNG', 20, y + 21, pageWidth - 40, 40);
+          }
+          y += 68; 
+        }
+        
+        doc.save(`Unified_Battery_Report_${Date.now()}.pdf`);
+      } catch (err) { alert("Error generating PDF: " + err); }
+      toast.style.opacity = 0;
+    }, 100);
+  }
+
+  fetchAllLogs();
 </script>
 </body>
 </html>
