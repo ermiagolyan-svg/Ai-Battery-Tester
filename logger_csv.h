@@ -58,6 +58,15 @@ String generateAutoName(uint8_t ch) {
 
 // ─── تابع اصلی ذخیره لاگ CSV ──────────────────────────
 void saveCSV(uint8_t c) {
+  // --- [فیکس باگ CH-004]: اعتبارسنجی اجباری فرمت ID ---
+  ch[c].name.trim();
+  // فرمت استاندارد باید با #CH شروع شود و کاراکتر پنجم آن خط تیره باشد (مثل #CH1-001)
+  if (ch[c].name.length() < 7 || !ch[c].name.startsWith("#CH") || ch[c].name.charAt(4) != '-') {
+      Serial.printf("|- WARNING: Invalid Battery ID '%s' on CH%d! Forcing Auto-Name to protect ML Database.\n", ch[c].name.c_str(), c + 1);
+      ch[c].name = generateAutoName(c);
+  }
+  // ----------------------------------------------------------------
+
   String filename = "/log_ch" + String(c+1) + ".csv";
 
   bool exists = LittleFS.exists(filename);

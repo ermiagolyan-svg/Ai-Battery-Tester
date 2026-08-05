@@ -23,25 +23,21 @@ float triage_grade_c_mohm = 300.0f;
 void setTriageProfile(BatteryProfile profile) {
   switch (profile) {
     case PROFILE_HIGH_DRAIN:
-      // باتری‌های ابزار برقی (مثلاً Sony VTC, Samsung INR)
       triage_grade_a_mohm = 40.0f;
       triage_grade_b_mohm = 70.0f;
       triage_grade_c_mohm = 120.0f;
       break;
     case PROFILE_LAPTOP:
-      // باتری‌های لپ‌تاپ و پاوربانک (مثلاً Panasonic NCR, Sanyo)
       triage_grade_a_mohm = 100.0f;
       triage_grade_b_mohm = 180.0f;
       triage_grade_c_mohm = 350.0f;
       break;
     case PROFILE_UNKNOWN:
-      // استاندارد متعادل برای سلول‌های ناشناخته و بازیافتی
       triage_grade_a_mohm = 80.0f;
       triage_grade_b_mohm = 150.0f;
       triage_grade_c_mohm = 300.0f;
       break;
     case PROFILE_CUSTOM:
-      // در این حالت مقادیر از طریق رابط وب یا حافظه تنظیم می‌شوند
       break;
   }
 }
@@ -50,8 +46,8 @@ void setTriageProfile(BatteryProfile profile) {
 const float TRIAGE_MIN_VALID_CURRENT_A = 0.1f;
 
 // ─── تبدیل مقاومت اندازه‌گیری‌شده (mΩ) به حرف گرید ───────────────
-// متن‌ها به حالت عمومی‌تری تغییر یافتند تا برای همه پروفایل‌ها منطقی باشند
 String gradeFromMohm(float mohm) {
+  if (mohm <= 0.0f) return "N/A"; // محافظت در برابر نویز و اعداد نامعتبر
   if (mohm <= triage_grade_a_mohm) return "A (Excellent)";
   if (mohm <= triage_grade_b_mohm) return "B (Good)";
   if (mohm <= triage_grade_c_mohm) return "C (Acceptable)";
@@ -62,7 +58,8 @@ String gradeFromMohm(float mohm) {
 void triageAbortNoLoad(uint8_t c, const char* stageLabel) {
   ch[c].qt_dcir = 0.0f;
   ch[c].qt_thermalStatus = String("No Current @ ") + stageLabel;
-  ch[c].qt_grade = "Error (No Load)";
+  // تغییر استرینگ ارور به N/A برای هماهنگی با فیلتر فرانت‌اند و الگوریتم K-Means
+  ch[c].qt_grade = "N/A"; 
   Serial.printf("|- ERROR: Current near 0 at %s pulse. Battery disconnected or BMS protected. Aborting remaining steps.\n", stageLabel);
 
   digitalWrite(hwPins[c].pin_d500, LOW);
@@ -172,7 +169,8 @@ void processTriage(uint8_t c) {
       } else {
          ch[c].qt_dcir = 0.0f;
          ch[c].qt_thermalStatus = "No Current @ 1500mA";
-         ch[c].qt_grade = "Error (No Load)";
+         // تغییر استرینگ ارور به N/A برای هماهنگی با فیلتر فرانت‌اند
+         ch[c].qt_grade = "N/A"; 
          Serial.println("|- ERROR: Current is near 0. Battery disconnected or BMS protected.");
       }
 

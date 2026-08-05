@@ -253,7 +253,6 @@ String buildLogPage() {
 
         if (bestCapTest.cap < 400) continue; 
 
-        // اینجا گراف‌ها رو هم به آرایه نهایی تزریق می‌کنیم تا برای CSV آماده باشن
         unifiedCells.push({ 
             id: id, 
             date: bestCapTest.date,
@@ -291,7 +290,7 @@ String buildLogPage() {
     document.getElementById('btn-unified-csv').style.display = 'inline-block';
     document.getElementById('btn-unified-pdf').style.display = 'inline-block';
 
-    // اضافه کردن نقاط هر دو گراف به خروجی CSV برای K-Means
+    // تغییرات اضافه شده: الصاق داده‌های هر دو گراف (تریاژ و دشارژ) به فایل CSV
     let csvContent = "Battery ID,Date,Merged Action,Capacity (mAh),IR (mOhm),Triage Grade,DCIR (mOhm),Recovery (mV/s),V_End,Triage_Graph_Points... ,|, Discharge_Graph_Points...\n";
     unifiedCells.forEach(c => {
         let row = `${c.id},${c.date},Unified Test,${c.cap},${c.ir},${c.grade},${c.dcir},${c.recRate},${c.vEnd}`;
@@ -527,7 +526,7 @@ String buildLogPage() {
     }, 100);
   }
 
-  // پرینت گرفتن از دیتای یکپارچه و فیلتر شده (همراه با هر دو گراف)
+  // پرینت گرفتن از دیتای یکپارچه و فیلتر شده
   async function generateUnifiedPDF() {
     if(unifiedCells.length === 0) return;
     const toast = document.getElementById('toast');
