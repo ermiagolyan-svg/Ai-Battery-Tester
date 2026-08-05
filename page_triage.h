@@ -210,7 +210,9 @@ let activeClusterForPack = -1;
 const clusterColors = ['#00d4aa', '#0096ff', '#ff6b35', '#e83e8c', '#f1c40f', '#9b59b6', '#3498db', '#2ecc71'];
 
 async function fetchDeviceLogs() {
-  allCells = [];
+  let rawData = [];
+  
+  // ۱. خواندن خام تمام فایل‌ها
   for (let c = 1; c <= 3; c++) {
     try {
       const res = await fetch('/log' + c);
@@ -221,18 +223,14 @@ async function fetchDeviceLogs() {
           const cols = lines[i].split(',');
           if (cols.length < 12) continue;
           
-          let name = cols[0];
-          let action = cols[4] || "";
-          
-          if (!action.includes("Triage")) continue;
-          
+          let rawId = cols[0].trim();
+          let cleanId = rawId.replace(/^#/, ''); // حذف هشتگ برای مچ کردن دو سطر به هم
+          let mode = cols[4] ? cols[4].trim() : "";
           let cap = parseFloat(cols[5]) || 0;
           let ir = parseFloat(cols[6]) || 0;
           let grade = cols[7] ? cols[7].trim() : "Unknown";
           let dcir = parseFloat(cols[8]) || 0;
           let recRate = parseFloat(cols[9]) || 0;
-          let vStart = parseFloat(cols[10]) || 0;
-          let vEnd = parseFloat(cols[11]) || 0;
           
           let curve = [];
           for(let j = 12; j < cols.length; j++) {
@@ -241,16 +239,182 @@ async function fetchDeviceLogs() {
               }
           }
           
-          if(ir > 0 || curve.length > 0) {
-              allCells.push({ 
-                  id: name, cap: cap, ir: ir, dcir: dcir, 
-                  recRate: recRate, curve: curve, grade: grade, ch: c 
-              });
-          }
+          rawData.push({ cleanId, mode, cap, ir, grade, dcir, recRate, curve, ch: c });
         }
       }
     } catch(e) { console.log("Log read error CH" + c); }
   }
+
+  // ۲. گروه‌بندی بر اساس Battery ID
+  let grouped = {};
+  rawData.forEach(row => {
+      if (!grouped[row.cleanId]) {
+          grouped[row.cleanId] = { triage: null, capTests: [] };
+      }
+      if (row.mode.includes("Triage")) {
+          grouped[row.cleanId].triage = row;
+      } else if (row.cap > 0) { // تست‌های مرتبط با ظرفیت
+          grouped[row.cleanId].capTests.push(row);
+      }
+  });
+
+  allCells = [];
+  
+  // ۳. ادغام و فیلترینگ
+  for (let id in grouped) {
+      let g = grouped[id];
+      if (!g.triage) continue; // حتما باید دیتای تریاژ (DCIR/Grade) داشته باشه
+      if (g.capTests.length === 0) continue; // حتما باید دیتای ظرفیت داشته باشه
+
+      // پیدا کردن بالاترین ظرفیت در صورت وجود چند تست با یک نام
+      g.capTests.sort((a, b) => b.cap - a.cap);
+      let bestCapTest = g.capTests[0];
+
+      // حذف باتری‌های مرده با ظرفیت زیر 400
+      if (bestCapTest.cap < 400) continue;
+
+      allCells.push({ 
+          id: id, 
+          cap: bestCapTest.cap, 
+          ir: bestCapTest.ir, 
+          dcir: g.triage.dcir, 
+          recRate: g.triage.recRate, 
+          grade: g.triage.grade, 
+          triageCurve: g.triage.curve,            // تغذیه مجزا برای K-Means
+          dischargeCurve: bestCapTest.curve,      // تغذیه مجزا برای K-Means
+          curve: bestCapTest.curve,               // استفاده از گراف دیس‌شارژ برای رسم UI
+          ch: bestCapTest.ch 
+      });
+  }
+}
+
+// =========================================================
+// آپدیت موتور K-Means برای پردازش همزمان دو گراف (Triage & Discharge)
+// =========================================================
+
+function weightedDistance(cell, cent) {
+  let baseDist = (Math.pow(cell.nIr - cent.nIr, 2) * IR_WEIGHT) + 
+                 (Math.pow(cell.nDCIR - cent.nDCIR, 2) * DCIR_WEIGHT) + 
+                 Math.pow(cell.nRec - cent.nRec, 2);
+                 
+  let tCurveDist = 0;
+  let tPoints = Math.min(cell.nTriageCurve.length, cent.nTriageCurve.length);
+  for(let p = 0; p < tPoints; p++) tCurveDist += Math.pow(cell.nTriageCurve[p] - cent.nTriageCurve[p], 2);
+  if(tPoints > 0) tCurveDist = (tCurveDist / tPoints) * 2.5;
+
+  let dCurveDist = 0;
+  let dPoints = Math.min(cell.nDischargeCurve.length, cent.nDischargeCurve.length);
+  for(let p = 0; p < dPoints; p++) dCurveDist += Math.pow(cell.nDischargeCurve[p] - cent.nDischargeCurve[p], 2);
+  if(dPoints > 0) dCurveDist = (dCurveDist / dPoints) * 2.5;
+
+  return Math.sqrt(baseDist + tCurveDist + dCurveDist);
+}
+
+function cellToCentroid(cell) {
+  return { 
+      nIr: cell.nIr, 
+      nDCIR: cell.nDCIR, 
+      nRec: cell.nRec, 
+      nTriageCurve: [...cell.nTriageCurve],
+      nDischargeCurve: [...cell.nDischargeCurve]
+  };
+}
+
+function kMeansSingleRun(data, k) {
+  let centroids = seedCentroidsPlusPlus(data, k);
+  let clusters = new Array(k).fill(null).map(() => []);
+  let maxIter = 100;
+
+  for(let it=0; it<maxIter; it++) {
+    clusters = new Array(k).fill(null).map(() => []);
+    data.forEach(cell => {
+      let minDist = Infinity, clusterIdx = 0;
+      centroids.forEach((cent, idx) => {
+        let d = weightedDistance(cell, cent);
+        if(d < minDist) { minDist = d; clusterIdx = idx; }
+      });
+      clusters[clusterIdx].push(cell);
+    });
+
+    let hadEmpty = false;
+    clusters.forEach((cluster, idx) => {
+      if(cluster.length > 0) return;
+      hadEmpty = true;
+      let farthestPoint = data[0], farthestDist = -1;
+      data.forEach(d => {
+        let nearest = Math.min(...centroids.map(c => weightedDistance(d, c)));
+        if(nearest > farthestDist) { farthestDist = nearest; farthestPoint = d; }
+      });
+      centroids[idx] = cellToCentroid(farthestPoint);
+    });
+    if (hadEmpty) continue;
+
+    let oldCentroids = JSON.parse(JSON.stringify(centroids));
+    clusters.forEach((cluster, idx) => {
+      let sumIr = 0, sumDCIR = 0, sumRec = 0;
+      let sumTCurve = [], countTCurve = [];
+      let sumDCurve = [], countDCurve = [];
+      
+      cluster.forEach(c => {
+          sumIr += c.nIr; sumDCIR += c.nDCIR; sumRec += c.nRec;
+          
+          for(let p = 0; p < c.nTriageCurve.length; p++) {
+              sumTCurve[p] = (sumTCurve[p] || 0) + c.nTriageCurve[p];
+              countTCurve[p] = (countTCurve[p] || 0) + 1;
+          }
+          
+          for(let p = 0; p < c.nDischargeCurve.length; p++) {
+              sumDCurve[p] = (sumDCurve[p] || 0) + c.nDischargeCurve[p];
+              countDCurve[p] = (countDCurve[p] || 0) + 1;
+          }
+      });
+      
+      centroids[idx] = { 
+          nIr: sumIr / cluster.length, 
+          nDCIR: sumDCIR / cluster.length, 
+          nRec: sumRec / cluster.length,
+          nTriageCurve: sumTCurve.map((v, p) => v / countTCurve[p]),
+          nDischargeCurve: sumDCurve.map((v, p) => v / countDCurve[p])
+      };
+    });
+
+    let hasChanged = false;
+    for(let i=0; i<k; i++) {
+      if(Math.abs(centroids[i].nIr - oldCentroids[i].nIr) > 0.0001 ||
+         Math.abs(centroids[i].nDCIR - oldCentroids[i].nDCIR) > 0.0001 ||
+         Math.abs(centroids[i].nRec - oldCentroids[i].nRec) > 0.0001) { hasChanged = true; break; }
+    }
+    if(!hasChanged) break;
+  }
+
+  let inertia = 0;
+  clusters.forEach((cluster, idx) => cluster.forEach(cell => { inertia += Math.pow(weightedDistance(cell, centroids[idx]), 2); }));
+  return { clusters, inertia };
+}
+
+function kMeansDynamicClustering(data, k) {
+  if (data.length <= k) return data.map(d => [d]);
+  
+  let maxIr = Math.max(...data.map(d => d.ir)) || 1;
+  let maxDCIR = Math.max(...data.map(d => Math.abs(d.dcir))) || 1;
+  let maxRec = Math.max(...data.map(d => d.recRate)) || 1;
+  let maxCurveV = 4.3; 
+
+  data.forEach(d => { 
+      d.nIr = d.ir / maxIr; 
+      d.nDCIR = Math.abs(d.dcir) / maxDCIR; 
+      d.nRec = d.recRate / maxRec; 
+      d.nTriageCurve = d.triageCurve.map(v => v / maxCurveV);
+      d.nDischargeCurve = d.dischargeCurve.map(v => v / maxCurveV);
+  });
+
+  let best = null;
+  const RESTARTS = 6;
+  for (let r = 0; r < RESTARTS; r++) {
+    let result = kMeansSingleRun(data, k);
+    if (!best || result.inertia < best.inertia) best = result;
+  }
+  return best.clusters;
 }
 
 const IR_WEIGHT = 50.0;
