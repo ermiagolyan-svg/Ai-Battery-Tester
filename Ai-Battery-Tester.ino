@@ -8,6 +8,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <WiFi.h>
+#include <WiFiMulti.h> // <--- کتابخانه اضافه شد
 #include <WebServer.h>
 #include <LittleFS.h>
 #include <TFT_eSPI.h>
@@ -50,6 +51,7 @@ IPAddress subnet(255, 255, 255, 0);
 IPAddress primaryDNS(8, 8, 8, 8);     
 
 QueueHandle_t baleQueue;
+SemaphoreHandle_t csvMutex;
 
 // ─── Constants ─────────────────────────────────────
 const float CUTOFF_DISCHARGE = 2.80f;
@@ -138,6 +140,7 @@ Preferences prefs;
 #include "page_settings.h"
 #include "page_logs.h"
 #include "page_triage.h"
+#include "page_pack_builder.h"
 #include "display_tft.h"
 #include "web_server_api.h"
 
@@ -147,6 +150,8 @@ Preferences prefs;
 void setup() {
   Serial.begin(115200);
 
+  csvMutex = xSemaphoreCreateMutex();
+  
   baleQueue = xQueueCreate(10, sizeof(String*));
   xTaskCreatePinnedToCore(baleTask, "BaleTask", 8192, NULL, 1, NULL, 0);
 
@@ -188,7 +193,7 @@ void setup() {
   tft.setTextSize(1); 
   tft.setTextColor(TFT_LIGHTGREY, TFT_BLACK); 
   tft.setCursor(185, 15); 
-  tft.println("V6.8.2"); // ورژن آپدیت شد
+  tft.println("V6.8.2"); 
   tft.drawLine(5, 42, 235, 42, TFT_DARKGREY); 
 
   tft.setTextFont(4); 
@@ -197,14 +202,33 @@ void setup() {
   tft.setCursor(5, 55); 
   tft.println("Initializing...");
 
-  // ---> شروع خواندن اطلاعات وای‌فای از حافظه <---
+  // ---> بارگذاری لیست شبکه‌ها از NVS در WiFiMulti <---
+  WiFiMulti wifiMulti;
   prefs.begin("triage", false);
-  String current_ssid = prefs.getString("wifi_ssid", "Ermia"); 
-  String current_pass = prefs.getString("wifi_pass", "8641682Ermia");
-  // ---> پایان خواندن حافظه <---
+  String wifiJson = prefs.getString("wifi_list", "[]");
+  JsonDocument doc;
+  deserializeJson(doc, wifiJson);
+  bool hasNetworks = false;
+  
+  if (doc.is<JsonArray>()) {
+    JsonArray arr = doc.as<JsonArray>();
+    for (JsonObject nw : arr) {
+      const char* s = nw["s"];
+      const char* p = nw["p"];
+      if (s && strlen(s) > 0) {
+        wifiMulti.addAP(s, p);
+        hasNetworks = true;
+      }
+    }
+  }
+  
+  // قرار دادن شبکه پیش‌فرض در صورت خالی بودن حافظه
+  if (!hasNetworks) {
+     wifiMulti.addAP("Ermia", "8641682Ermia");
+  }
 
+// ... کدهای قبل از این ثابت است ...
   WiFi.mode(WIFI_STA);
-  WiFi.begin(current_ssid.c_str(), current_pass.c_str());
   
   tft.setTextFont(4); 
   tft.setTextSize(1); 
@@ -212,24 +236,34 @@ void setup() {
   tft.setCursor(5, 90);
   tft.println("Connecting WiFi...");
 
-  Serial.print("Connecting to WiFi: ");
-  Serial.println(current_ssid);
+  Serial.print("Scanning and connecting to best saved WiFi");
 
   int wifi_tries = 0;
-  while (WiFi.status() != WL_CONNECTED && wifi_tries < 20) {
-    delay(500);
+  bool wifiConnected = false;
+  
+  // تابع wifiMulti.run() خودش حدود ۲ الی ۳ ثانیه (برای اسکن محیط) زمان می‌برد.
+  // پس ۵ بار تکرار آن برای پیدا کردن شبکه کاملاً کافی است (حدود ۱۲ ثانیه تاخیر).
+  while (wifi_tries < 7) {
+    if (wifiMulti.run() == WL_CONNECTED) {
+      wifiConnected = true;
+      break;
+    }
+    delay(100);
     Serial.print(".");
     wifi_tries++;
   }
 
   String currentIP;
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi Connected!");
+  if (wifiConnected) {
+    Serial.println("\nWiFi Connected to: " + WiFi.SSID());
     currentIP = WiFi.localIP().toString();
     configTime(12600, 0, "ir.pool.ntp.org", "pool.ntp.org", "time.google.com");
     Serial.println("NTP Time Sync Initiated.");
   } else {
+    // 💡 رفع باگ: رفتن فوری به حالت هات‌اسپات در صورت پیدا نشدن هیچ شبکه‌ای
     Serial.println("\nWiFi Failed! Starting AP...");
+    WiFi.disconnect();
+    delay(100);
     WiFi.mode(WIFI_AP);
     WiFi.softAP("Portable-Tester"); 
     currentIP = WiFi.softAPIP().toString();

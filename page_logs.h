@@ -40,6 +40,20 @@ String buildLogPage() {
   pre { background: #0a0a0c; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: var(--mono); font-size: 12px; overflow-x: auto; height: 140px; color: #a1a1aa; white-space: pre; direction: ltr; text-align: left;}
   .unified pre { color: #e8e8f0; height: 220px;}
   
+  /* استایل‌های آکاردئون برای لاگ‌های خام */
+  .acc-item { margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .acc-header { background: #1e1e24; padding: 12px 15px; cursor: pointer; display: flex; justify-content: space-between; font-weight: bold; direction: ltr; align-items: center;}
+  .acc-header:hover { background: #2a2a32; }
+  .acc-body { display: none; padding: 0; background: #121216; overflow-x: auto;}
+  .acc-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; direction: ltr; font-family: var(--mono);}
+  .acc-table th, .acc-table td { padding: 10px; border-bottom: 1px solid var(--border); white-space: nowrap;}
+  .acc-table th { color: var(--muted); background: #0a0a0c;}
+  .tag { padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;}
+  .tag-chg { background: #005f7340; color: #94d2bd; border: 1px solid #005f73;}
+  .tag-dis { background: #ae201240; color: #ffb703; border: 1px solid #ae2012;}
+  .tag-rest { background: #4a4e6940; color: #c9ada7; border: 1px solid #4a4e69;}
+  .tag-def { background: #333; color: #ccc;}
+
   #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 10px 20px; border-radius: 8px; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 9999;}
 </style>
 </head>
@@ -60,12 +74,23 @@ String buildLogPage() {
           <button id="btn-unified-pdf" class="btn-pdf btn-uni" style="display:none;" onclick="generateUnifiedPDF()" data-i18n="btn_pdf_uni">📄 خروجی PDF جامع</button>
         </div>
       </div>
-      <pre id="unified-preview" data-i18n="loading">در حال اسکن کانال‌ها و پردازش ادغام اطلاعات...</pre>
+      <pre id="unified-preview" data-i18n="loading">در حال پردازش دیتابیس یکپارچه...</pre>
     </div>
   </div>
 
-  <div class="section-title" data-i18n="sec_raw">📂 لاگ‌های خام مجزا (Raw Data)</div>
-  <div id="channels-container"></div>
+  <div class="section-title" data-i18n="sec_raw">📂 لاگ کل سیستم (Raw Global Data - تفکیک فازها)</div>
+  <div class="ch-card">
+    <div class="ch-header">
+        <div class="ch-title">⚡ Phases & Cycles History</div>
+        <div style="display:flex; gap:10px;">
+        <a id="btn-raw-csv" href="/global_log" class="btn-csv" download="Global_RawLog.csv" style="display:none;" data-i18n="btn_csv_raw">دانلود فایل اصلی</a>
+        <button id="btn-raw-pdf" class="btn-pdf" style="display:none;" onclick="generateMassPDF()" data-i18n="btn_pdf_raw">📄 PDF خام سیستم</button>
+        </div>
+    </div>
+    <div id="channels-container">
+        <!-- آکاردئون‌ها اینجا رندر می‌شوند -->
+    </div>
+  </div>
   
   <div id="toast" data-i18n="toast_pdf">در حال ساخت فایل PDF، لطفاً صبر کنید...</div>
 
@@ -75,36 +100,35 @@ String buildLogPage() {
       'back_dash': '→ بازگشت به داشبورد',
       'page_title': '📋 گزارش‌ها و لاگ‌ها',
       'sec_unified': '🌍 پایگاه داده یکپارچه (ادغام هوشمند Triage و ظرفیت)',
-      'sec_raw': '📂 لاگ‌های خام مجزا (بدون فیلتر)',
-      'loading': 'در حال اسکن کانال‌ها...',
+      'sec_raw': '📂 لاگ کل سیستم (گروه‌بندی فازها)',
+      'loading': 'در حال اسکن دیتابیس...',
       'no_data': 'هیچ رکوردی یافت نشد.',
       'no_uni_data': 'هیچ باتری معتبری (دارای تست Triage + ظرفیت کامل > 400mAh) یافت نشد.',
       'btn_csv_uni': 'دانلود CSV نهایی',
       'btn_pdf_uni': '📄 PDF یکپارچه',
-      'btn_csv_raw': 'دانلود CSV',
-      'btn_pdf_raw': '📄 PDF خام',
-      'toast_pdf': 'در حال پردازش، لطفاً صبر کنید...',
-      'trunc': '\n... [لیست برای پیش‌نمایش کوتاه شده است]'
+      'btn_csv_raw': 'دانلود فایل اصلی',
+      'btn_pdf_raw': '📄 PDF تمام فازها',
+      'toast_pdf': 'در حال پردازش، لطفاً صبر کنید...'
     },
     'en': {
       'back_dash': '← Dashboard',
       'page_title': '📋 Mass Reports & Logs',
       'sec_unified': '🌍 Global Unified Database (Smart Merge)',
-      'sec_raw': '📂 Raw Channel Logs (Unfiltered)',
-      'loading': 'Scanning channels...',
+      'sec_raw': '📂 Global Raw Data (Phases Grouped)',
+      'loading': 'Scanning database...',
       'no_data': 'No records discovered.',
       'no_uni_data': 'No valid matched batteries (> 400mAh) found.',
       'btn_csv_uni': 'Unified CSV',
       'btn_pdf_uni': '📄 Unified PDF',
       'btn_csv_raw': 'Download CSV',
-      'btn_pdf_raw': '📄 Raw PDF',
-      'toast_pdf': 'Processing, Please wait...',
-      'trunc': '\n... [List truncated for preview]'
+      'btn_pdf_raw': '📄 All Phases PDF',
+      'toast_pdf': 'Processing, Please wait...'
     }
   };
 
   let currentLang = localStorage.getItem('sysLang') || 'fa';
-  let rawLogsData = { 1: '', 2: '', 3: '' };
+  let globalLogData = '';
+  let parsedData = []; 
   let unifiedCells = [];
   let isAiRegraded = false; 
 
@@ -127,104 +151,162 @@ String buildLogPage() {
   window.onload = applyLanguage;
 
   async function fetchAllLogs() {
-    for (let c = 1; c <= 3; c++) {
-      try {
-        const res = await fetch('/log' + c);
-        const text = await res.text();
-        if (text !== 'Empty' && text.trim().length > 0) {
-          rawLogsData[c] = text.trim();
-        }
-      } catch (e) { console.log("Error reading CH" + c); }
-    }
-    renderRawLogs();
+    try {
+      const res = await fetch('/global_log'); 
+      const text = await res.text();
+      if (text !== 'Empty' && text.trim().length > 0) {
+        globalLogData = text.trim();
+        parseCSV();
+      }
+    } catch (e) { console.log("Error reading global log"); }
+    
+    renderRawLogsAccordion();
     processUnifiedLogs();
   }
 
-  function renderRawLogs() {
+  // تجزیه CSV به یک آرایه ساختاریافته از آبجکت‌ها
+  function parseCSV() {
+    parsedData = [];
+    const lines = globalLogData.split('\n');
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',');
+      if (cols.length < 13) continue; 
+      
+      let chValue = cols[0].replace('CH', '').trim();
+      let c = parseInt(chValue) || 1;
+      let cleanId = cols[1].trim(); 
+      if (cleanId === "") continue; 
+      
+      let start = cols[2] ? cols[2].trim() : "";
+      let end = cols[3] ? cols[3].trim() : "";
+      let duration = cols[4] ? cols[4].trim() : "";
+      let mode = cols[5] ? cols[5].trim() : "";
+      let cap = parseFloat(cols[6]) || 0;
+      let ir = parseFloat(cols[7]) || 0;
+      let grade = cols[8] ? cols[8].trim() : "Unknown";
+      let dcir = parseFloat(cols[9]) || 0;
+      let recRate = parseFloat(cols[10]) || 0;
+      let vStart = parseFloat(cols[11]) || 0;
+      let vEnd = parseFloat(cols[12]) || 0;
+      
+      let curve = [];
+      for(let j = 13; j < cols.length; j++) {
+          if(cols[j] !== undefined && cols[j].trim() !== "") {
+              curve.push(parseFloat(cols[j]));
+          }
+      }
+      
+      let timeVal = new Date(start).getTime();
+      if (isNaN(timeVal)) timeVal = 0; 
+      
+      parsedData.push({ cleanId, start, end, duration, mode, cap, ir, grade, dcir, recRate, vStart, vEnd, curve, ch: c, timeVal });
+    }
+    parsedData.sort((a, b) => a.timeVal - b.timeVal);
+  }
+
+  function toggleAcc(el) {
+    const body = el.nextElementSibling;
+    body.style.display = (body.style.display === 'block') ? 'none' : 'block';
+  }
+
+  function getPhaseTagClass(mode) {
+    let m = mode.toUpperCase();
+    if(m.includes("CHG")) return "tag-chg";
+    if(m.includes("DISCHARGE") || m.includes("DISCHG") || m.includes("TRIAGE")) return "tag-dis";
+    if(m.includes("REST") || m.includes("IDLE")) return "tag-rest";
+    return "tag-def";
+  }
+
+  // رندر کردن لاگ‌های خام به صورت آکاردئون گروه‌بندی شده
+  function renderRawLogsAccordion() {
     const container = document.getElementById('channels-container');
     container.innerHTML = '';
     
-    for (let c = 1; c <= 3; c++) {
-      let text = rawLogsData[c];
-      let hasData = text.length > 0;
-      let previewText = dict[currentLang]['no_data'];
-      
-      if (hasData) {
-        const lines = text.split('\n');
-        previewText = lines.slice(0, 4).map(l => l.split(',').slice(0,12).join(',')).join('\n');
-        if(lines.length > 4) previewText += dict[currentLang]['trunc'];
-      }
-
-      container.innerHTML += `
-        <div class="ch-card">
-          <div class="ch-header">
-            <div class="ch-title">⚡ Channel ${c} RAW</div>
-            <div style="display:flex; gap:10px;">
-              ${hasData ? `<a href="/log${c}" class="btn-csv" download="CH${c}_RawLog.csv">${dict[currentLang]['btn_csv_raw']}</a>` : ''}
-              ${hasData ? `<button class="btn-pdf" onclick="generateMassPDF(${c})">${dict[currentLang]['btn_pdf_raw']}</button>` : ''}
-            </div>
-          </div>
-          <pre>${previewText}</pre>
-        </div>
-      `;
+    if (parsedData.length === 0) {
+      container.innerHTML = `<div style="padding: 20px; color: var(--muted);">${dict[currentLang]['no_data']}</div>`;
+      return;
     }
+
+    document.getElementById('btn-raw-csv').style.display = 'inline-block';
+    document.getElementById('btn-raw-pdf').style.display = 'inline-block';
+
+    // گروه‌بندی بر اساس Battery ID
+    const grouped = {};
+    parsedData.forEach(row => {
+        if(!grouped[row.cleanId]) grouped[row.cleanId] = [];
+        grouped[row.cleanId].push(row);
+    });
+
+    let html = '';
+    for (const [id, rows] of Object.entries(grouped)) {
+        let maxCap = Math.max(...rows.map(r => r.cap));
+        let totalPhases = rows.length;
+        let lastCh = rows[rows.length-1].ch;
+        
+        html += `<div class="acc-item">
+            <div class="acc-header" onclick="toggleAcc(this)">
+                <span>🔋 ID: ${id} <span style="color:var(--muted); font-size:12px; margin-left:10px;">(CH${lastCh})</span></span>
+                <span>${totalPhases} Phases | Cap: <span style="color:var(--accent2);">${maxCap.toFixed(0)} mAh</span></span>
+            </div>
+            <div class="acc-body">
+                <table class="acc-table">
+                    <tr>
+                        <th>Phase / Mode</th>
+                        <th>Start Time</th>
+                        <th>Duration</th>
+                        <th>Cap (mAh)</th>
+                        <th>V-Start</th>
+                        <th>V-End</th>
+                        <th>IR/DCIR (mΩ)</th>
+                    </tr>`;
+        
+        rows.forEach(r => {
+            let tagCls = getPhaseTagClass(r.mode);
+            let phaseName = r.mode.includes("[") ? r.mode.substring(r.mode.indexOf("[")) : r.mode;
+            let baseName = r.mode.includes("[") ? r.mode.substring(0, r.mode.indexOf("[")) : "";
+            
+            let irText = r.ir > 0 ? r.ir.toFixed(1) : "-";
+            if(r.dcir > 0) irText += ` / ${r.dcir.toFixed(1)}`;
+            
+            html += `<tr>
+                <td><span class="tag ${tagCls}">${phaseName}</span> <span style="font-size:10px; color:var(--muted);">${baseName}</span></td>
+                <td>${r.start.split(' ')[1] || r.start}</td>
+                <td>${r.duration}</td>
+                <td style="color:${r.cap > 0 ? 'var(--accent2)' : 'inherit'}">${r.cap.toFixed(0)}</td>
+                <td>${r.vStart.toFixed(2)}</td>
+                <td>${r.vEnd.toFixed(2)}</td>
+                <td>${irText}</td>
+            </tr>`;
+        });
+        
+        html += `</table></div></div>`;
+    }
+    
+    container.innerHTML = html;
   }
 
+  // استخراج لاگ‌های یکپارچه با هماهنگی تگ‌های جدید [DISCHARGE]
   function processUnifiedLogs() {
-    let rawData = [];
+    if(parsedData.length === 0) return;
     
-    for (let c = 1; c <= 3; c++) {
-      if(!rawLogsData[c]) continue;
-      const lines = rawLogsData[c].split('\n');
-      
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',');
-        if (cols.length < 12) continue;
-        
-        let rawId = cols[0].trim();
-        let cleanId = rawId.replace(/^#/, '').trim(); 
-        if (cleanId === "") continue; 
-        
-        let start = cols[1] ? cols[1].trim() : "";
-        let end = cols[2] ? cols[2].trim() : "";
-        let duration = cols[3] ? cols[3].trim() : "";
-        
-        let mode = cols[4] ? cols[4].trim() : "";
-        let cap = parseFloat(cols[5]) || 0;
-        let ir = parseFloat(cols[6]) || 0;
-        let grade = cols[7] ? cols[7].trim() : "Unknown";
-        let dcir = parseFloat(cols[8]) || 0;
-        let recRate = parseFloat(cols[9]) || 0;
-        let vStart = parseFloat(cols[10]) || 0;
-        let vEnd = parseFloat(cols[11]) || 0;
-        
-        let curve = [];
-        for(let j = 12; j < cols.length; j++) {
-            if(cols[j] !== undefined && cols[j].trim() !== "") {
-                curve.push(parseFloat(cols[j]));
-            }
-        }
-        
-        let timeVal = new Date(start).getTime();
-        if (isNaN(timeVal)) timeVal = 0; 
-        
-        rawData.push({ cleanId, start, end, duration, mode, cap, ir, grade, dcir, recRate, vStart, vEnd, curve, ch: c, timeVal });
-      }
-    }
-
-    rawData.sort((a, b) => a.timeVal - b.timeVal);
-
     let allSessions = [];
     let currentSessionForId = {}; 
 
-    rawData.forEach(row => {
+    parsedData.forEach(row => {
         let id = row.cleanId;
-        if (row.mode.includes("Triage")) {
-            let newSession = { triage: row, capTests: [] };
+        if (!currentSessionForId[id]) {
+            let newSession = { triage: null, capTests: [] };
             allSessions.push(newSession);
             currentSessionForId[id] = newSession; 
-        } else if (row.cap > 0) {
-            if (currentSessionForId[id]) {
+        }
+        
+        // پیدا کردن ردیف تریاژ (تگ حاوی Triage)
+        if (row.mode.includes("Triage")) {
+            currentSessionForId[id].triage = row;
+        } 
+        // پیدا کردن ردیف ظرفیت (حتماً باید فاز DISCHARGE باشد)
+        else if (row.mode.includes("[DISCHARGE]") || row.mode.includes("Manual Dischg")) {
+            if (row.cap > 0) {
                 currentSessionForId[id].capTests.push(row);
             }
         }
@@ -238,7 +320,7 @@ String buildLogPage() {
         if (session.capTests.length === 0) return;
 
         session.capTests.sort((a, b) => b.cap - a.cap);
-        let bestCapTest = session.capTests[0];
+        let bestCapTest = session.capTests[0]; // انتخاب بهترین دشارژ
 
         if (bestCapTest.cap < 400) return; 
 
@@ -318,7 +400,7 @@ String buildLogPage() {
   }
 
   // =========================================================
-  // 🧠 موتور هوش مصنوعی جاوااسکریپت (رفع باگ مقیاس‌بندی)
+  // 🧠 موتور هوش مصنوعی جاوااسکریپت (بدون تغییر)
   // =========================================================
   function runAiRegrade() {
     const ai_input_mean = [173.5880, 219.9374, 1.2423, 0.4123];
@@ -346,8 +428,6 @@ String buildLogPage() {
 
     function predictGradeJS(ir, dcir, rec, vDrop) {
         if (ir <= 0 || dcir <= 0) return "N/A";
-        
-        // 💡 رفع باگ مقیاس‌بندی: تبدیل به مقیاس نرمال‌شده مدل
         let scaled_rec = rec / 18.0;
         
         let x = [
@@ -392,9 +472,7 @@ String buildLogPage() {
     
     let count = 0;
     unifiedCells.forEach(c => {
-        // 💡 بازسازی دقیق ولتاژ دراپ بر اساس فرمول فیزیک (مقاومت * جریان 1.5 آمپر)
         let triageVdrop = (c.dcir / 1000.0) * 1.5;
-        
         let aiGrade = predictGradeJS(c.ir, c.dcir, c.recRate, triageVdrop);
         
         let idPad = c.id.padEnd(10, ' ');
@@ -411,7 +489,6 @@ String buildLogPage() {
     isAiRegraded = true; 
     updateUnifiedUI(); 
   }
-  // =========================================================
 
   function renderRawPrintGraph(pts, chIndex) {
     const canvas = document.createElement('canvas');
@@ -429,7 +506,7 @@ String buildLogPage() {
     });
 
     const colors = ['#00d4aa', '#0096ff', '#ff6b35'];
-    const themeColor = colors[(chIndex - 1) % 3];
+    const themeColor = colors[(chIndex - 1) % 3] || '#00d4aa';
 
     ctx.beginPath(); ctx.strokeStyle = themeColor; ctx.lineWidth = 8;
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -462,7 +539,7 @@ String buildLogPage() {
     });
 
     const colors = ['#00d4aa', '#0096ff', '#ff6b35'];
-    const themeColor = colors[(chIndex - 1) % 3];
+    const themeColor = colors[(chIndex - 1) % 3] || '#00d4aa';
 
     if(triagePts && triagePts.length > 0) {
       ctx.beginPath();
@@ -502,14 +579,13 @@ String buildLogPage() {
     return canvas.toDataURL('image/png');
   }
 
-  async function generateMassPDF(c) {
-    if(!rawLogsData[c]) return;
+  async function generateMassPDF() {
+    if(parsedData.length === 0) return;
     const toast = document.getElementById('toast');
     toast.style.opacity = 1;
     
     setTimeout(() => {
       try {
-        const lines = rawLogsData[c].split('\n');
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
@@ -518,60 +594,49 @@ String buildLogPage() {
         let y = 15;
         
         doc.setFontSize(16); doc.setFont("helvetica", "bold");
-        doc.text(`Li-ion RAW Test Report - Channel ${c}`, 15, y);
+        doc.text(`Li-ion RAW Test Report - Global System`, 15, y);
         y += 8;
         doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
         doc.text(`Generated automatically by ESP32 Battery Analyzer`, 15, y);
         y += 12;
 
-        for(let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',');
-          if(cols.length < 12) continue; 
+        for(let i = 0; i < parsedData.length; i++) {
+          const r = parsedData[i];
           
           if (y > pageHeight - 68) { doc.addPage(); y = 15; }
-          
-          const name = cols[0];
-          const date = cols[2]; 
-          const action = cols[4];  
-          const cap = cols[5];
-          const ir = cols[6];
-          const grade = cols[7] ? cols[7].trim() : "N/A";
-          const dcir = cols[8] ? cols[8].trim() : "N/A";
-          const vEnd = cols[11];    
           
           doc.setDrawColor(200); doc.setFillColor(248, 249, 250);
           doc.roundedRect(15, y, pageWidth - 30, 64, 2, 2, 'FD');
           
           doc.setTextColor(0); doc.setFontSize(11); doc.setFont("helvetica", "bold");
-          doc.text(`ID: ${name}`, 20, y + 7);
+          doc.text(`ID: ${r.cleanId} (CH${r.ch})`, 20, y + 7);
           
           doc.setFontSize(10); doc.setTextColor(50);
-          doc.text(`Test: ${action}`, 75, y + 7);
+          doc.text(`Phase: ${r.mode}`, 75, y + 7);
           
           doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
-          doc.text(`Date: ${date}`, pageWidth - 55, y + 7);
+          doc.text(`Date: ${r.start.split(' ')[0] || ''}`, pageWidth - 55, y + 7);
           
           doc.setDrawColor(220); doc.line(20, y + 11, pageWidth - 20, y + 11);
           
           doc.setTextColor(0); doc.setFontSize(9); doc.setFont("helvetica", "bold");
           
-          doc.text(`Cap: ${cap} mAh`, 18, y + 17);
-          doc.text(`IR/DCIR: ${ir}/${dcir} mΩ`, 55, y + 17);
+          doc.text(`Cap: ${r.cap} mAh`, 18, y + 17);
+          doc.text(`IR: ${r.ir} mΩ`, 55, y + 17);
           
-          if(grade !== "N/A" && grade !== "Unknown" && grade !== "") {
-              doc.text(`Grade: ${grade}`, 115, y + 17);
+          if(r.grade !== "N/A" && r.grade !== "Unknown" && r.grade !== "") {
+              doc.text(`Grade: ${r.grade}`, 90, y + 17);
           }
-          doc.text(`V-End: ${vEnd} V`, 160, y + 17);
+          doc.text(`V-End: ${r.vEnd} V`, 160, y + 17);
           
-          const pts = cols.slice(12).map(Number).filter(n => !isNaN(n));
-          if (pts.length > 0) {
-            const graphImg = renderRawPrintGraph(pts, c);
+          if (r.curve && r.curve.length > 0) {
+            const graphImg = renderRawPrintGraph(r.curve, r.ch);
             doc.addImage(graphImg, 'PNG', 20, y + 21, pageWidth - 40, 40);
           }
           y += 68; 
         }
         
-        doc.save(`CH${c}_RAW_Report_${Date.now()}.pdf`);
+        doc.save(`Global_RAW_Phases_Report_${Date.now()}.pdf`);
       } catch (err) { alert("Error generating PDF: " + err); }
       toast.style.opacity = 0;
     }, 100);
@@ -608,7 +673,7 @@ String buildLogPage() {
           doc.roundedRect(15, y, pageWidth - 30, 64, 2, 2, 'FD');
           
           doc.setTextColor(0); doc.setFontSize(11); doc.setFont("helvetica", "bold");
-          doc.text(`ID: ${cell.id}`, 20, y + 7);
+          doc.text(`ID: ${cell.id} (CH${cell.ch})`, 20, y + 7);
           
           doc.setFontSize(10); doc.setTextColor(50);
           doc.text(`Test: Chronological Match`, 75, y + 7);

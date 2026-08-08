@@ -6,12 +6,16 @@
 #include <WebServer.h>
 #include <ArduinoJson.h>
 
-// این متغیر در فایل اصلی تعریف شده است، در اینجا فقط به آن اشاره می‌کنیم
+// این متغیرها در فایل اصلی تعریف شده‌اند
 extern WebServer server;
 extern Preferences prefs;
 
 // دسترسی به آرایه اضافه شده در بک‌اند
 extern uint8_t topUpRetries[3];
+
+// ─── توابع سیستم لاگ یکپارچه (تعریف شده در logger_csv.h) ───
+extern String getNextGlobalAutoName();
+extern void incrementGlobalId();
 
 // ─── Forward Declarations برای توابعی که در فایل اصلی هستند ───
 void startChannel(uint8_t ch_idx, const String& name, ChannelState act);
@@ -21,11 +25,12 @@ void stopChannel(uint8_t ch_idx);
 // ─── راه‌اندازی و تعریف مسیرهای وب‌سرور (Routes) ───────────────
 void setupWebServer() {
   
-  // ۱. صفحات اصلی (HTML)
+// ۱. صفحات اصلی (HTML)
   server.on("/", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildIndexPage()); });
   server.on("/settings", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildSettingsPage()); });
   server.on("/logs", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildLogPage()); });
   server.on("/triage", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildTriagePage()); });
+  server.on("/pack_builder", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildPackBuilderPage()); });
 
   // ۲. دریافت اطلاعات آنلاین وضعیت سیستم (JSON)
   server.on("/data", HTTP_GET, []() {
@@ -71,7 +76,6 @@ void setupWebServer() {
       chObj["vstart"] = String(ch[c].voltStart, 3);
       chObj["health"] = String(health, 0);
       
-      // اضافه کردن مقدار topUpRetries به خروجی JSON
       chObj["topup"] = topUpRetries[c]; 
     }
     
@@ -82,7 +86,7 @@ void setupWebServer() {
     server.send(200, "application/json", response);
   });
 
-  // ۳. API مربوط به پروفایل تریاژ (منسوخ شده - توسط هوش مصنوعی جایگزین شد، صرفاً دیتای فیک می‌فرستد تا فرانت‌اند خطا ندهد)
+  // ۳. API مربوط به پروفایل تریاژ
   server.on("/getprofile", HTTP_GET, []() {
     String json = "{\"p\":2,\"a\":80.0,\"b\":150.0,\"c\":300.0}";
     server.send(200, "application/json", json);
@@ -125,24 +129,19 @@ void setupWebServer() {
     name.trim(); 
     
     if (name.length() == 0) {
-      if (chIdx >= 0 && chIdx < 3) {
-        name = generateAutoName(chIdx); 
-      } else {
-        name = "Battery";
-      }
+        name = getNextGlobalAutoName();
+        incrementGlobalId();
     }
 
-    // ---> بلاک جدید برای هندل کردن توقف دستی <---
     if (chIdx >= 0 && chIdx < 3) {
       if (act == "stop") {
-        ch[chIdx].isCanceled = true; // علامت‌گذاری به عنوان توقف دستی
-        stopChannel(chIdx);          // فراخوانی تابع توقف
+        ch[chIdx].isCanceled = true; 
+        stopChannel(chIdx);          
         server.send(200, "text/plain", "Stopped");
-        return; // خروج از تابع
+        return; 
       }
     } 
 
-    // ---> بررسی وضعیت برای شروع تست‌های جدید <---
     if (chIdx >= 0 && chIdx < 3 && ch[chIdx].state == IDLE && ch[chIdx].autoPhase == PHASE_NONE) {
       if (act == "charge") startChannel(chIdx, name, CHARGING);
       else if (act == "d500") startChannel(chIdx, name, DISCHARGE_500);
@@ -165,7 +164,6 @@ void setupWebServer() {
     if (chIdx >= 0 && chIdx < 3 && ch[chIdx].state != IDLE && ch[chIdx].state != DONE) {
       ch[chIdx].autoMode = AUTO_OFF;
       ch[chIdx].autoPhase = PHASE_NONE;
-      
       stopChannel(chIdx); 
       server.send(200, "text/plain", "OK");
     } else server.send(400, "text/plain", "Error");
@@ -193,54 +191,36 @@ void setupWebServer() {
     } else server.send(400, "text/plain", "Error");
   });
 
-  // ۹. دانلود فایل‌های CSV
-  server.on("/log1", HTTP_GET, []() {
-    if (LittleFS.exists("/log_ch1.csv")) { File f = LittleFS.open("/log_ch1.csv", FILE_READ); server.streamFile(f, "text/csv"); f.close(); }
-    else server.send(404, "text/plain", "Empty");
-  });
-  server.on("/log2", HTTP_GET, []() {
-    if (LittleFS.exists("/log_ch2.csv")) { File f = LittleFS.open("/log_ch2.csv", FILE_READ); server.streamFile(f, "text/csv"); f.close(); }
-    else server.send(404, "text/plain", "Empty");
-  });
-  server.on("/log3", HTTP_GET, []() {
-    if (LittleFS.exists("/log_ch3.csv")) { File f = LittleFS.open("/log_ch3.csv", FILE_READ); server.streamFile(f, "text/csv"); f.close(); }
+  // ۹. دانلود فایل لاگ یکپارچه
+  server.on("/global_log", HTTP_GET, []() {
+    if (LittleFS.exists("/global_log.csv")) { 
+        File f = LittleFS.open("/global_log.csv", FILE_READ); 
+        server.streamFile(f, "text/csv"); 
+        f.close(); 
+    }
     else server.send(404, "text/plain", "Empty");
   });
 
-  // ۱۰. پاک‌کردن لاگ‌ها
+  // ۱۰. پاک‌کردن لاگ‌ها (یکپارچه شده)
   server.on("/clearlog", HTTP_POST, []() {
-    int chIdx = server.arg("plain").toInt();
-    if (chIdx >= 0 && chIdx < 3) {
-      String fn = "/log_ch" + String(chIdx+1) + ".csv";
-      String cntFn = "/cnt_ch" + String(chIdx+1) + ".txt"; 
-      
-      if (LittleFS.exists(fn)) LittleFS.remove(fn);
-      if (LittleFS.exists(cntFn)) LittleFS.remove(cntFn); 
-    } else {
-      LittleFS.remove("/log_ch1.csv"); 
-      LittleFS.remove("/log_ch2.csv"); 
-      LittleFS.remove("/log_ch3.csv");
-      LittleFS.remove("/cnt_ch1.txt"); 
-      LittleFS.remove("/cnt_ch2.txt"); 
-      LittleFS.remove("/cnt_ch3.txt");
+    if (LittleFS.exists("/global_log.csv")) {
+        LittleFS.remove("/global_log.csv");
     }
+    prefs.putUInt("global_id", 1); 
     server.send(200, "text/plain", "Log Cleared");
   });
 
-server.on("/scanwifi", HTTP_GET, []() {
+  // ۱۱. مدیریت شبکه‌های WiFi
+  server.on("/scanwifi", HTTP_GET, []() {
     int n = WiFi.scanComplete();
-    
     if (n == WIFI_SCAN_FAILED) {
-      // شروع اسکن غیرمسدودکننده (Async) در بک‌گراند
       WiFi.scanNetworks(true); 
       server.send(202, "application/json", "{\"status\":\"scanning\"}");
     } 
     else if (n == WIFI_SCAN_RUNNING) {
-      // اسکن هنوز در حال انجام است
       server.send(202, "application/json", "{\"status\":\"scanning\"}");
     } 
     else {
-      // نتایج آماده است
       JsonDocument doc;
       JsonArray nets = doc["networks"].to<JsonArray>();
       for (int i = 0; i < n; ++i) {
@@ -248,47 +228,108 @@ server.on("/scanwifi", HTTP_GET, []() {
         obj["ssid"] = WiFi.SSID(i);
         obj["rssi"] = WiFi.RSSI(i);
       }
-      WiFi.scanDelete(); // پاکسازی حافظه اسکن
+      WiFi.scanDelete(); 
       String res;
       serializeJson(doc, res);
       server.send(200, "application/json", res);
     }
   });
 
+  // واکشی شبکه‌های ذخیره شده روی دستگاه
+  server.on("/getwifi", HTTP_GET, []() {
+    String wifiJson = prefs.getString("wifi_list", "[]");
+    server.send(200, "application/json", wifiJson);
+  });
+
+  // حذف شبکه از حافظه دستگاه
+  server.on("/delwifi", HTTP_POST, []() {
+    String ssid = server.arg("plain");
+    String wifiJson = prefs.getString("wifi_list", "[]");
+    JsonDocument doc;
+    deserializeJson(doc, wifiJson);
+    if (doc.is<JsonArray>()) {
+      JsonArray arr = doc.as<JsonArray>();
+      for (int i = 0; i < arr.size(); i++) {
+        if (arr[i]["s"] == ssid) {
+          arr.remove(i);
+          break;
+        }
+      }
+      String out;
+      serializeJson(doc, out);
+      prefs.putString("wifi_list", out);
+    }
+    server.send(200, "text/plain", "OK");
+  });
+
+  // افزودن یا اتصال به شبکه
   server.on("/setwifi", HTTP_POST, []() {
     String ssid = server.arg("ssid");
     String pass = server.arg("pass");
     
+    // حذف فاصله‌های پنهان احتمالی
+    ssid.trim();
+    pass.trim();
+    
     if (ssid.length() > 0) {
+      // قطع اتصال بدون خاموش کردن کامل ماژول
       WiFi.disconnect();
       delay(100);
       
-      // تلاش برای اتصال تستی
-      WiFi.begin(ssid.c_str(), pass.c_str());
+      // قرار دادن در حالت AP_STA برای پایداری کانکشن فعلی کاربر
+      WiFi.mode(WIFI_AP_STA);
+      delay(100); 
+      
+      if (pass.length() > 0) {
+          WiFi.begin(ssid.c_str(), pass.c_str());
+      } else {
+          WiFi.begin(ssid.c_str());
+      }
+      
       int tries = 0;
-      // حداکثر ۷.۵ ثانیه منتظر می‌ماند تا وضعیت اتصال را بررسی کند
-      while (WiFi.status() != WL_CONNECTED && tries < 15) {
+      // افزایش زمان مهلت به ۲۰ ثانیه (۴۰ تست ۵۰۰ میلی‌ثانیه‌ای)
+      while (WiFi.status() != WL_CONNECTED && tries < 40) {
         delay(500); 
         tries++;
       }
       
       if (WiFi.status() == WL_CONNECTED) {
-        // اتصال موفقیت‌آمیز بود
-        prefs.putString("wifi_ssid", ssid);
-        prefs.putString("wifi_pass", pass);
-        server.send(200, "text/plain", "اتصال موفق! دستگاه در حال ریستارت است...");
-        delay(1500);
+        String wifiJson = prefs.getString("wifi_list", "[]");
+        JsonDocument doc;
+        deserializeJson(doc, wifiJson);
+        JsonArray arr = doc.is<JsonArray>() ? doc.as<JsonArray>() : doc.to<JsonArray>();
+        
+        bool found = false;
+        for (JsonObject nw : arr) {
+          if (nw["s"] == ssid) {
+            nw["p"] = pass; 
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          JsonObject newNw = arr.add<JsonObject>();
+          newNw["s"] = ssid;
+          newNw["p"] = pass;
+        }
+        
+        String out;
+        serializeJson(doc, out);
+        prefs.putString("wifi_list", out);
+        
+        server.send(200, "text/plain", "OK");
+        delay(1000);
         ESP.restart(); 
       } else {
-        // عدم موفقیت در اتصال، بازگشت به شبکه هات‌اسپات دستگاه
+        // بازگشت مطمئن به حالت هات‌اسپات در صورت خطا
         WiFi.disconnect();
         delay(100);
         WiFi.mode(WIFI_AP);
         WiFi.softAP("Portable-Tester");
-        server.send(400, "text/plain", "خطا: رمز عبور اشتباه است یا مودم خارج از برد است!");
+        server.send(400, "text/plain", "FAIL");
       }
     } else {
-      server.send(400, "text/plain", "SSID نامعتبر است");
+      server.send(400, "text/plain", "INVALID");
     }
   });
 }

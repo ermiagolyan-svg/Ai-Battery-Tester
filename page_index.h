@@ -120,13 +120,32 @@ String buildIndexPage() {
 
   @media (max-width: 700px) {
     .logo-sub, .sys-time { display: none; }
+    /* مخفی کردن متن لینک‌ها در موبایل */
     .nav-links a span { display: none; }
-    .nav-links a { padding: 8px 12px; font-size: 16px; border: none; background: var(--surface2); }
-    header { padding: 12px 15px; }
-    .header-right { gap: 6px; }
+    /* استایل دکمه‌ای مربعی و تمیز برای آیکون‌های منو در موبایل */
+    .nav-links { gap: 6px; } /* فاصله بین دکمه‌ها در موبایل */
+    .nav-links a { 
+      padding: 0; /* حذف پدینگ قبلی */
+      width: 38px; /* عرض ثابت */
+      height: 38px; /* ارتفاع ثابت */
+      font-size: 18px; /* سایز بزرگتر برای آیکون */
+      display: flex; 
+      align-items: center; 
+      justify-content: center; /* وسط‌چین کردن آیکون */
+      border: 1px solid var(--border); /* برگرداندن حاشیه */
+      background: var(--surface2); /* پس‌زمینه متمایز */
+      border-radius: 8px; /* لبه‌های گرد */
+    }
+    .nav-links a.special { 
+      background: rgba(0,212,170,.15); 
+      border-color: var(--accent); 
+    }
+    header { padding: 10px 14px; }
+    .header-right { gap: 8px; }
     .grid { padding: 12px; }
-    .global-panel { width: calc(100% - 24px); padding: 16px; gap: 16px; }
+    .global-panel { width: calc(100% - 24px); padding: 14px; gap: 14px; }
   }
+
 </style>
 </head><body>
 <header>
@@ -138,8 +157,9 @@ String buildIndexPage() {
     </div>
   </div>
   <div class="header-right">
-    <nav class="nav-links">
-      <a href="/triage" class="special" title="Triage Manager">⚕️ <span data-i18n="nav_triage">تریاژ</span></a>
+   <nav class="nav-links">
+      <a href="/pack_builder" class="special" title="AI Pack Builder">🧠 <span data-i18n="nav_pack">ساخت پک</span></a>
+      <a href="/triage" title="Triage Manager">⚕️ <span data-i18n="nav_triage">تریاژ</span></a>
       <a href="/logs" title="CSV Manager">📋 <span data-i18n="nav_logs">فایل‌ها</span></a>
       <a href="/settings" title="Settings">⚙️ <span data-i18n="nav_settings">تنظیمات</span></a>
     </nav>
@@ -205,7 +225,7 @@ String buildIndexPage() {
 // دیکشنری دو زبانه
 const dict = {
   'fa': {
-     nav_triage: 'تریاژ', nav_logs: 'فایل‌ها', nav_settings: 'تنظیمات',
+     nav_pack: 'ساخت پک', nav_triage: 'تریاژ', nav_logs: 'فایل‌ها', nav_settings: 'تنظیمات',
      mode_lbl: 'حالت کارکرد دستگاه (Mode)',
      mode_auto: 'اتوماتیک (اجرای متوالی مراحل)', mode_manual: 'دستی (اجرای یک مرحله و توقف)',
      prof_lbl: 'پروفایل تریاژ (Triage Thresholds)',
@@ -224,7 +244,7 @@ const dict = {
      info_prof_t: '⚕️ راهنمای پروفایل تریاژ', info_prof_d: 'باتری‌ها بر اساس مقاومت داخلی دسته‌بندی می‌شوند.\n- برای ابزارآلات مقاومت باید پایین باشد.\n- می‌توانید با انتخاب گزینه "کاستوم"، سقف مجاز را خودتان تعیین کنید.'
   },
   'en': {
-     nav_triage: 'Triage', nav_logs: 'Logs', nav_settings: 'Settings',
+     nav_pack: 'Pack Builder', nav_triage: 'Triage', nav_logs: 'Logs', nav_settings: 'Settings',
      mode_lbl: 'Operation Mode',
      mode_auto: 'Automatic (Sequential Phases)', mode_manual: 'Manual (Single Phase)',
      prof_lbl: 'Triage Thresholds Profile',
@@ -402,33 +422,50 @@ async function fetchAndDrawGraph(i) {
   } catch(e) {}
 }
 
-async function fetchLogCSV(i) {
+// 💡 تابع جدید برای فراخوانی لاگ یکپارچه و فیلتر کردن هوشمند برای هر کانال
+async function fetchGlobalLogCSV() {
   try {
-    const r = await fetch('/log' + (i+1));
+    const r = await fetch('/global_log');
     const txt = await r.text();
-    const logBox = document.getElementById(`csv-log-${i}`);
     
-    if(logBox) {
+    for(let i = 0; i < 3; i++) {
+      const logBox = document.getElementById(`csv-log-${i}`);
+      if(!logBox) continue;
+      
       if(txt === "Empty" || txt.trim() === "") {
         logBox.innerHTML = dict[currentLang]['lbl_no_data'];
-      } else {
-        const isScrolledToBottom = logBox.scrollHeight - logBox.clientHeight <= logBox.scrollTop + 5;
-        const rows = txt.trim().split('\n');
-        let tableHTML = '<table class="csv-table">';
-        
-        rows.forEach((row, index) => {
-          const cols = row.split(',');
+        continue;
+      }
+      
+      const isScrolledToBottom = logBox.scrollHeight - logBox.clientHeight <= logBox.scrollTop + 5;
+      const rows = txt.trim().split('\n');
+      const headers = rows[0].split(',');
+      
+      let tableHTML = '<table class="csv-table"><tr>';
+      headers.forEach((col, colIdx) => {
+        // نادیده گرفتن ستون اول (Channel) در رابط کاربری چون لاگ داخل باکس اختصاصی کانال است
+        if(colIdx > 0 && colIdx < 10) tableHTML += `<th>${col.trim()}</th>`;
+      });
+      tableHTML += '</tr>';
+      
+      let hasData = false;
+      for(let rIdx = 1; rIdx < rows.length; rIdx++) {
+        const cols = rows[rIdx].split(',');
+        // فقط ردیف‌های مربوط به همین کانال فیزیکی پردازش می‌شوند
+        if(cols.length > 1 && cols[0].trim() === `CH${i+1}`) {
+          hasData = true;
           tableHTML += '<tr>';
           cols.forEach((col, colIdx) => {
-            if(colIdx < 9) {
-              if(index === 0) tableHTML += `<th>${col.trim()}</th>`;
-              else tableHTML += `<td>${col.trim()}</td>`;
-            }
+            if(colIdx > 0 && colIdx < 10) tableHTML += `<td>${col.trim()}</td>`;
           });
           tableHTML += '</tr>';
-        });
-        tableHTML += '</table>';
-        
+        }
+      }
+      tableHTML += '</table>';
+      
+      if(!hasData) {
+        logBox.innerHTML = dict[currentLang]['lbl_no_data'];
+      } else {
         logBox.innerHTML = tableHTML;
         if (isScrolledToBottom) logBox.scrollTop = logBox.scrollHeight;
       }
@@ -511,7 +548,8 @@ function renderCards(data) {
 
       let footerHtml = '';
       if (ch.state === STATE.DONE) {
-        footerHtml = `<div class="form-row" style="direction:ltr;"><a href="/log${i+1}" class="btn" style="background:#333; color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center; flex:1;" download>${dict[currentLang]['btn_dl']}</a><button class="btn btn-report" onclick="downloadGraph(${i})">${dict[currentLang]['btn_graph']}</button><button class="btn btn-reset" onclick="resetCh(${i})">${dict[currentLang]['btn_rst']}</button></div>`;
+        // 💡 لینک دانلود آپدیت شد تا فایل یکپارچه را دریافت کند
+        footerHtml = `<div class="form-row" style="direction:ltr;"><a href="/global_log" class="btn" style="background:#333; color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center; flex:1;" download="Global_Log.csv">${dict[currentLang]['btn_dl']}</a><button class="btn btn-report" onclick="downloadGraph(${i})">${dict[currentLang]['btn_graph']}</button><button class="btn btn-reset" onclick="resetCh(${i})">${dict[currentLang]['btn_rst']}</button></div>`;
       } else {
         let bCharge = (ch.state === STATE.CHARGING) ? 'active-btn chg' : '';
         let b500 = (ch.state === STATE.D500) ? 'active-btn d500' : '';
@@ -635,7 +673,6 @@ function renderCards(data) {
     }
 
     fetchAndDrawGraph(i);
-    fetchLogCSV(i);
   });
 }
 
@@ -731,7 +768,17 @@ function downloadGraph(i) {
   link.click();
 }
 
-async function fetchData() { try { const r=await fetch('/data'); const d=await r.json(); renderCards(d); document.getElementById('sysTime').textContent=d.time; } catch(e){} }
+async function fetchData() { 
+  try { 
+    const r=await fetch('/data'); 
+    const d=await r.json(); 
+    renderCards(d); 
+    document.getElementById('sysTime').textContent=d.time; 
+    
+    // 💡 اضافه شدن تابع جدید فیلترینگ و اسکن لاگ یکپارچه
+    fetchGlobalLogCSV();
+  } catch(e){} 
+}
 
 async function startAct(i, act) { 
   if (document.getElementById('triageProfile').value === '3' && !customConfirmed) {

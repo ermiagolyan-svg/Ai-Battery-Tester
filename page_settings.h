@@ -28,6 +28,13 @@ String buildSettingsPage() {
   
   .clear-btn { background: #161619; color: #ff6b35; border: 1px solid #ff6b35; padding: 10px; border-radius: 8px; cursor: pointer; flex: 1; text-align: center; font-weight: 600; font-size: 13px; transition: 0.2s; }
   .clear-btn:hover { background: rgba(255,107,53,0.1); }
+  
+  .wifi-pill { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.4); color: var(--accent); padding: 6px 12px; border-radius: 20px; font-size: 12px; transition:0.2s; }
+  .wifi-pill span { cursor: pointer; }
+  .wifi-pill:hover { border-color: var(--accent); }
+  .wifi-del { color: #ff3366; cursor: pointer; font-weight: bold; font-family: monospace; padding: 0 4px; transition: 0.2s;}
+  .wifi-del:hover { background: rgba(255,51,102,0.2); border-radius: 50%; }
+  
   .flex-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
   
   .input-field { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.2s; }
@@ -40,7 +47,6 @@ String buildSettingsPage() {
   
   <div class="settings-grid">
     
-    <!-- پنل انتخاب زبان -->
     <div class="card">
       <h3 data-i18n="lang_title">🌐 انتخاب زبان (Language)</h3>
       <p data-i18n="lang_desc">زبان رابط کاربری را انتخاب کنید. این تنظیم در مرورگر شما ذخیره شده و پردازنده دستگاه را درگیر نمی‌کند.</p>
@@ -52,7 +58,13 @@ String buildSettingsPage() {
 
     <div class="card">
       <h3 data-i18n="wifi_title">📡 تنظیمات شبکه وای‌فای</h3>
-      <p data-i18n="wifi_desc">شبکه وای‌فای متصل به دستگاه را تغییر دهید. توجه داشته باشید پس از ذخیره رمز عبور، دستگاه به صورت خودکار ریستارت می‌شود.</p>
+      <p data-i18n="wifi_desc">شبکه‌های ذخیره شده روی دستگاه به صورت خودکار متصل می‌شوند. با اضافه کردن شبکه جدید، دستگاه ریستارت خواهد شد.</p>
+      
+      <div id="saved-wifi-container" style="margin-bottom:15px; display:none; background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
+        <div style="font-size:12px; margin-bottom:8px; color:var(--muted);" data-i18n="wifi_saved_lbl">شبکه‌های ذخیره شده در دستگاه:</div>
+        <div id="saved-wifi-list" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+      </div>
+
       <button class="btn" style="background:var(--surface); color:var(--accent); border:1px solid var(--accent); margin-bottom: 15px; margin-top:0;" onclick="scanWiFi()" id="btnScan" data-i18n="wifi_scan">جستجوی شبکه‌های اطراف</button>
       
       <select class="input-field input-ltr" id="wifiSSID" style="display:none;"></select>
@@ -70,66 +82,61 @@ String buildSettingsPage() {
     </div>
     
     <div class="card">
-      <h3 data-i18n="storage_title">📊 پاکسازی حافظه داخلی</h3>
-      <p data-i18n="storage_desc">شما می‌توانید فایل‌های گزارش قدیمی مربوط به هر کانال را از روی حافظه داخلی پاک کنید تا فضای خالی ایجاد شود.</p>
-      <div class="flex-row">
-        <button class="clear-btn" onclick="clearL(0)" data-i18n="clear_ch1">کانال ۱</button>
-        <button class="clear-btn" onclick="clearL(1)" data-i18n="clear_ch2">کانال ۲</button>
-        <button class="clear-btn" onclick="clearL(2)" data-i18n="clear_ch3">کانال ۳</button>
-      </div>
-      <button class="clear-btn" style="background:#ff6b35; color:#000; width:100%; flex:none; margin-top:auto;" onclick="clearL(-1)" data-i18n="clear_all">پاکسازی تمام اطلاعات</button>
+      <h3 data-i18n="storage_title">📊 پاکسازی دیتابیس یکپارچه</h3>
+      <p data-i18n="storage_desc">با این گزینه تمام رکوردهای ادغام شده و لاگ‌های خام از حافظه دستگاه پاک شده و شماره‌انداز باتری‌ها ریست می‌شود.</p>
+      <button class="clear-btn" style="background:#ff6b35; color:#000; width:100%; flex:none; margin-top:auto;" onclick="clearGlobalLog()" data-i18n="clear_all">پاکسازی کامل دیتابیس (Global Wipe)</button>
     </div>
   </div>
 </div>
 
 <script>
-// --- بخش دیکشنری و تغییر زبان (سمت مرورگر) ---
 const dict = {
   'fa': {
     'back_dash': '→ بازگشت به داشبورد اصلی',
     'lang_title': '🌐 انتخاب زبان (Language)',
     'lang_desc': 'زبان رابط کاربری را انتخاب کنید. این تنظیم در مرورگر شما ذخیره شده و پردازنده دستگاه را درگیر نمی‌کند.',
     'wifi_title': '📡 تنظیمات شبکه وای‌فای',
-    'wifi_desc': 'شبکه وای‌فای متصل به دستگاه را تغییر دهید. توجه داشته باشید پس از ذخیره رمز عبور، دستگاه به صورت خودکار ریستارت می‌شود.',
+    'wifi_desc': 'شبکه‌های ذخیره شده روی دستگاه به صورت خودکار متصل می‌شوند. با اضافه کردن شبکه جدید، دستگاه ریستارت خواهد شد.',
+    'wifi_saved_lbl': 'شبکه‌های ذخیره شده در دستگاه:',
     'wifi_scan': 'جستجوی شبکه‌های اطراف',
     'wifi_save': 'ذخیره و اتصال به شبکه',
+    'wifi_success': 'اتصال موفق! شبکه در دستگاه ذخیره شد و در حال ریستارت است...',
+    'wifi_error': 'خطا: رمز عبور اشتباه است یا مودم خارج از برد است!',
+    'wifi_checking': 'در حال بررسی اتصال، لطفاً چند ثانیه صبر کنید...',
     'time_title': '⏰ همگام‌سازی زمان سیستم',
     'time_desc': 'برای ثبت دقیق زمان در فایل‌های لاگ (CSV)، ساعت دستگاه را با مرورگر خود همگام کنید.',
     'time_sync': 'همگام‌سازی زمان (Sync RTC)',
-    'storage_title': '📊 پاکسازی حافظه داخلی',
-    'storage_desc': 'شما می‌توانید فایل‌های گزارش قدیمی مربوط به هر کانال را از روی حافظه داخلی پاک کنید تا فضای خالی ایجاد شود.',
-    'clear_ch1': 'کانال ۱',
-    'clear_ch2': 'کانال ۲',
-    'clear_ch3': 'کانال ۳',
-    'clear_all': 'پاکسازی تمام اطلاعات'
+    'storage_title': '📊 پاکسازی دیتابیس یکپارچه',
+    'storage_desc': 'با این گزینه تمام رکوردهای ادغام شده و لاگ‌های خام از حافظه دستگاه پاک شده و شماره‌انداز باتری‌ها ریست می‌شود.',
+    'clear_all': 'پاکسازی کامل دیتابیس (Global Wipe)'
   },
   'en': {
     'back_dash': '← Back to Dashboard',
     'lang_title': '🌐 Language Selection',
     'lang_desc': 'Select your preferred UI language. This is saved locally in your browser to keep the ESP32 fast.',
     'wifi_title': '📡 WiFi Network Settings',
-    'wifi_desc': 'Change the WiFi network connected to the device. The analyzer will automatically reboot after saving.',
+    'wifi_desc': 'Networks saved on the device will connect automatically. Adding a new network will restart the device.',
+    'wifi_saved_lbl': 'Networks saved on device:',
     'wifi_scan': 'Scan Networks',
     'wifi_save': 'Save & Connect',
+    'wifi_success': 'Connected! Network saved. Device is restarting...',
+    'wifi_error': 'Error: Incorrect password or out of range!',
+    'wifi_checking': 'Checking connection, please wait...',
     'time_title': '⏰ System Time Sync',
     'time_desc': 'Sync the internal clock with your browser to ensure accurate timestamps in your CSV log files.',
     'time_sync': 'Sync Time (RTC)',
-    'storage_title': '📊 Storage Wipe',
-    'storage_desc': 'You can safely delete old CSV log files for each channel from the internal LittleFS memory.',
-    'clear_ch1': 'Channel 1',
-    'clear_ch2': 'Channel 2',
-    'clear_ch3': 'Channel 3',
-    'clear_all': 'Wipe All Data'
+    'storage_title': '📊 Global Database Wipe',
+    'storage_desc': 'This option wipes all unified records and raw logs from the device memory and resets the battery ID counter.',
+    'clear_all': 'Wipe Global Database'
   }
 };
 
-let currentLang = 'fa'; // زبان پیش‌فرض
+let currentLang = 'fa'; 
 
 function changeLang(lang) {
   currentLang = lang;
-  localStorage.setItem('sysLang', lang); // ذخیره در مرورگر کاربر
+  localStorage.setItem('sysLang', lang); 
   
-  // تنظیم راست‌چین یا چپ‌چین شدن کل صفحه
   if (lang === 'fa') {
     document.body.style.direction = 'rtl';
     document.body.style.textAlign = 'right';
@@ -140,23 +147,68 @@ function changeLang(lang) {
     document.getElementById('btnBack').style.direction = 'ltr';
   }
 
-  // جایگذاری متن‌های جدید بدون رفرش صفحه
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    if (dict[lang] && dict[lang][key]) {
-      el.innerText = dict[lang][key];
-    }
+    if (dict[lang] && dict[lang][key]) el.innerText = dict[lang][key];
   });
 }
 
-// بارگذاری زبان هنگام باز شدن صفحه
+function loadDeviceWiFi() {
+  fetch('/getwifi').then(r => r.json()).then(saved => {
+    let container = document.getElementById('saved-wifi-container');
+    let list = document.getElementById('saved-wifi-list');
+    
+    if(!saved || saved.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+    list.innerHTML = '';
+    
+    saved.forEach(nw => {
+        let pill = document.createElement('div');
+        pill.className = 'wifi-pill';
+        
+        let label = document.createElement('span');
+        label.textContent = nw.s;
+        label.onclick = () => {
+            const sel = document.getElementById('wifiSSID');
+            sel.innerHTML = `<option value="${nw.s}">${nw.s}</option>`;
+            sel.style.display = 'block';
+            
+            const pass = document.getElementById('wifiPass');
+            pass.value = nw.p;
+            pass.style.display = 'block';
+            
+            document.getElementById('btnSaveWifi').style.display = 'block';
+        };
+        
+        let delBtn = document.createElement('div');
+        delBtn.className = 'wifi-del';
+        delBtn.textContent = 'x';
+        delBtn.title = currentLang === 'fa' ? 'حذف از حافظه دستگاه' : 'Delete from device memory';
+        delBtn.onclick = (e) => {
+            e.stopPropagation();
+            if(confirm(currentLang === 'fa' ? `حذف شبکه ${nw.s} از حافظه دستگاه؟` : `Delete network ${nw.s} from device?`)) {
+                fetch('/delwifi', {method: 'POST', body: nw.s}).then(() => loadDeviceWiFi());
+            }
+        };
+        
+        pill.appendChild(label);
+        pill.appendChild(delBtn);
+        list.appendChild(pill);
+    });
+  }).catch(e => console.log('No wifi data found on device.'));
+}
+
 window.onload = () => {
   const savedLang = localStorage.getItem('sysLang') || 'fa';
   document.getElementById('langSelect').value = savedLang;
   changeLang(savedLang);
+  loadDeviceWiFi(); 
 };
 
-// --- توابع اصلی کنترل دستگاه ---
 function scanWiFi() {
   const btn = document.getElementById('btnScan');
   btn.textContent = currentLang === 'fa' ? 'در حال جستجو...' : 'Scanning...';
@@ -172,6 +224,7 @@ function scanWiFi() {
       sel.innerHTML = currentLang === 'fa' ? '<option value="">انتخاب شبکه...</option>' : '<option value="">Select a network...</option>';
       d.networks.forEach(nw => { sel.innerHTML += `<option value="${nw.ssid}">${nw.ssid} (${nw.rssi}dBm)</option>`; });
       sel.style.display = 'block';
+      document.getElementById('wifiPass').value = '';
       document.getElementById('wifiPass').style.display = 'block';
       document.getElementById('btnSaveWifi').style.display = 'block';
       btn.textContent = dict[currentLang]['wifi_scan'];
@@ -190,14 +243,17 @@ function saveWiFi() {
   
   const res = document.getElementById('resWifi');
   res.style.color = 'var(--accent)';
-  res.textContent = currentLang === 'fa' ? 'در حال بررسی اتصال، لطفاً چند ثانیه صبر کنید...' : 'Checking connection, please wait...';
+  res.textContent = dict[currentLang]['wifi_checking'];
   
   fetch('/setwifi', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `ssid=${encodeURIComponent(ssid)}&pass=${encodeURIComponent(pass)}` })
-    .then(r => r.text().then(t => ({status: r.status, text: t})))
+    .then(r => ({status: r.status}))
     .then(obj => {
        res.style.color = obj.status === 200 ? 'var(--accent)' : '#ff6b35';
-       res.textContent = obj.text;
-       setTimeout(() => res.textContent = '', 5000);
+       res.textContent = obj.status === 200 ? dict[currentLang]['wifi_success'] : dict[currentLang]['wifi_error'];
+       
+       if (obj.status === 200) {
+           setTimeout(() => res.textContent = '', 5000);
+       }
     });
 }
 
@@ -211,11 +267,11 @@ function sync() {
     }); 
 }
 
-function clearL(ch) { 
-  const msg = currentLang === 'fa' ? 'آیا از پاکسازی اطلاعات فایل لاگ اطمینان دارید؟' : 'Are you sure you want to delete this log?';
-  const successMsg = currentLang === 'fa' ? 'پاکسازی با موفقیت انجام شد.' : 'Data wiped successfully.';
+function clearGlobalLog() { 
+  const msg = currentLang === 'fa' ? 'آیا از پاکسازی کل دیتابیس یکپارچه و ریست شدن شماره‌انداز اطمینان دارید؟' : 'Are you sure you want to wipe the global database and reset the counter?';
+  const successMsg = currentLang === 'fa' ? 'پاکسازی با موفقیت انجام شد.' : 'Database wiped successfully.';
   if(confirm(msg)) { 
-    fetch('/clearlog',{method:'POST',body:String(ch)}).then(()=>alert(successMsg)); 
+    fetch('/clearlog',{method:'POST'}).then(()=>alert(successMsg)); 
   } 
 }
 </script></body></html>

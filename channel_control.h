@@ -130,12 +130,11 @@ void startChannel(uint8_t c, const String& name, ChannelState act) {
     }
   }
 
-  if (ch[c].autoMode == AUTO_OFF) {
-    ch[c].sessionStartTime = ch[c].startTime;
-    ch[c].sessionStartMillis = ch[c].startMillis;
-    ch[c].sessionVoltStart = ch[c].voltStart;
-    graphReset(c); 
-  }
+  // مقداردهی و ریست تایمر/گراف فاز بدون توجه به اتوماتیک یا دستی بودن
+  ch[c].sessionStartTime = ch[c].startTime;
+  ch[c].sessionStartMillis = ch[c].startMillis;
+  ch[c].sessionVoltStart = ch[c].voltStart;
+  graphReset(c); 
 
   // ─── منطق پالس تحریک شارژ (Kickstart) ─────────────────
   if (act == CHARGING) {
@@ -174,13 +173,8 @@ void startChannel(uint8_t c, const String& name, ChannelState act) {
 }
 
 void startAuto(uint8_t c, const String& name, AutoMode mode) {
-  ch[c].sessionStartTime = nowEpoch();
-  ch[c].sessionStartMillis = millis();
-  ch[c].sessionVoltStart = readVoltage(c);
   ch[c].recordedCapacity = 0.0f;
   
-  graphReset(c); 
-
   float v = readVoltage(c);
   if (v < 4.05f) {
     ch[c].autoMode = mode;
@@ -217,17 +211,15 @@ void stopChannel(uint8_t c) {
   
   ch[c].endMillis  = millis();
   ch[c].endTime    = nowEpoch();
-  
   ch[c].state = lastState; 
   
-  bool isFinalStop = (ch[c].autoMode == AUTO_OFF) || (ch[c].autoPhase == PHASE_FINAL_CHG) || (ch[c].hasFault) || (ch[c].isCanceled) || (lastState == Triage);
-  
-  if (isFinalStop) {
-    saveCSV(c); 
-  }
+  // ذخیره بدون قید و شرط CSV در پایان هر فاز
+  saveCSV(c); 
   
   ch[c].state = DONE;
 
+  bool isFinalStop = (ch[c].autoMode == AUTO_OFF) || (ch[c].autoPhase == PHASE_FINAL_CHG) || (ch[c].hasFault) || (ch[c].isCanceled) || (lastState == Triage);
+  
   String actStr = (lastState == CHARGING) ? "شارژ" : (lastState == Triage) ? "تریاژ پله‌ای" : "دشارژ";
   String modeType = (ch[c].autoMode != AUTO_OFF) ? "(اتوماتیک)" : "(دستی)";
   
@@ -276,7 +268,7 @@ void stopChannel(uint8_t c) {
       first = false;
     }
     chartUrl += "%5D%7D%5D%7D%7D";
-    msg += "📊 تصویر نمودار کل چرخه پیوسته:\n" + chartUrl;
+    msg += "📊 تصویر نمودار فاز نهایی:\n" + chartUrl;
   } else if (!isFinalStop) {
     msg += "⏳ در حال ورود به فاز استراحت/بعدی...";
   } else {
@@ -322,7 +314,7 @@ void handleCharging(uint8_t c) {
       String name = ch[c].name;
       unsigned long chargeDuration = millis() - ch[c].startMillis;
       
-      stopChannel(c); 
+      stopChannel(c); // ثبت لاگِ فاز شارژ اولیه
       
       if (chargeDuration < 60000) {
         ch[c].autoMode = am;
@@ -341,13 +333,19 @@ void handleCharging(uint8_t c) {
         ch[c].state = IDLE; 
         ch[c].restStartMillis = millis(); 
         ch[c].name = name; 
+        
+        // آماده‌سازی گراف و تایمرها برای فاز استراحت
+        ch[c].sessionStartMillis = millis();
+        ch[c].sessionStartTime = nowEpoch();
+        ch[c].sessionVoltStart = ch[c].voltNow;
+        graphReset(c);
+
         sendBaleNotification("☕ شارژ اولیه کانال " + String(c+1) + " کامل شد.\nآغاز فاز استراحت برای تثبیت ولتاژ...");
       }
     } 
     else if (ch[c].autoMode != AUTO_OFF && ch[c].autoPhase == PHASE_FINAL_CHG) {
       float finalCapacity = ch[c].recordedCapacity; 
-      stopChannel(c); 
-      ch[c].mAh = finalCapacity; 
+      stopChannel(c); // ثبت لاگِ فاز شارژ نهایی
       ch[c].recordedCapacity = finalCapacity;
       ch[c].autoMode = AUTO_OFF;
       ch[c].autoPhase = PHASE_NONE;
@@ -442,6 +440,11 @@ void sampleAll(unsigned long dt) {
         String name = ch[c].name;
         float rc = ch[c].recordedCapacity; 
         
+        // ثبت لاگِ فاز استراحت پیش از تغییر فاز
+        ch[c].endMillis = millis();
+        ch[c].endTime = nowEpoch();
+        saveCSV(c);
+
         if (ch[c].autoPhase == PHASE_REST) {
             ChannelState nState;
             if (am == AUTO_TRIAGE) nState = Triage;
@@ -484,7 +487,7 @@ void sampleAll(unsigned long dt) {
       if (ch[c].voltNow <= CUTOFF_DISCHARGE) {
         if (ch[c].autoMode != AUTO_OFF && ch[c].autoPhase == PHASE_DISCHG) {
           ch[c].recordedCapacity = ch[c].mAh;
-          stopChannel(c);
+          stopChannel(c); // ثبت لاگِ فاز دشارژ
           
           AutoMode am = ch[c].autoMode;
           float rc = ch[c].recordedCapacity;
@@ -497,13 +500,18 @@ void sampleAll(unsigned long dt) {
           ch[c].restStartMillis = millis();
           ch[c].name = name;
           
+          // آماده‌سازی گراف و تایمرها برای فاز استراحت دوم
+          ch[c].sessionStartMillis = millis();
+          ch[c].sessionStartTime = nowEpoch();
+          ch[c].sessionVoltStart = ch[c].voltNow;
+          graphReset(c);
+
           sendBaleNotification("📉 دشارژ کانال " + String(c+1) + " کامل شد.\nآغاز فاز استراحت ۱ دقیقه‌ای پیش از شارژ نهایی...");
         } else {
           stopChannel(c);
         }
       }
     } 
-
     else if (ch[c].state == CHARGING) {
       handleCharging(c);
     }

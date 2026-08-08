@@ -1,9 +1,9 @@
-#ifndef PAGE_TRIAGE_H
-#define PAGE_TRIAGE_H
+#ifndef PAGE_PACK_BUILDER_H
+#define PAGE_PACK_BUILDER_H
 
 #include <Arduino.h>
 
-String buildTriagePage() {
+String buildPackBuilderPage() {
   return R"rawhtml(
 <!DOCTYPE html>
 <html lang="fa">
@@ -11,7 +11,6 @@ String buildTriagePage() {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Smart Pack Builder</title>
-<!-- 💡 اضافه شدن jsPDF برای تولید خروجی -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root { --bg: #0d0d0f; --surface: #161619; --surface2: #1e1e23; --border: #2a2a32; --accent: #00d4aa; --accent2: #0096ff; --warn: #ff6b35; --danger: #e74c3c; --text: #e8e8f0; --muted: #6b6b80; --mono: 'Consolas', monospace; }
@@ -37,7 +36,6 @@ String buildTriagePage() {
   .alert-box { background: rgba(255, 107, 53, 0.1); border: 1px solid var(--warn); color: var(--text); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; font-size: 13px; line-height: 1.6;}
   .alert-box strong { color: var(--warn); }
   
-  /* Pack Builder Styles */
   #pack-result-section { display: none; animation: fadeIn 0.5s;}
   @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   
@@ -161,49 +159,64 @@ let globalBestBlocks = null;
 let globalBestStats = null;
 let globalTotalAmps = 0;
 
+// =======================================================
+// آپدیت: هماهنگی سیستم استخراج داده با تگ‌های جدید فازها
+// =======================================================
 async function fetchDeviceLogs() {
   let rawData = [];
-  for (let c = 1; c <= 3; c++) {
-    try {
-      const res = await fetch('/log' + c);
-      const text = await res.text();
-      if (text !== 'Empty' && text.trim().length > 0) {
-        const lines = text.trim().split('\n');
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',');
-          if (cols.length < 12) continue;
-          
-          let rawId = cols[0].trim();
-          let cleanId = rawId.replace(/^#/, ''); 
-          let mode = cols[4] ? cols[4].trim() : "";
-          let cap = parseFloat(cols[5]) || 0;
-          let ir = parseFloat(cols[6]) || 0;
-          let grade = cols[7] ? cols[7].trim() : "Unknown";
-          let dcir = parseFloat(cols[8]) || 0;
-          
-          let curve = [];
-          for(let j = 12; j < cols.length; j++) {
-              if(cols[j] !== undefined && cols[j].trim() !== "") curve.push(parseFloat(cols[j]));
-          }
-          rawData.push({ cleanId, mode, cap, ir, grade, dcir, curve, ch: c });
+  try {
+    const res = await fetch('/global_log');
+    const text = await res.text();
+    if (text !== 'Empty' && text.trim().length > 0) {
+      const lines = text.trim().split('\n');
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        if (cols.length < 13) continue;
+        
+        let chStr = cols[0].replace('CH', '').trim();
+        let c = parseInt(chStr) || 1;
+        let rawId = cols[1].trim();
+        let cleanId = rawId; 
+        
+        let mode = cols[5] ? cols[5].trim() : "";
+        let cap = parseFloat(cols[6]) || 0;
+        let ir = parseFloat(cols[7]) || 0;
+        let grade = cols[8] ? cols[8].trim() : "Unknown";
+        let dcir = parseFloat(cols[9]) || 0;
+        
+        let curve = [];
+        for(let j = 13; j < cols.length; j++) {
+            if(cols[j] !== undefined && cols[j].trim() !== "") curve.push(parseFloat(cols[j]));
         }
+        rawData.push({ cleanId, mode, cap, ir, grade, dcir, curve, ch: c });
       }
-    } catch(e) {}
-  }
+    }
+  } catch(e) {}
 
   let grouped = {};
   rawData.forEach(row => {
       if (!grouped[row.cleanId]) grouped[row.cleanId] = { triage: null, capTests: [] };
-      if (row.mode.includes("Triage")) grouped[row.cleanId].triage = row;
-      else if (row.cap > 0) grouped[row.cleanId].capTests.push(row);
+      
+      // استخراج دیتای تریاژ برای گرفتن مقاومت DCIR
+      if (row.mode.includes("Triage")) {
+          if (row.dcir > 0 || !grouped[row.cleanId].triage) {
+              grouped[row.cleanId].triage = row;
+          }
+      } 
+      // استخراج گراف و ظرفیت فقط از فاز خالص دشارژ
+      if (row.mode.includes("[DISCHARGE]") || row.mode.includes("Manual Dischg")) {
+          if (row.cap > 0) grouped[row.cleanId].capTests.push(row);
+      }
   });
 
   allCells = [];
   for (let id in grouped) {
       let g = grouped[id];
       if (!g.triage || g.capTests.length === 0) continue;
+      
       g.capTests.sort((a, b) => b.cap - a.cap);
       let bestCapTest = g.capTests[0];
+      
       if (bestCapTest.cap < 400) continue;
 
       allCells.push({ 
@@ -244,7 +257,6 @@ async function runSmartPackBuilder() {
     let thermalFallbackTriggered = false;
     let inventoryMaxP = origP;
 
-    // ۰. بررسی پیش‌دستانه موجودی دیتابیس (Inventory Check)
     if (validCells.length < (reqS * origP)) {
         inventoryFallbackTriggered = true;
         currentP = Math.floor(validCells.length / reqS);
@@ -257,14 +269,12 @@ async function runSmartPackBuilder() {
     while (currentP >= 1) {
         let totalNeeded = reqS * currentP;
 
-        // ۱. حذف ضعیف‌ترین سلول‌ها برای رسیدن دقیق به تعداد مورد نیاز
         let pool = [...validCells].sort((a, b) => {
             if (a.cap !== b.cap) return a.cap - b.cap; 
             return b.dcir - a.dcir; 
         });
         let selectedCells = pool.slice(pool.length - totalNeeded); 
 
-        // ۲. تابع ارزیابی هزینه (Cost Function)
         function evaluate(testBlocks) {
             let caps = testBlocks.map(b => b.cells.reduce((sum, c) => sum + c.cap, 0));
             let capDiff = Math.max(...caps) - Math.min(...caps);
@@ -287,7 +297,6 @@ async function runSmartPackBuilder() {
         let localBestBlocks = null;
         let localBestStats = null;
 
-        // ۳. اجرای چندباره الگوریتم با استراتژی‌های شروع مختلف
         for (let attempt = 1; attempt <= 4; attempt++) {
             let poolCopy = [...selectedCells];
             
@@ -380,7 +389,6 @@ async function runSmartPackBuilder() {
             alertBox.style.display = 'block';
         }
         
-        // ذخیره دیتای نهایی برای PDF
         globalBestBlocks = bestFinalBlocks;
         globalBestStats = bestFinalStats;
         globalTotalAmps = totalAmps;
@@ -481,7 +489,6 @@ function drawMasterGraph(pool) {
   ctx.stroke();
 }
 
-// 💡 تابع جدید برای تولید PDF
 function generatePackPDF() {
     if(!globalBestBlocks || globalBestBlocks.length === 0) return;
     
@@ -502,7 +509,6 @@ function generatePackPDF() {
         doc.text(`Configuration: ${sCount}S${pCount}P | Target Load: ${globalTotalAmps}A`, 15, y);
         y += 15;
 
-        // اضافه کردن اسکرین‌شات گراف
         const canvas = document.getElementById('master-canvas');
         if(canvas) {
             const imgData = canvas.toDataURL('image/png');
@@ -510,7 +516,6 @@ function generatePackPDF() {
             y += 35;
         }
 
-        // رسم بلاک‌ها
         globalBestBlocks.forEach((block, index) => {
             if (y > pageHeight - 50) { doc.addPage(); y = 15; }
             
@@ -528,7 +533,6 @@ function generatePackPDF() {
             doc.text(`Total Cap: ${blockTotalCap.toFixed(0)} mAh | Eq.IR: ${rp.toFixed(1)} mOhm`, 50, y + 6);
             y += 12;
 
-            // سرستون‌های سلول
             doc.setFontSize(8); doc.setTextColor(120); doc.setFont("helvetica", "bold");
             doc.text("Cell ID", 20, y);
             doc.text("Cap (mAh)", 60, y);
@@ -536,7 +540,6 @@ function generatePackPDF() {
             doc.text("Cell Load (A)", 150, y);
             y += 5;
 
-            // لیست سلول‌ها
             doc.setFont("helvetica", "normal"); doc.setTextColor(0);
             block.cells.forEach(cell => {
                 if (y > pageHeight - 15) { doc.addPage(); y = 15; }
