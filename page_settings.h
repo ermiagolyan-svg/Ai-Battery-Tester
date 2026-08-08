@@ -9,13 +9,53 @@ String buildSettingsPage() {
 <html lang="fa">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Settings - Li-ion Analyzer</title>
 <style>
-  :root { --bg: #0d0d0f; --surface: #161619; --border: #2a2a32; --accent: #00d4aa; --text: #e8e8f0; --muted: #6b6b80; }
-  body { background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; padding: 20px; direction: rtl; text-align: right; transition: all 0.3s ease;}
-  .container { max-width: 1200px; margin: 0 auto; }
-  .nav-back { color: var(--accent); text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block; margin-bottom: 20px; transition: 0.2s; direction: ltr;}
+  :root { 
+    --bg: #0d0d0f; --surface: #161619; --surface2: #1e1e23; --border: #2a2a32; 
+    --accent: #00d4aa; --accent2: #0096ff; --warn: #ff6b35; --text: #e8e8f0; --muted: #6b6b80; --mono: 'Consolas', monospace;
+    --dir-sign: 1; 
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body { background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; min-height: 100vh; min-height: 100dvh; direction: rtl; text-align: right; transition: all 0.3s ease; padding-inline-start: max(70px, env(safe-area-inset-left)); overflow-x: hidden; padding-top: env(safe-area-inset-top); padding-bottom: max(20px, env(safe-area-inset-bottom)); margin: 0; }
+  
+  .main-content { padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+
+  /* Overlay بک‌گراند برای زمانی که کشو باز است */
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 95; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px); }
+  .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+  
+  /* تاپ‌بار مخصوص موبایل */
+  .mobile-top-bar { display: none; }
+
+  /* سایدبار کشویی */
+  header#mainSidebar { position: fixed; top: 0; bottom: 0; inset-inline-start: 0; width: 70px; background: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow-x: hidden; white-space: nowrap; }
+  header#mainSidebar.open { width: 260px; box-shadow: 0 0 24px rgba(0,0,0,0.7); }
+  
+  .top-bar-sidebar { display: flex; align-items: center; padding: 0 13px 16px; gap: 16px; min-height: 50px; }
+  .menu-toggle { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text); cursor: pointer; border-radius: 50%; flex-shrink: 0; transition: background 0.2s; }
+  .menu-toggle:hover { background: var(--surface2); }
+  
+  .logo-icon { font-size: 20px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  
+  /* مخفی/نمایان شدن متون کشو */
+  .text, .logo-text { opacity: 0; transition: opacity 0.2s ease; font-weight: 600; }
+  .logo-text { font-size: 16px; }
+  header#mainSidebar.open .text, header#mainSidebar.open .logo-text { opacity: 1; transition-delay: 0.1s; }
+  
+  .nav-links { display: flex; flex-direction: column; gap: 6px; flex: 1; margin-top: 10px; }
+  .nav-links a, .bottom-section a { text-decoration: none; color: var(--text); font-size: 14px; padding: 0 12px; height: 44px; margin: 0 13px; border-radius: 50px; display: flex; align-items: center; gap: 16px; transition: background 0.2s, color 0.2s; border: none; font-weight: normal; }
+  .nav-links a:hover, .bottom-section a:hover { background: var(--surface2); }
+  .nav-links a.special { background: rgba(0, 212, 170, 0.1); color: var(--accent); }
+  .nav-links a.special:hover { background: rgba(0, 212, 170, 0.2); }
+  .icon { font-size: 18px; width: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  
+  .bottom-section { display: flex; flex-direction: column; gap: 6px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+  
+  /* عناصر مختص صفحه Settings */
+  .nav-back { color: var(--accent); text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block; margin-bottom: 20px; transition: 0.2s; direction: inherit;}
   .nav-back:hover { text-shadow: 0 0 8px rgba(0,212,170,0.5); }
   
   .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
@@ -23,10 +63,10 @@ String buildSettingsPage() {
   h3 { color: var(--accent); font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
   p { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
   
-  .btn { padding: 12px 20px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s; margin-top: auto; }
+  .btn { padding: 12px 20px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s; margin-top: auto; font-family: inherit;}
   .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
   
-  .clear-btn { background: #161619; color: #ff6b35; border: 1px solid #ff6b35; padding: 10px; border-radius: 8px; cursor: pointer; flex: 1; text-align: center; font-weight: 600; font-size: 13px; transition: 0.2s; }
+  .clear-btn { background: #161619; color: #ff6b35; border: 1px solid #ff6b35; padding: 10px; border-radius: 8px; cursor: pointer; flex: 1; text-align: center; font-weight: 600; font-size: 13px; transition: 0.2s; font-family: inherit;}
   .clear-btn:hover { background: rgba(255,107,53,0.1); }
   
   .wifi-pill { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.4); color: var(--accent); padding: 6px 12px; border-radius: 20px; font-size: 12px; transition:0.2s; }
@@ -40,9 +80,75 @@ String buildSettingsPage() {
   .input-field { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.2s; }
   .input-field:focus { border-color: var(--accent); }
   .input-ltr { direction: ltr; text-align: left; }
+
+  @media (max-width: 700px) {
+    /* تغییرات اصلی بدنه برای هدر بالایی */
+    body { padding-inline-start: env(safe-area-inset-left); padding-top: calc(64px + env(safe-area-inset-top)); padding-bottom: max(40px, env(safe-area-inset-bottom)); }
+    .main-content { padding: 15px; }
+    
+    /* نوار افقی بالای صفحه در موبایل */
+    .mobile-top-bar { display: flex; position: fixed; top: 0; left: 0; right: 0; height: calc(64px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 16px 0; background: var(--bg); align-items: center; justify-content: space-between; z-index: 90; }
+    .mobile-top-bar .title-group { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 500; }
+    
+    /* تبدیل سایدبار به کشوی متحرک */
+    header#mainSidebar { 
+       width: 280px; 
+       transform: translateX(calc(100% * var(--dir-sign))); 
+       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+       border-inline-end: none;
+       background: var(--surface);
+    }
+    header#mainSidebar.open { 
+       transform: translateX(0); 
+       box-shadow: 0 0 40px rgba(0,0,0,0.8); 
+    }
+    
+    .top-bar-sidebar { padding: 0 16px 16px; }
+    .nav-links a, .bottom-section a { margin: 0 12px; }
+    .text, .logo-text { opacity: 1; }
+    
+    .settings-grid { grid-template-columns: 1fr; gap: 15px; }
+  }
 </style>
 </head><body>
-<div class="container">
+
+<!-- Mobile Top Bar -->
+<div class="mobile-top-bar">
+  <div class="title-group">
+    <button class="menu-toggle" onclick="toggleSidebar()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 16h18v-2H3v2zm0-5h18v-2H3v2z"/></svg>
+    </button>
+    <span>AI Battery Studio <span style="font-size:12px; color:var(--muted)">▾</span></span>
+  </div>
+  <div></div>
+</div>
+
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<header id="mainSidebar">
+  <div class="top-bar-sidebar">
+    <button class="menu-toggle" onclick="toggleSidebar()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 16h18v-2H3v2zm0-5h18v-2H3v2z"/></svg>
+    </button>
+    <div class="logo-icon">✨</div>
+    <div class="logo-text">AI Battery Studio</div>
+  </div>
+  
+  <nav class="nav-links">
+    <a href="/pack_builder" class="special" title="AI Pack Builder"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
+    <a href="/triage" title="Triage Manager"><span class="icon">⚕️</span> <span class="text" data-i18n="nav_triage">تریاژ</span></a>
+    <a href="/worker_manager" title="Worker Manager"><span class="icon">🧑‍🔧</span> <span class="text" data-i18n="nav_worker">مدیریت ورکر</span></a>
+    <a href="/logs" title="CSV Manager"><span class="icon">📋</span> <span class="text" data-i18n="nav_logs">فایل‌ها</span></a>
+  </nav>
+
+  <div class="bottom-section">
+    <a href="/settings" title="Settings" style="background:var(--surface2)"><span class="icon">⚙️</span> <span class="text" data-i18n="nav_settings">تنظیمات</span></a>
+  </div>
+</header>
+
+<div class="main-content">
   <a href="/" class="nav-back" id="btnBack" data-i18n="back_dash">→ بازگشت به داشبورد اصلی</a>
   
   <div class="settings-grid">
@@ -92,6 +198,7 @@ String buildSettingsPage() {
 <script>
 const dict = {
   'fa': {
+    'nav_pack': 'ساخت پک', 'nav_triage': 'تریاژ', 'nav_worker': 'مدیریت ورکر', 'nav_logs': 'فایل‌ها', 'nav_settings': 'تنظیمات',
     'back_dash': '→ بازگشت به داشبورد اصلی',
     'lang_title': '🌐 انتخاب زبان (Language)',
     'lang_desc': 'زبان رابط کاربری را انتخاب کنید. این تنظیم در مرورگر شما ذخیره شده و پردازنده دستگاه را درگیر نمی‌کند.',
@@ -111,6 +218,7 @@ const dict = {
     'clear_all': 'پاکسازی کامل دیتابیس (Global Wipe)'
   },
   'en': {
+    'nav_pack': 'Pack Builder', 'nav_triage': 'Triage', 'nav_worker': 'Worker Manager', 'nav_logs': 'Logs', 'nav_settings': 'Settings',
     'back_dash': '← Back to Dashboard',
     'lang_title': '🌐 Language Selection',
     'lang_desc': 'Select your preferred UI language. This is saved locally in your browser to keep the ESP32 fast.',
@@ -131,20 +239,26 @@ const dict = {
   }
 };
 
+function toggleSidebar() {
+  const sidebar = document.getElementById('mainSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('active');
+}
+
 let currentLang = 'fa'; 
 
 function changeLang(lang) {
   currentLang = lang;
   localStorage.setItem('sysLang', lang); 
+  document.documentElement.style.setProperty('--dir-sign', lang === 'fa' ? '1' : '-1');
   
   if (lang === 'fa') {
     document.body.style.direction = 'rtl';
     document.body.style.textAlign = 'right';
-    document.getElementById('btnBack').style.direction = 'rtl';
   } else {
     document.body.style.direction = 'ltr';
     document.body.style.textAlign = 'left';
-    document.getElementById('btnBack').style.direction = 'ltr';
   }
 
   document.querySelectorAll('[data-i18n]').forEach(el => {

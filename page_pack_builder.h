@@ -9,12 +9,54 @@ String buildPackBuilderPage() {
 <html lang="fa">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>AI Smart Pack Builder</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-  :root { --bg: #0d0d0f; --surface: #161619; --surface2: #1e1e23; --border: #2a2a32; --accent: #00d4aa; --accent2: #0096ff; --warn: #ff6b35; --danger: #e74c3c; --text: #e8e8f0; --muted: #6b6b80; --mono: 'Consolas', monospace; }
-  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; padding: 20px; max-width: 1100px; margin: 0 auto; direction: rtl; text-align: right; transition: all 0.3s ease; }
+  :root { 
+    --bg: #0d0d0f; --surface: #161619; --surface2: #1e1e23; --border: #2a2a32; 
+    --accent: #00d4aa; --accent2: #0096ff; --warn: #ff6b35; --danger: #e74c3c; 
+    --text: #e8e8f0; --muted: #6b6b80; --mono: 'Consolas', monospace; 
+    --dir-sign: 1; 
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body { background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; min-height: 100vh; min-height: 100dvh; direction: rtl; text-align: right; transition: background 0.3s ease; padding-inline-start: max(70px, env(safe-area-inset-left)); overflow-x: hidden; padding-top: env(safe-area-inset-top); padding-bottom: max(20px, env(safe-area-inset-bottom)); margin: 0; }
+  
+  .main-content { padding: 20px; max-width: 1100px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+
+  /* Overlay بک‌گراند برای زمانی که کشو باز است */
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 95; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px); }
+  .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+  
+  /* تاپ‌بار مخصوص موبایل */
+  .mobile-top-bar { display: none; }
+
+  /* سایدبار کشویی */
+  header#mainSidebar { position: fixed; top: 0; bottom: 0; inset-inline-start: 0; width: 70px; background: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow-x: hidden; white-space: nowrap; }
+  header#mainSidebar.open { width: 260px; box-shadow: 0 0 24px rgba(0,0,0,0.7); }
+  
+  .top-bar-sidebar { display: flex; align-items: center; padding: 0 13px 16px; gap: 16px; min-height: 50px; }
+  .menu-toggle { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text); cursor: pointer; border-radius: 50%; flex-shrink: 0; transition: background 0.2s; }
+  .menu-toggle:hover { background: var(--surface2); }
+  
+  .logo-icon { font-size: 20px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  
+  /* مخفی/نمایان شدن متون کشو */
+  .text, .logo-text { opacity: 0; transition: opacity 0.2s ease; font-weight: 600; }
+  .logo-text { font-size: 16px; }
+  header#mainSidebar.open .text, header#mainSidebar.open .logo-text { opacity: 1; transition-delay: 0.1s; }
+  
+  .nav-links { display: flex; flex-direction: column; gap: 6px; flex: 1; margin-top: 10px; }
+  .nav-links a, .bottom-section a { text-decoration: none; color: var(--text); font-size: 14px; padding: 0 12px; height: 44px; margin: 0 13px; border-radius: 50px; display: flex; align-items: center; gap: 16px; transition: background 0.2s, color 0.2s; border: none; font-weight: normal; }
+  .nav-links a:hover, .bottom-section a:hover { background: var(--surface2); }
+  .nav-links a.special { background: rgba(0, 212, 170, 0.1); color: var(--accent); }
+  .nav-links a.special:hover { background: rgba(0, 212, 170, 0.2); }
+  .icon { font-size: 18px; width: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  
+  .bottom-section { display: flex; flex-direction: column; gap: 6px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+  
+  /* عناصر مختص صفحه Pack Builder */
   .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; direction: inherit;}
   .btn-back { color: var(--accent); text-decoration: none; font-weight: bold; border: 1px solid var(--accent); padding: 6px 14px; border-radius: 6px; background: rgba(0,212,170,.1); transition: 0.2s; direction: inherit;}
   .btn-back:hover { background: var(--accent); color: #000; }
@@ -53,9 +95,79 @@ String buildPackBuilderPage() {
   .btn-pdf:hover { opacity: 0.9; transform: translateY(-1px); }
   
   #loader { display: none; color: var(--accent); margin-bottom: 15px; font-weight: bold; text-align: center; width: 100%;}
+  
+  @media (max-width: 700px) {
+    /* تغییرات اصلی بدنه برای هدر بالایی */
+    body { padding-inline-start: env(safe-area-inset-left); padding-top: calc(64px + env(safe-area-inset-top)); padding-bottom: max(40px, env(safe-area-inset-bottom)); }
+    .main-content { padding: 15px; }
+    
+    /* نوار افقی بالای صفحه در موبایل */
+    .mobile-top-bar { display: flex; position: fixed; top: 0; left: 0; right: 0; height: calc(64px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 16px 0; background: var(--bg); align-items: center; justify-content: space-between; z-index: 90; }
+    .mobile-top-bar .title-group { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 500; }
+    
+    /* تبدیل سایدبار به کشوی متحرک */
+    header#mainSidebar { 
+       width: 280px; 
+       transform: translateX(calc(100% * var(--dir-sign))); 
+       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+       border-inline-end: none;
+       background: var(--surface);
+    }
+    header#mainSidebar.open { 
+       transform: translateX(0); 
+       box-shadow: 0 0 40px rgba(0,0,0,0.8); 
+    }
+    
+    .top-bar-sidebar { padding: 0 16px 16px; }
+    .nav-links a, .bottom-section a { margin: 0 12px; }
+    .text, .logo-text { opacity: 1; }
+    
+    .input-row { flex-direction: column; }
+    .btn-run { width: 100%; }
+    .header { flex-direction: column; gap: 10px; align-items: flex-start; }
+  }
+
 </style>
 </head>
 <body>
+
+<!-- Mobile Top Bar -->
+<div class="mobile-top-bar">
+  <div class="title-group">
+    <button class="menu-toggle" onclick="toggleSidebar()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 16h18v-2H3v2zm0-5h18v-2H3v2z"/></svg>
+    </button>
+    <span>AI Battery Studio <span style="font-size:12px; color:var(--muted)">▾</span></span>
+  </div>
+  <div></div>
+</div>
+
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<header id="mainSidebar">
+  <div class="top-bar-sidebar">
+    <button class="menu-toggle" onclick="toggleSidebar()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 16h18v-2H3v2zm0-5h18v-2H3v2z"/></svg>
+    </button>
+    <div class="logo-icon">✨</div>
+    <div class="logo-text">AI Battery Studio</div>
+  </div>
+  
+  <nav class="nav-links">
+    <a href="/pack_builder" class="special" title="AI Pack Builder"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
+    <a href="/triage" title="Triage Manager"><span class="icon">⚕️</span> <span class="text" data-i18n="nav_triage">تریاژ</span></a>
+    <a href="/worker_manager" title="Worker Manager"><span class="icon">🧑‍🔧</span> <span class="text" data-i18n="nav_worker">مدیریت ورکر</span></a>
+    <a href="/logs" title="CSV Manager"><span class="icon">📋</span> <span class="text" data-i18n="nav_logs">فایل‌ها</span></a>
+  </nav>
+
+  <div class="bottom-section">
+    <a href="/settings" title="Settings"><span class="icon">⚙️</span> <span class="text" data-i18n="nav_settings">تنظیمات</span></a>
+  </div>
+</header>
+
+<div class="main-content">
   <div class="header">
     <h2>🧠 <span data-i18n="title_main">AI Smart Pack Builder</span></h2>
     <a href="/" class="btn-back" id="btnBack" data-i18n="back_dash">→ بازگشت به داشبورد</a>
@@ -96,13 +208,15 @@ String buildPackBuilderPage() {
       <canvas id="master-canvas" width="800" height="120" style="width:100%; height:120px;"></canvas>
     </div>
 
-    <div id="pack-stats" style="display:flex; justify-content:space-around; background:var(--surface); border:1px solid var(--border); padding:15px; border-radius:8px; font-weight:bold; margin-bottom:15px; direction:ltr;"></div>
+    <div id="pack-stats" style="display:flex; justify-content:space-around; background:var(--surface); border:1px solid var(--border); padding:15px; border-radius:8px; font-weight:bold; margin-bottom:15px; direction:ltr; flex-wrap:wrap; gap:10px;"></div>
     <div id="pack-layout" class="pack-blocks"></div>
   </div>
+</div>
 
 <script>
 const dict = {
   'fa': {
+    'nav_pack': 'ساخت پک', 'nav_triage': 'تریاژ', 'nav_worker': 'مدیریت ورکر', 'nav_logs': 'فایل‌ها', 'nav_settings': 'تنظیمات',
     'back_dash': '→ بازگشت به داشبورد',
     'title_main': 'موتور هوشمند ساخت پک',
     'engine1_title': 'موتور هوشمند محاسبه تلورانس و کلاستربندی',
@@ -120,6 +234,7 @@ const dict = {
     'alert_fallback_both': '📦⚠️ <strong>محدودیت موجودی و ایمنی:</strong> ابتدا به دلیل کمبود سلول، ساختار به {S}S{P_INV}P کاهش یافت. سپس برای جلوگیری از خطر حرارتی تحت جریان {A} آمپر، سیستم امن‌ترین پک ممکن را به صورت <strong>{S}S{P_NEW}P</strong> نهایی کرد.',
   },
   'en': {
+    'nav_pack': 'Pack Builder', 'nav_triage': 'Triage', 'nav_worker': 'Worker Manager', 'nav_logs': 'Logs', 'nav_settings': 'Settings',
     'back_dash': '← Dashboard',
     'title_main': 'AI Smart Pack Builder',
     'engine1_title': 'Smart Tolerance & Assembly Engine',
@@ -138,8 +253,16 @@ const dict = {
   }
 };
 
+function toggleSidebar() {
+  const sidebar = document.getElementById('mainSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('active');
+}
+
 let currentLang = localStorage.getItem('sysLang') || 'fa';
 function applyLanguage() {
+  document.documentElement.style.setProperty('--dir-sign', currentLang === 'fa' ? '1' : '-1');
   if (currentLang === 'fa') {
     document.body.style.direction = 'rtl';
     document.body.style.textAlign = 'right';
