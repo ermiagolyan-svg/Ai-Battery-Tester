@@ -31,7 +31,7 @@ void setupWebServer() {
   server.on("/logs", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildLogPage()); });
   server.on("/triage", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildTriagePage()); });
   server.on("/pack_builder", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildPackBuilderPage()); });
-
+  server.on("/worker_manager", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildWorkerManagerPage()); });
   // ۲. دریافت اطلاعات آنلاین وضعیت سیستم (JSON)
   server.on("/data", HTTP_GET, []() {
     JsonDocument doc; 
