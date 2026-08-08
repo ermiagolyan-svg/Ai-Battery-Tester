@@ -25,13 +25,37 @@ void stopChannel(uint8_t ch_idx);
 // ─── راه‌اندازی و تعریف مسیرهای وب‌سرور (Routes) ───────────────
 void setupWebServer() {
   
-// ۱. صفحات اصلی (HTML)
-  server.on("/", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildIndexPage()); });
-  server.on("/settings", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildSettingsPage()); });
-  server.on("/logs", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildLogPage()); });
-  server.on("/triage", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildTriagePage()); });
-  server.on("/pack_builder", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildPackBuilderPage()); });
-  server.on("/worker_manager", HTTP_GET, []() { server.send(200, "text/html; charset=utf-8", buildWorkerManagerPage()); });
+  // ۱. صفحات اصلی (HTML)
+  server.on("/", HTTP_GET, []() { 
+      server.sendHeader("Connection", "close"); 
+      server.send(200, "text/html; charset=utf-8", buildIndexPage()); 
+  });
+  
+  server.on("/settings", HTTP_GET, []() { 
+      server.sendHeader("Connection", "close"); 
+      server.send(200, "text/html; charset=utf-8", buildSettingsPage()); 
+  });
+  
+  server.on("/logs", HTTP_GET, []() { 
+      server.sendHeader("Connection", "close"); 
+      server.send(200, "text/html; charset=utf-8", buildLogPage()); 
+  });
+  
+  server.on("/triage", HTTP_GET, []() { 
+      server.sendHeader("Connection", "close"); 
+      server.send(200, "text/html; charset=utf-8", buildTriagePage()); 
+  });
+  
+  server.on("/pack_builder", HTTP_GET, []() { 
+      server.sendHeader("Connection", "close"); 
+      server.send(200, "text/html; charset=utf-8", buildPackBuilderPage()); 
+  });
+  
+  server.on("/worker_manager", HTTP_GET, []() { 
+      server.sendHeader("Connection", "close"); 
+      server.send(200, "text/html; charset=utf-8", buildWorkerManagerPage()); 
+  });
+
   // ۲. دریافت اطلاعات آنلاین وضعیت سیستم (JSON)
   server.on("/data", HTTP_GET, []() {
     JsonDocument doc; 
@@ -83,20 +107,31 @@ void setupWebServer() {
 
     String response;
     serializeJson(doc, response);
+    
+    server.sendHeader("Connection", "close"); // آزادسازی سوکت
     server.send(200, "application/json", response);
   });
 
   // ۳. API مربوط به پروفایل تریاژ
   server.on("/getprofile", HTTP_GET, []() {
     String json = "{\"p\":2,\"a\":80.0,\"b\":150.0,\"c\":300.0}";
+    server.sendHeader("Connection", "close");
     server.send(200, "application/json", json);
   });
 
   // ۴. API مربوط به گراف هوشمند
   server.on("/api/graph", HTTP_GET, []() {
-    if (!server.hasArg("ch")) { server.send(400, "text/plain", "missing ch"); return; }
+    if (!server.hasArg("ch")) { 
+        server.sendHeader("Connection", "close");
+        server.send(400, "text/plain", "missing ch"); 
+        return; 
+    }
     int c = server.arg("ch").toInt();
-    if (c < 0 || c >= 3) { server.send(400, "text/plain", "bad ch"); return; }
+    if (c < 0 || c >= 3) { 
+        server.sendHeader("Connection", "close");
+        server.send(400, "text/plain", "bad ch"); 
+        return; 
+    }
     
     JsonDocument doc;
     JsonArray dataArray = doc.to<JsonArray>();
@@ -107,10 +142,10 @@ void setupWebServer() {
     
     String response;
     serializeJson(doc, response);
+    server.sendHeader("Connection", "close"); // آزادسازی سوکت
     server.send(200, "application/json", response);
   });
 
-  // ۵. دریافت دستورات کنترلی از کلاینت (Action)
   // ۵. دریافت دستورات کنترلی از کلاینت (Action)
   server.on("/action", HTTP_POST, []() {
     String body = server.arg("plain");
@@ -130,27 +165,23 @@ void setupWebServer() {
     
     name.trim(); 
     
-    // 🛑 سد دفاعی سرور: اگر در حالت اتوماتیک هستیم و دستور تریاژ نیست، تگ الزامی است
     if (uiMode == "auto" && act != "autotriage" && name.length() == 0) {
+        server.sendHeader("Connection", "close");
         server.send(400, "text/plain", "Error: Triage Tag is REQUIRED!");
         return; 
     }
     
-    // 🏷️ سیستم تگ‌گذاری تفکیک شده و فورس‌ماژور برای تست‌های دستی
     if (uiMode == "manual") {
         if (name.length() == 0) {
-            // ساخت تگ دستی خودکار
             uint16_t mId = prefs.getUInt("man_id", 1);
             char buf[16];
             snprintf(buf, sizeof(buf), "MAN-%03u", mId);
             name = String(buf);
             prefs.putUInt("man_id", mId + 1);
         } else if (!name.startsWith("MAN-")) {
-            // اگر کاربر اسم دلخواه مثل batry2 داد، به زور MAN- را میچسبانیم
             name = "MAN-" + name;
         }
     } else if (uiMode == "auto" && act == "autotriage" && name.length() == 0) {
-        // تگ‌های تمیز برای هوش مصنوعی (B-001)
         name = getNextGlobalAutoName();
         incrementGlobalId();
     }
@@ -159,6 +190,7 @@ void setupWebServer() {
       if (act == "stop") {
         ch[chIdx].isCanceled = true; 
         stopChannel(chIdx);          
+        server.sendHeader("Connection", "close");
         server.send(200, "text/plain", "Stopped");
         return; 
       }
@@ -174,29 +206,40 @@ void setupWebServer() {
       else if (act == "auto1500") startAuto(chIdx, name, AUTO_1500);
       else if (act == "triage") startChannel(chIdx, name, Triage);
       else if (act == "autotriage") startAuto(chIdx, name, AUTO_TRIAGE);
+      
+      server.sendHeader("Connection", "close");
       server.send(200, "text/plain", "OK");
     } else {
+      server.sendHeader("Connection", "close");
       server.send(400, "text/plain", "Error: Channel is busy or in Auto-Rest phase");
     }
   });
 
   // ۶. دستور توقف دستی
-  // ۶. دستور توقف دستی
   server.on("/stop", HTTP_POST, []() {
     int chIdx = server.arg("plain").toInt();
     if (chIdx >= 0 && chIdx < 3 && ch[chIdx].state != IDLE && ch[chIdx].state != DONE) {
-      ch[chIdx].isCanceled = true;  // به جای صفر کردن متغیرها، ثبت می‌کنیم که لغو شده
-      stopChannel(chIdx);           // خود stopChannel در مرحله آخر همه‌چیز را پاک می‌کند
+      ch[chIdx].isCanceled = true;  
+      stopChannel(chIdx);           
+      server.sendHeader("Connection", "close");
       server.send(200, "text/plain", "OK");
-    } else server.send(400, "text/plain", "Error");
+    } else {
+      server.sendHeader("Connection", "close");
+      server.send(400, "text/plain", "Error");
+    }
   });
 
   // ۷. ریست کانال
   server.on("/reset", HTTP_POST, []() {
     int chIdx = server.arg("plain").toInt();
     if (chIdx >= 0 && chIdx < 3 && (ch[chIdx].state == IDLE || ch[chIdx].state == DONE)) {
-      ch[chIdx] = Channel(); server.send(200, "text/plain", "OK");
-    } else server.send(400, "text/plain", "Error");
+      ch[chIdx] = Channel(); 
+      server.sendHeader("Connection", "close");
+      server.send(200, "text/plain", "OK");
+    } else {
+      server.sendHeader("Connection", "close");
+      server.send(400, "text/plain", "Error");
+    }
   });
 
   // ۸. تنظیم زمان (NTP Sync)
@@ -209,12 +252,17 @@ void setupWebServer() {
       tv.tv_sec = epoch;
       tv.tv_usec = 0;
       settimeofday(&tv, NULL); 
+      server.sendHeader("Connection", "close");
       server.send(200, "text/plain", "Time Sync Success");
-    } else server.send(400, "text/plain", "Error");
+    } else {
+      server.sendHeader("Connection", "close");
+      server.send(400, "text/plain", "Error");
+    }
   });
 
   // ۹. دانلود فایل لاگ یکپارچه
   server.on("/global_log", HTTP_GET, []() {
+    server.sendHeader("Connection", "close"); // قطع آنی سوکت بعد از ارسال لاگ سنگین
     if (LittleFS.exists("/global_log.csv")) { 
         File f = LittleFS.open("/global_log.csv", FILE_READ); 
         server.streamFile(f, "text/csv"); 
@@ -223,18 +271,21 @@ void setupWebServer() {
     else server.send(404, "text/plain", "Empty");
   });
 
-  // ۱۰. پاک‌کردن لاگ‌ها (یکپارچه شده)
+  // ۱۰. پاک‌کردن لاگ‌ها
   server.on("/clearlog", HTTP_POST, []() {
     if (LittleFS.exists("/global_log.csv")) {
         LittleFS.remove("/global_log.csv");
     }
     prefs.putUInt("global_id", 1); 
+    server.sendHeader("Connection", "close");
     server.send(200, "text/plain", "Log Cleared");
   });
 
   // ۱۱. مدیریت شبکه‌های WiFi
   server.on("/scanwifi", HTTP_GET, []() {
     int n = WiFi.scanComplete();
+    server.sendHeader("Connection", "close");
+    
     if (n == WIFI_SCAN_FAILED) {
       WiFi.scanNetworks(true); 
       server.send(202, "application/json", "{\"status\":\"scanning\"}");
@@ -257,13 +308,12 @@ void setupWebServer() {
     }
   });
 
-  // واکشی شبکه‌های ذخیره شده روی دستگاه
   server.on("/getwifi", HTTP_GET, []() {
     String wifiJson = prefs.getString("wifi_list", "[]");
+    server.sendHeader("Connection", "close");
     server.send(200, "application/json", wifiJson);
   });
 
-  // حذف شبکه از حافظه دستگاه
   server.on("/delwifi", HTTP_POST, []() {
     String ssid = server.arg("plain");
     String wifiJson = prefs.getString("wifi_list", "[]");
@@ -281,35 +331,29 @@ void setupWebServer() {
       serializeJson(doc, out);
       prefs.putString("wifi_list", out);
     }
+    server.sendHeader("Connection", "close");
     server.send(200, "text/plain", "OK");
   });
 
-  // افزودن یا اتصال به شبکه
   server.on("/setwifi", HTTP_POST, []() {
     String ssid = server.arg("ssid");
     String pass = server.arg("pass");
     
-    // حذف فاصله‌های پنهان احتمالی
     ssid.trim();
     pass.trim();
     
+    server.sendHeader("Connection", "close");
+    
     if (ssid.length() > 0) {
-      // قطع اتصال بدون خاموش کردن کامل ماژول
       WiFi.disconnect();
       delay(100);
-      
-      // قرار دادن در حالت AP_STA برای پایداری کانکشن فعلی کاربر
       WiFi.mode(WIFI_AP_STA);
       delay(100); 
       
-      if (pass.length() > 0) {
-          WiFi.begin(ssid.c_str(), pass.c_str());
-      } else {
-          WiFi.begin(ssid.c_str());
-      }
+      if (pass.length() > 0) WiFi.begin(ssid.c_str(), pass.c_str());
+      else WiFi.begin(ssid.c_str());
       
       int tries = 0;
-      // افزایش زمان مهلت به ۲۰ ثانیه (۴۰ تست ۵۰۰ میلی‌ثانیه‌ای)
       while (WiFi.status() != WL_CONNECTED && tries < 40) {
         delay(500); 
         tries++;
@@ -343,7 +387,6 @@ void setupWebServer() {
         delay(1000);
         ESP.restart(); 
       } else {
-        // بازگشت مطمئن به حالت هات‌اسپات در صورت خطا
         WiFi.disconnect();
         delay(100);
         WiFi.mode(WIFI_AP);

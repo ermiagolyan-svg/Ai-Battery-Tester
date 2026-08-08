@@ -231,6 +231,7 @@ void setup() {
   }
 
   WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
   
   tft.setTextColor(UI_ACCENT2, UI_BG); 
   tft.drawString("Network: Scanning...", 20, 160);

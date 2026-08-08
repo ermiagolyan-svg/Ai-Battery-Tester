@@ -9,8 +9,9 @@ String buildIndexPage() {
 <html lang="fa">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Li-ion Battery Analyzer V6.8.2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <style>
+  a, button { touch-action: manipulation; }
   :root { 
     --bg: #0d0d0f; --surface: #161619; --surface2: #1e1e23; --border: #2a2a32; 
     --accent: #00d4aa; --accent2: #0096ff; --warn: #ff6b35; --ok: #00e676; 
@@ -19,7 +20,7 @@ String buildIndexPage() {
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   
-  body { background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; min-height: 100vh; min-height: 100dvh; direction: rtl; text-align: right; transition: background 0.3s ease; padding-inline-start: max(70px, env(safe-area-inset-left)); overflow-x: hidden; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; min-height: 100vh; min-height: 100dvh; direction: rtl; text-align: right; transition: background 0.4s ease; padding-inline-start: max(70px, env(safe-area-inset-left)); overflow-x: hidden; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); }
   
   .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 95; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px); }
   .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
@@ -32,7 +33,7 @@ String buildIndexPage() {
   .top-bar-sidebar { display: flex; align-items: center; padding: 0 13px 16px; gap: 16px; min-height: 50px; }
   
   .menu-toggle { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text); cursor: pointer; border-radius: 50%; flex-shrink: 0; transition: background 0.2s; }
-  .menu-toggle:hover { background: var(--surface2); }
+  .menu-toggle:hover { background: rgba(255,255,255,0.05); }
   
   .logo-icon { font-size: 20px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   
@@ -42,7 +43,7 @@ String buildIndexPage() {
   
   .nav-links { display: flex; flex-direction: column; gap: 6px; flex: 1; margin-top: 10px; }
   .nav-links a, .bottom-section a { text-decoration: none; color: var(--text); font-size: 14px; padding: 0 12px; height: 44px; margin: 0 13px; border-radius: 50px; display: flex; align-items: center; gap: 16px; transition: background 0.2s, color 0.2s; border: none; font-weight: normal; }
-  .nav-links a:hover, .bottom-section a:hover { background: var(--surface2); }
+  .nav-links a:hover, .bottom-section a:hover { background: rgba(255,255,255,0.05); }
   .nav-links a.special { background: rgba(0, 212, 170, 0.1); color: var(--accent); }
   .nav-links a.special:hover { background: rgba(0, 212, 170, 0.2); }
   .icon { font-size: 18px; width: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -51,18 +52,19 @@ String buildIndexPage() {
   .sys-time { padding: 0 24px; font-family: var(--mono); font-size: 12px; color: var(--muted); direction: ltr; text-align: left; opacity: 0; transition: opacity 0.2s ease; margin-top: 8px; }
   header#mainSidebar.open .sys-time { opacity: 0.6; transition-delay: 0.1s; }
 
-  .global-panel { background: var(--surface); margin: 16px 20px 0; max-width: 1500px; border-radius: 16px; border: 1px solid var(--border); padding: 16px 24px; display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-start; }
+  .global-panel { background: var(--surface); margin: 16px 20px 0; max-width: 1500px; border-radius: 16px; border: 1px solid var(--border); padding: 16px 24px; display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-start; transition: background 0.4s ease, border-color 0.4s ease; }
   .panel-col { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 8px; }
   .panel-label { font-size: 13px; color: var(--text); font-weight: 700; }
   .info-btn { cursor: pointer; color: var(--accent); background: rgba(0,212,170,0.1); border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; border: 1px solid rgba(0,212,170,0.3); transition: 0.2s; }
   .info-btn:hover { background: var(--accent); color: #000; }
-  .panel-select { background: #0a0a0c; color: var(--text); border: 1px solid var(--border); padding: 12px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; cursor: pointer; font-family: inherit; width: 100%; direction: inherit; }
+  
+  .panel-select { background: rgba(0,0,0,0.2); color: var(--text); border: 1px solid rgba(255,255,255,0.1); padding: 12px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; cursor: pointer; font-family: inherit; width: 100%; direction: inherit; }
   .panel-select:focus { border-color: var(--accent); }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; padding: 20px; max-width: 1540px; margin: 0 auto; direction: inherit;}
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.3s;}
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.4s ease, background 0.4s ease;}
   
-  .card-header { padding: 14px 18px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); direction: ltr; }
+  .card-header { padding: 14px 18px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); direction: ltr; }
   .ch-label { display: flex; align-items: center; gap: 8px; }
   .ch-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: all 0.3s; }
   @keyframes p { 0%,100%{opacity:1} 50%{opacity:.4} }
@@ -70,33 +72,33 @@ String buildIndexPage() {
   .ch-num { font-size: 12px; color: var(--muted); font-family: var(--mono); font-weight: bold; text-align: left; }
   .badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; transition: all 0.3s; }
   
-  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); direction: ltr; text-align: left; }
-  .metric { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(255,255,255,0.05); direction: ltr; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .metric { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; transition: background 0.4s ease; }
   .metric-label { font-size: 11px; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; }
   .metric-value { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; }
   .metric-value.accent { color: var(--accent); }
   .metric-unit { font-size: 14px; color: var(--muted); margin-left: 2px; }
   
-  .graph-wrap { padding: 12px 18px; background: var(--surface); border-top: 1px solid var(--border); direction: ltr; text-align: left; }
+  .graph-wrap { padding: 12px 18px; background: transparent; direction: ltr; text-align: left; }
   .graph-header { font-size: 11px; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between;}
-  .voltage-bar-wrap { padding: 10px 18px; background: var(--surface); border-top: 1px solid var(--border); direction: ltr; }
-  .voltage-bar-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-  .voltage-bar { height: 5px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .voltage-bar-wrap { padding: 10px 18px; background: transparent; border-top: 1px solid rgba(255,255,255,0.05); direction: ltr; }
+  .voltage-bar-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .voltage-bar { height: 6px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; }
   .voltage-bar-fill { height: 100%; background: linear-gradient(90deg, var(--warn), var(--accent), var(--ok)); transition: width .5s; }
   
-  .card-footer { padding: 14px 18px; background: var(--surface2); border-top: 1px solid var(--border); }
+  .card-footer { padding: 14px 18px; background: transparent; border-top: 1px solid rgba(255,255,255,0.05); }
   .form-row { display: flex; gap: 8px; margin-bottom: 10px; }
   
-  .input-name { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 8px; font-size: 13px; outline: none; transition: border-color 0.2s; font-family: inherit; direction: inherit; }
+  .input-name { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text); padding: 12px; border-radius: 8px; font-size: 13px; outline: none; transition: border-color 0.2s; font-family: inherit; direction: inherit; }
   select.input-name { cursor: pointer; appearance: none; }
   .input-name:focus { border-color: var(--accent); }
   
   .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .action-grid .full-width { grid-column: span 2; }
   
-  .btn-big { background: var(--surface); border: 1px solid var(--border); color: var(--text); height: 50px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); font-family: inherit; }
-  .btn-big:hover { background: #2a2a32; border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,212,170,0.1); }
-  .btn-big:active { transform: translateY(1px); box-shadow: none; }
+  .btn-big { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: var(--text); height: 50px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; }
+  .btn-big:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); transform: translateY(-1px); }
+  .btn-big:active { transform: translateY(1px); }
   
   .btn-big.active-btn { border-width: 2px; }
   .btn-big.chg.active-btn { border-color: #00ffff; color: #00ffff; background: rgba(0,255,255,0.1); box-shadow: 0 0 16px rgba(0,255,255,0.2); }
@@ -109,21 +111,21 @@ String buildIndexPage() {
   .btn-stop { background: rgba(255, 107, 53, 0.1); color: var(--warn); border: 1px solid var(--warn); width: 100%; }
   .btn-stop:hover { background: var(--warn); color: #fff; }
   .btn-report { background: var(--accent2); color: #fff; }
-  .btn-reset { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-reset { background: transparent; color: var(--muted); border: 1px solid rgba(255,255,255,0.1); }
   .btn-reset:hover { border-color: var(--text); color: var(--text); }
   
-  .log-container { background: #0a0a0c; border-top: 1px solid var(--border); flex-grow: 1; }
-  .log-header { font-size: 12px; padding: 10px 18px; color: var(--muted); border-bottom: 1px solid #1e1e23; display: flex; justify-content: space-between; align-items: center; direction: inherit;}
-  .log-btn { background: #1e1e23; border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 2px 12px; cursor: pointer; font-size: 13px; margin: 0 4px; font-family: inherit;}
+  .log-container { background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.05); flex-grow: 1; }
+  .log-header { font-size: 12px; padding: 10px 18px; color: var(--muted); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; direction: inherit;}
+  .log-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); border-radius: 4px; padding: 2px 12px; cursor: pointer; font-size: 13px; margin: 0 4px; font-family: inherit;}
   .log-btn:hover { border-color: var(--accent); color: var(--accent); }
   
   .log-content { padding: 10px 18px; font-family: var(--mono); font-size: 13px; color: #a1a1aa; height: 160px; overflow: auto; direction: ltr; text-align: left; }
   .log-content::-webkit-scrollbar { width: 6px; height: 6px; }
-  .log-content::-webkit-scrollbar-thumb { background: #2a2a32; border-radius: 4px; }
+  .log-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
   
   .csv-table { width: 100%; border-collapse: collapse; text-align: left; }
-  .csv-table th, .csv-table td { padding: 4px 12px; border-bottom: 1px solid #1e1e23; white-space: nowrap; }
-  .csv-table th { color: var(--muted); font-weight: bold; position: sticky; top: 0; background: #0a0a0c; z-index: 1; }
+  .csv-table th, .csv-table td { padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); white-space: nowrap; }
+  .csv-table th { color: var(--muted); font-weight: bold; position: sticky; top: 0; background: rgba(10,10,12,0.95); z-index: 1; }
   
   #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent); color: var(--text); padding: 12px 24px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-weight: bold; }
   #toast.show { opacity: 1; }
@@ -136,13 +138,13 @@ String buildIndexPage() {
   @media (max-width: 700px) {
     body { padding-inline-start: env(safe-area-inset-left); padding-top: calc(64px + env(safe-area-inset-top)); padding-bottom: max(40px, env(safe-area-inset-bottom)); }
     
-    .mobile-top-bar { display: flex; position: fixed; top: 0; left: 0; right: 0; height: calc(64px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 16px 0; background: var(--bg); align-items: center; justify-content: space-between; z-index: 90; }
+    .mobile-top-bar { display: flex; position: fixed; top: 0; left: 0; right: 0; height: calc(64px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 16px 0; background: var(--bg); align-items: center; justify-content: space-between; z-index: 90; transition: background 0.4s ease; }
     .mobile-top-bar .title-group { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 500; }
     
     header#mainSidebar { 
        width: 280px; 
-       transform: translateX(calc(100% * var(--dir-sign)));
-       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+       transform: translateX(calc(100% * var(--dir-sign))); 
+       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s ease; 
        border-inline-end: none;
        background: var(--surface);
     }
@@ -184,8 +186,8 @@ String buildIndexPage() {
   </div>
   
   <nav class="nav-links">
-    <a href="/" title="Dashboard" style="background:var(--surface2)"><span class="icon">🏠</span> <span class="text" data-i18n="nav_home">داشبورد</span></a>
-    <a href="/pack_builder"  title="AI Pack Builder"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
+    <a href="/" title="Dashboard" style="background:rgba(255,255,255,0.08)"><span class="icon">🏠</span> <span class="text" data-i18n="nav_home">داشبورد</span></a>
+    <a href="/pack_builder" title="AI Pack Builder"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
     <a href="/triage" title="Triage Manager"><span class="icon">⚕️</span> <span class="text" data-i18n="nav_triage">تریاژ</span></a>
     <a href="/worker_manager" title="Worker Manager"><span class="icon">🧑‍🔧</span> <span class="text" data-i18n="nav_worker">مدیریت ورکر</span></a>
     <a href="/logs" title="CSV Manager"><span class="icon">📋</span> <span class="text" data-i18n="nav_logs">فایل‌ها</span></a>
@@ -352,6 +354,7 @@ async function fetchAndDrawGraph(i) {
     
     const canvas = document.getElementById(`graph-val-${i}`);
     if(!canvas) return;
+    
     const ctx = canvas.getContext('2d');
     const w = canvas.width; const h = canvas.height;
     ctx.clearRect(0, 0, w, h);
@@ -360,21 +363,21 @@ async function fetchAndDrawGraph(i) {
     if(ptsEl) ptsEl.textContent = data.length + " pts";
     
     const minV = 2.5; const maxV = 4.3;
-    const paddingLeft = 40; 
+    const paddingLeft = 60; 
     
     ctx.fillStyle = '#6b6b80';
-    ctx.font = '11px Consolas, monospace';
+    ctx.font = '22px Consolas, monospace'; 
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     
     [2.5, 3.0, 3.5, 4.0, 4.2].forEach(v => {
         let y = h - ((v - minV) / (maxV - minV)) * h;
-        let textY = Math.max(6, Math.min(y, h - 6)); 
+        let textY = Math.max(12, Math.min(y, h - 12)); 
         
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(42, 42, 50, 0.5)';
-        ctx.lineWidth = 1;
-        ctx.moveTo(paddingLeft - 5, y);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'; 
+        ctx.lineWidth = 2; 
+        ctx.moveTo(paddingLeft - 10, y);
         ctx.lineTo(w, y);
         ctx.stroke();
         ctx.fillText(v.toFixed(1) + 'V', 0, textY);
@@ -383,7 +386,9 @@ async function fetchAndDrawGraph(i) {
     if(!data || data.length < 2) return;
     
     ctx.beginPath();
-    ctx.strokeStyle = CH_COLORS[i]; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = CH_COLORS[i]; 
+    ctx.lineWidth = 6; 
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     for(let j=0; j<data.length; j++) {
       let x = paddingLeft + (j / Math.max(1, data.length - 1)) * (w - paddingLeft);
       let y = h - ((data[j] - minV) / (maxV - minV)) * h;
@@ -521,7 +526,7 @@ function renderCards(data) {
     const currentMode = card ? card.getAttribute('data-mode') : null;
     const forceRebuild = (currentTriageState !== String(isTriage)) || (currentMode !== globalMode);
 
-    let cardBorderColor = isRunning ? CH_COLORS[i] : (isResting ? '#87ceeb' : (ch.state===STATE.DONE ? '#00ff00' : '#2a2a32'));
+    let cardBorderColor = isRunning ? CH_COLORS[i] : (isResting ? '#87ceeb' : (ch.state===STATE.DONE ? '#00ff00' : 'rgba(255,255,255,0.05)'));
 
     if (!card || forceRebuild || (card.getAttribute('data-state') != ch.state && !isFocused) || (isResting && card.getAttribute('data-resting') !== 'true')) {
       if (!card) { card = document.createElement('div'); card.id = id; grid.appendChild(card); }
@@ -546,7 +551,7 @@ function renderCards(data) {
 
       let footerHtml = '';
       if (ch.state === STATE.DONE) {
-        footerHtml = `<div class="form-row" style="direction:ltr;"><a href="/global_log" class="btn" style="background:#333; color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center; flex:1;" download="Global_Log.csv">${dict[currentLang]['btn_dl']}</a><button class="btn btn-report" onclick="downloadGraph(${i})">${dict[currentLang]['btn_graph']}</button><button class="btn btn-reset" onclick="resetCh(${i})">${dict[currentLang]['btn_rst']}</button></div>`;
+        footerHtml = `<div class="form-row" style="direction:ltr;"><a href="/global_log" class="btn" style="background:rgba(255,255,255,0.1); color:var(--text); text-decoration:none; display:flex; align-items:center; justify-content:center; flex:1; border:1px solid rgba(255,255,255,0.1);" download="Global_Log.csv">${dict[currentLang]['btn_dl']}</a><button class="btn btn-report" onclick="downloadGraph(${i})">${dict[currentLang]['btn_graph']}</button><button class="btn btn-reset" onclick="resetCh(${i})">${dict[currentLang]['btn_rst']}</button></div>`;
       } else {
         let bCharge = (ch.state === STATE.CHARGING) ? 'active-btn chg' : '';
         let b500 = (ch.state === STATE.D500) ? 'active-btn d500' : '';
@@ -618,7 +623,7 @@ function renderCards(data) {
         </div>
         <div class="graph-wrap">
           <div class="graph-header"><span>Live Voltage Curve</span><span id="points-val-${i}">0 pts</span></div>
-          <canvas id="graph-val-${i}" width="400" height="120" style="width:100%; height:110px; background:var(--surface2); border-radius:6px;"></canvas>
+          <canvas id="graph-val-${i}" width="800" height="240" style="width:100%; height:120px; background:rgba(0,0,0,0.2); border-radius:8px; border:1px solid rgba(255,255,255,0.05);"></canvas>
         </div>
         <div class="voltage-bar-wrap"><div class="voltage-bar-row"><span style="font-size:11px;color:var(--muted)">Voltage level</span><span style="font-size:11px;color:var(--muted)" id="vpct-val-${i}">${vPct.toFixed(0)}%</span></div><div class="voltage-bar"><div class="voltage-bar-fill" id="vbar-val-${i}" style="width:${vPct}%"></div></div></div>
         
@@ -782,10 +787,27 @@ async function fetchData() {
     const d=await r.json(); 
     renderCards(d); 
     document.getElementById('sysTime').textContent=d.time; 
-    
-    fetchGlobalLogCSV();
   } catch(e){} 
 }
+
+// 💡 جدا کردن دریافت لاگ‌های سنگین از دیتای زنده
+let isCsvFetching = false;
+async function fetchGlobalLogSafe() {
+  if (isCsvFetching) return;
+  isCsvFetching = true;
+  await fetchGlobalLogCSV();
+  isCsvFetching = false;
+}
+
+fetchData();
+setInterval(fetchData, 1000); // آپدیت زنده کارت‌ها هر 1 ثانیه
+
+// بارگذاری فایل حجیم CSV با 1 ثانیه تاخیر (تا صفحه اول سریع لود شود)
+// و آپدیت آن هر 5 ثانیه یک‌بار (تا شبکه ESP32 خفه نشود)
+setTimeout(() => {
+  fetchGlobalLogSafe();
+  setInterval(fetchGlobalLogSafe, 5000);
+}, 1000);
 
 async function startAct(i, act) { 
   const el = document.getElementById(`name-${i}`); 
@@ -808,7 +830,6 @@ async function stopTest(i) { const r=await fetch('/stop',{method:'POST',body:Str
 async function resetCh(i) { await fetch('/reset',{method:'POST',body:String(i)}); fetchData(); }
 function showToast(m) { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
 
-fetchData(); setInterval(fetchData,1000);
 </script></body></html>
 )rawhtml";
 }
