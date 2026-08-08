@@ -44,9 +44,10 @@ void updateTFT() {
     firstDraw = false;
   }
 
-  // ════════ آپدیت دیتای کانال‌ها با استفاده از Sprite (بدون مصرف حافظه اضافه) ════════
+  // ════════ آپدیت دیتای کانال‌ها با استفاده از Sprite ════════
   for(int i = 0; i < 3; i++) {
-    int yPos = 26 + (i * 96); // موقعیت Y کارت (کمی فشرده‌تر برای تقارن بهتر)
+    // توزیع یکنواخت کارت‌ها برای پر کردن 320 پیکسل (ارتفاع 96 + فاصله 2)
+    int yPos = 25 + (i * 98); 
 
     // پس‌زمینه بیرونِ کارت
     spr.fillSprite(UI_BG); 
@@ -79,10 +80,10 @@ void updateTFT() {
     if((ch[i].state == IDLE && ch[i].autoPhase != PHASE_REST && ch[i].autoPhase != PHASE_REST_POST) || ch[i].state == DONE) modeChar = '-';
     char buffer[32]; 
 
-    // رسم کادر داخلی کارت (طراحی جدید)
+    // رسم کادر داخلی کارت (طراحی جدید با ارتفاع 96)
     uint16_t cardBorderColor = (ch[i].state == IDLE && ch[i].autoPhase != PHASE_REST && ch[i].autoPhase != PHASE_REST_POST) ? UI_BORDER : stateColor;
-    spr.fillRoundRect(2, 0, 236, 92, 8, UI_SURFACE); // پر کردن رنگ کارت
-    spr.drawRoundRect(2, 0, 236, 92, 8, cardBorderColor); // حاشیه کارت
+    spr.fillRoundRect(0, 0, 236, 96, 8, UI_SURFACE); 
+    spr.drawRoundRect(0, 0, 236, 96, 8, cardBorderColor); 
 
     // --- سطر اول: وضعیت و زمان ---
     spr.setTextFont(2); 
@@ -90,7 +91,7 @@ void updateTFT() {
     spr.setTextColor(stateColor, UI_SURFACE);
     
     sprintf(buffer, "CH%d-%c: %s", i+1, modeChar, stateStr.c_str());
-    spr.drawString(buffer, 10, 4); 
+    spr.drawString(buffer, 8, 5); 
     
     spr.setTextColor(UI_MUTED, UI_SURFACE);
     static unsigned long savedTime[3] = {0, 0, 0}; 
@@ -109,31 +110,31 @@ void updateTFT() {
       char restTimeBuf[16];
       snprintf(restTimeBuf, sizeof(restTimeBuf), "-%02lu:%02lu", remainS / 60, remainS % 60);
       spr.setTextColor(0x867D, UI_SURFACE); // رنگ آبی برای استراحت
-      spr.drawRightString(restTimeBuf, 230, 4, 2);
+      spr.drawRightString(restTimeBuf, 228, 5, 2); 
     }
     else if(ch[i].state != IDLE && ch[i].state != DONE) {
       unsigned long elapsed = millis() - ch[i].startMillis;
       savedTime[i] = elapsed; 
-      spr.drawRightString(durationStr(elapsed), 230, 4, 2);
+      spr.drawRightString(durationStr(elapsed), 228, 5, 2);
     } 
     else if (ch[i].state == DONE) {
-      spr.drawRightString(durationStr(savedTime[i]), 230, 4, 2); 
+      spr.drawRightString(durationStr(savedTime[i]), 228, 5, 2); 
     } 
     else {
-      spr.drawRightString("--:--", 230, 4, 2); 
+      spr.drawRightString("--:--", 228, 5, 2); 
     }
     
-    // رسم خط جداکننده زیر هدر کارت
-    spr.drawFastHLine(2, 22, 236, UI_BORDER);
+    // رسم خط جداکننده زیر هدر کارت (تنظیم فاصله جدید)
+    spr.drawFastHLine(0, 24, 236, UI_BORDER);
 
     // بررسی تریاژ
     bool isTriageDisplay = (ch[i].state == Triage) || (ch[i].state == DONE && ch[i].qt_grade != "" && ch[i].mAh < 20.0f);
 
-    // --- سطر دوم: ولتاژ و ظرفیت/نمره ---
+    // --- سطر دوم: ولتاژ و ظرفیت/نمره (فاصله‌ها افزایش یافت) ---
     spr.setTextFont(4); 
     spr.setTextColor(UI_TEXT, UI_SURFACE);
     sprintf(buffer, "%.3fV", ch[i].voltNow);
-    spr.drawString(buffer, 10, 26);
+    spr.drawString(buffer, 8, 28);
 
     spr.setTextColor(UI_ACCENT, UI_SURFACE);
     if (isTriageDisplay) {
@@ -141,43 +142,43 @@ void updateTFT() {
         if (shortGrade == "Testing...") shortGrade = "Test..";
         else if (shortGrade.length() > 0) shortGrade = "Gr: " + shortGrade.substring(0, 1);
         sprintf(buffer, "%s", shortGrade.c_str());
-        spr.drawRightString(buffer, 230, 26, 4);
+        spr.drawRightString(buffer, 228, 28, 4);
     } else {
         float displayMah = (ch[i].autoPhase == PHASE_FINAL_CHG) ? ch[i].recordedCapacity : ch[i].mAh;
         sprintf(buffer, "%4.0fmAh", displayMah);
-        spr.drawRightString(buffer, 230, 26, 4);
+        spr.drawRightString(buffer, 228, 28, 4);
     }
 
-    // --- سطر سوم: مقاومت و جریان/ریکاوری ---
+    // --- سطر سوم: مقاومت و جریان/ریکاوری (فاصله‌ها افزایش یافت) ---
     spr.setTextFont(2); 
     spr.setTextColor(TFT_MAGENTA, UI_SURFACE);
     if (isTriageDisplay) {
         if (ch[i].qt_dcir > 0) sprintf(buffer, "DCIR:%3.0fmR", ch[i].qt_dcir);
         else sprintf(buffer, "DCIR: ---");
-        spr.drawString(buffer, 10, 48);
+        spr.drawString(buffer, 8, 54);
     } else {
         sprintf(buffer, "IR:%3.1f mR", ch[i].IR);
-        spr.drawString(buffer, 10, 48);
+        spr.drawString(buffer, 8, 54);
     }
 
     spr.setTextColor(TFT_YELLOW, UI_SURFACE);
     if (isTriageDisplay && ch[i].qt_recoveryRate > 0) {
         sprintf(buffer, "Rec:%.1fmV/s", ch[i].qt_recoveryRate);
-        spr.drawRightString(buffer, 230, 48, 2);
+        spr.drawRightString(buffer, 228, 54, 2);
     } else {
         sprintf(buffer, "%4.0f mA", ch[i].currentNow);
-        spr.drawRightString(buffer, 230, 48, 2);
+        spr.drawRightString(buffer, 228, 54, 2);
     }
 
     // ════════ خط چهارم: گراف ════════
-    int gX = 10;
-    int gY = 68;
+    int gX = 8;
+    int gY = 74;
     int gW = 220;
-    int gH = 18;
+    int gH = 17; // ارتفاع متناسب با فضای جدید
 
     if ((ch[i].state >= CHARGING && ch[i].state <= Triage) || (ch[i].state == IDLE && (ch[i].autoPhase == PHASE_REST || ch[i].autoPhase == PHASE_REST_POST)) || ch[i].state == DONE) {
       
-      spr.fillRoundRect(gX, gY, gW, gH, 4, UI_SURFACE2); // پس‌زمینه تیره برای گراف (جدید)
+      spr.fillRoundRect(gX, gY, gW, gH, 4, UI_SURFACE2); // پس‌زمینه تیره برای گراف
       
       // خط‌چین 3.7 ولت
       int y37 = (gY + gH - 1) - ((3.7 - 2.5) / (4.3 - 2.5)) * (gH - 2);
@@ -208,8 +209,8 @@ void updateTFT() {
       }
     }
 
-    // انتقال اسپیرایت به نمایشگر اصلی
-    spr.pushSprite(0, yPos);
+    // انتقال اسپیرایت به نمایشگر اصلی (با 2 پیکسل حاشیه سمت چپ)
+    spr.pushSprite(2, yPos);
   }
 }
 
