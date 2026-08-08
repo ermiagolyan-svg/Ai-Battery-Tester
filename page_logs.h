@@ -48,11 +48,23 @@ String buildLogPage() {
   .acc-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; direction: ltr; font-family: var(--mono);}
   .acc-table th, .acc-table td { padding: 10px; border-bottom: 1px solid var(--border); white-space: nowrap;}
   .acc-table th { color: var(--muted); background: #0a0a0c;}
-  .tag { padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;}
-  .tag-chg { background: #005f7340; color: #94d2bd; border: 1px solid #005f73;}
-  .tag-dis { background: #ae201240; color: #ffb703; border: 1px solid #ae2012;}
-  .tag-rest { background: #4a4e6940; color: #c9ada7; border: 1px solid #4a4e69;}
-  .tag-def { background: #333; color: #ccc;}
+  /* سیستم تگ‌های جدید UI */
+  .tag { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap;}
+  
+  .tag-canceled { background: rgba(255, 165, 0, 0.1); color: #ffa500; border: 1px solid #ffa500; }
+  .tag-fault { background: rgba(255, 0, 0, 0.1); color: #ff0000; border: 1px solid #ff0000; }
+  .tag-done { background: rgba(0, 230, 118, 0.1); color: #00e676; border: 1px solid #00e676; }
+  
+  .tag-auto { background: rgba(0, 212, 170, 0.1); color: #00d4aa; border: 1px dashed #00d4aa; }
+  .tag-manual { background: rgba(107, 107, 128, 0.2); color: #e8e8f0; border: 1px dashed #6b6b80; }
+  
+  .tag-chg { background: rgba(0, 255, 255, 0.1); color: #00ffff; border: 1px solid #00ffff; }
+  .tag-d500 { background: rgba(255, 255, 0, 0.1); color: #ffff00; border: 1px solid #ffff00; }
+  .tag-d1000 { background: rgba(255, 165, 0, 0.1); color: #ffa500; border: 1px solid #ffa500; }
+  .tag-d1500 { background: rgba(255, 0, 0, 0.1); color: #ff0000; border: 1px solid #ff0000; }
+  .tag-trg { background: rgba(255, 0, 255, 0.1); color: #ff00ff; border: 1px solid #ff00ff; }
+  .tag-rest { background: rgba(135, 206, 235, 0.1); color: #87ceeb; border: 1px solid #87ceeb; }
+  .tag-def { background: #333; color: #ccc; border: 1px solid #555; }
 
   #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 10px 20px; border-radius: 8px; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 9999;}
 </style>
@@ -261,15 +273,60 @@ String buildLogPage() {
                     </tr>`;
         
         rows.forEach(r => {
-            let tagCls = getPhaseTagClass(r.mode);
-            let phaseName = r.mode.includes("[") ? r.mode.substring(r.mode.indexOf("[")) : r.mode;
-            let baseName = r.mode.includes("[") ? r.mode.substring(0, r.mode.indexOf("[")) : "";
+            let rawMode = r.mode; 
+            
+            // ۱. استخراج وضعیت (Status)
+            let statusHtml = `<span class="tag tag-done">✅ Done</span>`;
+            let innerMode = rawMode;
+            
+            if (rawMode.includes("Canceled")) {
+                statusHtml = `<span class="tag tag-canceled">🛑 Canceled</span>`;
+                let match = rawMode.match(/Canceled \((.*?)\)/);
+                if (match) innerMode = match[1];
+                else innerMode = rawMode.replace("Canceled", "").trim();
+            } else if (rawMode.includes("Fault")) {
+                statusHtml = `<span class="tag tag-fault">⚠️ Fault</span>`;
+                let match = rawMode.match(/Fault\/Error \((.*?)\)/);
+                if (match) innerMode = match[1];
+                else innerMode = rawMode.replace("Fault/Error", "").trim();
+            }
+            
+            // ۲. تشخیص Auto یا Manual
+            let isAuto = innerMode.includes("Auto");
+            let modeTypeHtml = isAuto ? `<span class="tag tag-auto">🤖 Auto</span>` : `<span class="tag tag-manual">🖐️ Manual</span>`;
+            
+            // ۳. استخراج فاز و عملیات
+            let phaseMatch = innerMode.match(/\[(.*?)\]/);
+            let phaseText = phaseMatch ? phaseMatch[1] : "";
+            let baseAction = innerMode.replace(/\[.*?\]/, "").trim(); 
+            
+            // رنگ‌بندی دقیق تسک
+            let actionCls = "tag-def";
+            let lowerAction = baseAction.toLowerCase();
+            let lowerPhase = phaseText.toLowerCase();
+            
+            if (lowerAction.includes("charge") || lowerPhase.includes("chg")) actionCls = "tag-chg";
+            if (lowerAction.includes("0.5a")) actionCls = "tag-d500";
+            if (lowerAction.includes("1.0a")) actionCls = "tag-d1000";
+            if (lowerAction.includes("1.5a")) actionCls = "tag-d1500";
+            if (lowerAction.includes("triage")) actionCls = "tag-trg";
+            if (lowerAction.includes("idle") || lowerPhase.includes("rest")) actionCls = "tag-rest";
+            
+            // زیباسازی اسم عملیات
+            let actionDisplay = baseAction.replace("Auto", "").replace("Manual", "").trim();
+            if (actionDisplay.includes("Dischg")) actionDisplay = actionDisplay.replace("Dischg", "Discharge");
+            if (actionDisplay === "") actionDisplay = phaseText; 
+            
+            let actionHtml = `<span class="tag ${actionCls}">${actionDisplay} ${phaseText ? `<span style="opacity:0.7; font-size:10px; margin-left:4px;">[${phaseText}]</span>` : ''}</span>`;
+            
+            // ترکیب تگ‌ها کنار هم
+            let combinedTags = `<div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">${statusHtml} ${modeTypeHtml} ${actionHtml}</div>`;
             
             let irText = r.ir > 0 ? r.ir.toFixed(1) : "-";
             if(r.dcir > 0) irText += ` / ${r.dcir.toFixed(1)}`;
             
             html += `<tr>
-                <td><span class="tag ${tagCls}">${phaseName}</span> <span style="font-size:10px; color:var(--muted);">${baseName}</span></td>
+                <td>${combinedTags}</td>
                 <td>${r.start.split(' ')[1] || r.start}</td>
                 <td>${r.duration}</td>
                 <td style="color:${r.cap > 0 ? 'var(--accent2)' : 'inherit'}">${r.cap.toFixed(0)}</td>

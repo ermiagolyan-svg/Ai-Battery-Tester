@@ -113,11 +113,6 @@ String buildIndexPage() {
   .modal-content { background: var(--surface); padding: 24px; border-radius: 16px; border: 1px solid var(--accent); width: 90%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
   .modal h3 { color: var(--accent); margin-bottom: 12px; font-size: 18px; display: flex; align-items: center; gap: 8px;}
   .modal p { font-size: 14px; color: var(--text); line-height: 1.6; margin-bottom: 15px;}
-  .custom-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
-  .custom-grid div { display: flex; justify-content: space-between; align-items: center; background: #0a0a0c; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); }
-  .custom-grid label { font-size: 14px; font-weight: bold; color: var(--text); }
-  .custom-grid input { width: 120px; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 6px; text-align: center; font-family: var(--mono); outline: none; }
-  .custom-grid input:focus { border-color: var(--accent); }
 
   @media (max-width: 700px) {
     .logo-sub, .sys-time { display: none; }
@@ -166,39 +161,10 @@ String buildIndexPage() {
       <option id="opt_manual" value="manual">دستی (اجرای یک مرحله و توقف)</option>
     </select>
   </div>
-  <div class="panel-col">
-    <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-      <label class="panel-label" data-i18n="prof_lbl">پروفایل تریاژ (Triage Thresholds)</label>
-      <span class="info-btn" onclick="showInfo('profile')">ℹ️</span>
-    </div>
-    <select class="panel-select" id="triageProfile" onchange="checkProfileChange()">
-      <option id="prof_0" value="0">باتری‌های High Drain (پاور تولز / ویپ)</option>
-      <option id="prof_1" value="1">باتری‌های معمولی (لپ‌تاپ / پاوربانک)</option>
-      <option id="prof_2" value="2">استاندارد ترکیبی (پیش‌فرض)</option>
-      <option id="prof_3" value="3">کاستوم (ورود مقادیر دستی)</option>
-    </select>
-  </div>
 </div>
 
 <div class="grid" id="channelGrid"></div>
 <div id="toast"></div>
-
-<!-- مودال اخطار مقادیر کاستوم -->
-<div id="customModal" class="modal">
-  <div class="modal-content">
-    <h3 data-i18n="cust_title">⚙️ تنظیمات پروفایل کاستوم</h3>
-    <p data-i18n="cust_desc">لطفاً حداکثر مقاومت قابل قبول (میلی‌اهم) را وارد کنید:</p>
-    <div class="custom-grid">
-       <div><label data-i18n="lbl_ga">گرید A (عالی)</label><input type="number" id="valA" placeholder="mΩ"></div>
-       <div><label data-i18n="lbl_gb">گرید B (خوب)</label><input type="number" id="valB" placeholder="mΩ"></div>
-       <div><label data-i18n="lbl_gc">گرید C (متوسط)</label><input type="number" id="valC" placeholder="mΩ"></div>
-    </div>
-    <div style="display:flex; gap:10px;">
-       <button class="btn" style="background:var(--accent); width:100%;" onclick="confirmCustom()" data-i18n="btn_conf">تأیید و ذخیره</button>
-       <button class="btn" style="background:#1e1e23; color:#fff;" onclick="cancelCustom()" data-i18n="btn_canc">انصراف</button>
-    </div>
-  </div>
-</div>
 
 <!-- مودال پاپ‌آپ راهنما -->
 <div id="infoModal" class="modal">
@@ -210,47 +176,37 @@ String buildIndexPage() {
 </div>
 
 <script>
-// دیکشنری دو زبانه (افزودن سلکتور تگ)
+// دیکشنری دو زبانه (افزودن سلکتور تگ تفکیک شده)
 const dict = {
   'fa': {
      nav_pack: 'ساخت پک', nav_triage: 'تریاژ', nav_logs: 'فایل‌ها', nav_settings: 'تنظیمات',
      mode_lbl: 'حالت کارکرد دستگاه (Mode)',
      mode_auto: 'اتوماتیک (اجرای متوالی مراحل)', mode_manual: 'دستی (اجرای یک مرحله و توقف)',
-     prof_lbl: 'پروفایل تریاژ (Triage Thresholds)',
-     prof_0: 'باتری‌های High Drain (پاور تولز / ویپ)', prof_1: 'باتری‌های معمولی (لپ‌تاپ / پاوربانک)', prof_2: 'استاندارد ترکیبی (پیش‌فرض)', prof_3: 'کاستوم (ورود مقادیر دستی)',
-     cust_title: '⚙️ تنظیمات پروفایل کاستوم', cust_desc: 'لطفاً حداکثر مقاومت قابل قبول (میلی‌اهم) را برای هر گرید وارد کرده و تأیید کنید:',
-     lbl_ga: 'گرید A (عالی)', lbl_gb: 'گرید B (خوب)', lbl_gc: 'گرید C (متوسط)',
-     btn_conf: 'تأیید و ذخیره', btn_canc: 'انصراف', info_ok: 'متوجه شدم',
-     toast_prof: 'پروفایل با موفقیت تغییر کرد.', toast_cust: 'مقادیر کاستوم ذخیره شدند.', toast_cmd: 'دستور با موفقیت به دستگاه ارسال شد.',
-     err_cust: 'اخطار امنیتی ⚠️\n\nشما پروفایل کاستوم را انتخاب کرده‌اید اما مقادیر آن را وارد نکرده‌اید. ابتدا تأیید کنید.',
-     err_notag: 'اخطار ⚠️\n\nبرای شروع دیس‌شارژ در حالت اتوماتیک، انتخاب نام باتری (تگ تریاژ) الزامی است!',
+     info_ok: 'متوجه شدم',
+     toast_cmd: 'دستور با موفقیت به دستگاه ارسال شد.',
+     err_notag_chg: 'اخطار ⚠️\n\nبرای شروع شارژ در حالت اتوماتیک، انتخاب نام باتری (تگ تریاژ) الزامی است!',
+     err_notag_dis: 'اخطار ⚠️\n\nبرای شروع دیس‌شارژ در حالت اتوماتیک، انتخاب نام باتری (تگ تریاژ) الزامی است!',
      btn_stop: '⏹ توقف', btn_chg: '⚡ شارژ', btn_chg_m: '⚡ شارژ (دستی)', btn_500: '🔋 دشارژ 0.5A', btn_500_m: '🔋 0.5A (دستی)',
      btn_1000: '🔥 دشارژ 1.0A', btn_1000_m: '🔥 1.0A (دستی)', btn_1500: '💥 دشارژ 1.5A', btn_1500_m: '💥 1.5A (دستی)',
      btn_trg: '⚕️ تریاژ خودکار', btn_trg_m: '⚕️ تریاژ دستی', btn_stop_rest: '■ توقف آنالیز (در حال استراحت)',
      btn_dl: '📥 دانلود CSV', btn_graph: '📸 خروجی گراف', btn_rst: '↺ ریست',
      lbl_prev: 'پیش‌نمایش لاگ', lbl_no_data: 'هیچ لاگی یافت نشد.', plc_id: 'شناسه باتری (اختیاری)', sel_tag: 'انتخاب تگ (الزامی)',
-     info_mode_t: '⚙️ راهنمای حالت کارکرد', info_mode_d: 'حالت اتوماتیک (Auto):\nدر این حالت دستگاه تمام مراحل استاندارد را متوالی اجرا می‌کند.\n\nحالت دستی (Manual):\nتنها همان فازی که انتخاب می‌کنید یک‌بار اجرا می‌شود.',
-     info_prof_t: '⚕️ راهنمای پروفایل تریاژ', info_prof_d: 'باتری‌ها بر اساس مقاومت داخلی دسته‌بندی می‌شوند.\n- برای ابزارآلات مقاومت باید پایین باشد.\n- می‌توانید با انتخاب گزینه "کاستوم"، سقف مجاز را خودتان تعیین کنید.'
+     info_mode_t: '⚙️ راهنمای حالت کارکرد', info_mode_d: 'حالت اتوماتیک (Auto):\nدر این حالت دستگاه تمام مراحل استاندارد را متوالی اجرا می‌کند.\n\nحالت دستی (Manual):\nتنها همان فازی که انتخاب می‌کنید یک‌بار اجرا می‌شود.'
   },
   'en': {
      nav_pack: 'Pack Builder', nav_triage: 'Triage', nav_logs: 'Logs', nav_settings: 'Settings',
      mode_lbl: 'Operation Mode',
      mode_auto: 'Automatic (Sequential Phases)', mode_manual: 'Manual (Single Phase)',
-     prof_lbl: 'Triage Thresholds Profile',
-     prof_0: 'High Drain (Power Tools / Vape)', prof_1: 'Normal (Laptop / Powerbank)', prof_2: 'Standard Mix (Default)', prof_3: 'Custom (Manual Entry)',
-     cust_title: '⚙️ Custom Profile Settings', cust_desc: 'Please enter the maximum acceptable resistance (mΩ) for each grade:',
-     lbl_ga: 'Grade A (Excellent)', lbl_gb: 'Grade B (Good)', lbl_gc: 'Grade C (Average)',
-     btn_conf: 'Save & Confirm', btn_canc: 'Cancel', info_ok: 'Got it',
-     toast_prof: 'Profile updated successfully.', toast_cust: 'Custom values saved.', toast_cmd: 'Command sent to device.',
-     err_cust: 'Security Warning ⚠️\n\nYou selected Custom Profile but have not confirmed the values.',
-     err_notag: 'Warning ⚠️\n\nA Triage Tag MUST be selected to start Auto Discharge!',
+     info_ok: 'Got it',
+     toast_cmd: 'Command sent to device.',
+     err_notag_chg: 'Warning ⚠️\n\nA Triage Tag MUST be selected to start Auto Charge!',
+     err_notag_dis: 'Warning ⚠️\n\nA Triage Tag MUST be selected to start Auto Discharge!',
      btn_stop: '⏹ Stop', btn_chg: '⚡ Charge', btn_chg_m: '⚡ Charge (Manual)', btn_500: '🔋 0.5A Disch.', btn_500_m: '🔋 0.5A (Manual)',
      btn_1000: '🔥 1.0A Disch.', btn_1000_m: '🔥 1.0A (Manual)', btn_1500: '💥 1.5A Disch.', btn_1500_m: '💥 1.5A (Manual)',
      btn_trg: '⚕️ Auto Triage', btn_trg_m: '⚕️ Manual Triage', btn_stop_rest: '■ Stop Analysis (Resting)',
      btn_dl: '📥 Down. CSV', btn_graph: '📸 Export Graph', btn_rst: '↺ Reset',
      lbl_prev: 'Log Preview', lbl_no_data: 'No log data yet.', plc_id: 'Battery ID (Optional)', sel_tag: 'Select Tag (Required)',
-     info_mode_t: '⚙️ Operation Mode Guide', info_mode_d: 'Auto Mode:\nExecutes all standard testing phases sequentially.\n\nManual Mode:\nRuns only the selected phase and stops completely.',
-     info_prof_t: '⚕️ Triage Profile Guide', info_prof_d: 'Sorts batteries by internal resistance classes.\n- Power Tools require very low resistance.\n- Choose "Custom" to set manual limits for each grade.'
+     info_mode_t: '⚙️ Operation Mode Guide', info_mode_d: 'Auto Mode:\nExecutes all standard testing phases sequentially.\n\nManual Mode:\nRuns only the selected phase and stops completely.'
   }
 };
 
@@ -276,10 +232,6 @@ function applyLanguage(lang) {
 
   if(document.getElementById('opt_auto')) document.getElementById('opt_auto').innerText = dict[lang]['mode_auto'];
   if(document.getElementById('opt_manual')) document.getElementById('opt_manual').innerText = dict[lang]['mode_manual'];
-  if(document.getElementById('prof_0')) document.getElementById('prof_0').innerText = dict[lang]['prof_0'];
-  if(document.getElementById('prof_1')) document.getElementById('prof_1').innerText = dict[lang]['prof_1'];
-  if(document.getElementById('prof_2')) document.getElementById('prof_2').innerText = dict[lang]['prof_2'];
-  if(document.getElementById('prof_3')) document.getElementById('prof_3').innerText = dict[lang]['prof_3'];
   
   fetchData(); 
 }
@@ -292,53 +244,24 @@ window.onload = () => {
 const STATE = {IDLE:0, CHARGING:1, D500:2, D1000:3, D1500:4, IR:5, TRIAGE:6, DONE:7};
 const CH_COLORS = ['#00d4aa','#0096ff','#ff6b35'];
 let globalMode = 'auto'; 
-let customConfirmed = true; 
-let previousProfile = "2"; 
-
-fetch('/getprofile').then(r=>r.json()).then(d=>{
-  document.getElementById('triageProfile').value = d.p;
-  document.getElementById('valA').value = d.a;
-  document.getElementById('valB').value = d.b;
-  document.getElementById('valC').value = d.c;
-  previousProfile = d.p;
-  if(d.p == 3) customConfirmed = true; 
-});
 
 function updateModeUI() {
   globalMode = document.getElementById('globalMode').value;
   const grid = document.getElementById('channelGrid');
   Array.from(grid.children).forEach(card => card.setAttribute('data-mode', 'invalid'));
-  fetchData();
-}
-
-function checkProfileChange() {
-  const sel = document.getElementById('triageProfile');
-  if (sel.value === '3') {
-      customConfirmed = false;
-      document.getElementById('customModal').style.display = 'flex';
+  
+  // 💡 تغییر رنگ داینامیک پس‌زمینه برای تشخیص راحت‌تر
+  if (globalMode === 'manual') {
+      document.documentElement.style.setProperty('--bg', '#0a1118');
+      document.documentElement.style.setProperty('--surface', '#121c26');
+      document.documentElement.style.setProperty('--border', '#2c3e50');
   } else {
-      previousProfile = sel.value;
-      fetch('/setprofile', {method: 'POST', body: `p=${sel.value}&a=80&b=150&c=300`});
-      showToast(dict[currentLang]['toast_prof']);
+      document.documentElement.style.setProperty('--bg', '#0d0d0f');
+      document.documentElement.style.setProperty('--surface', '#161619');
+      document.documentElement.style.setProperty('--border', '#2a2a32');
   }
-}
-
-function confirmCustom() {
-  const a = document.getElementById('valA').value || 80;
-  const b = document.getElementById('valB').value || 150;
-  const c = document.getElementById('valC').value || 300;
-  fetch('/setprofile', {method: 'POST', body: `p=3&a=${a}&b=${b}&c=${c}`}).then(r=>{
-      customConfirmed = true;
-      previousProfile = '3';
-      document.getElementById('customModal').style.display = 'none';
-      showToast(dict[currentLang]['toast_cust']);
-  });
-}
-
-function cancelCustom() {
-  document.getElementById('customModal').style.display = 'none';
-  document.getElementById('triageProfile').value = previousProfile;
-  if (previousProfile == 3) customConfirmed = true;
+  
+  fetchData();
 }
 
 function showInfo(type) {
@@ -347,9 +270,6 @@ function showInfo(type) {
     if (type === 'mode') {
         title.innerHTML = dict[currentLang]['info_mode_t'];
         text.innerHTML = dict[currentLang]['info_mode_d'];
-    } else {
-        title.innerHTML = dict[currentLang]['info_prof_t'];
-        text.innerHTML = dict[currentLang]['info_prof_d'];
     }
     document.getElementById('infoModal').style.display = 'flex';
 }
@@ -814,19 +734,19 @@ async function fetchData() {
   } catch(e){} 
 }
 
+// 💡 رفع باگ خطاها و مجزا کردن آن‌ها
 async function startAct(i, act) { 
-  if (document.getElementById('triageProfile').value === '3' && !customConfirmed) {
-      alert(dict[currentLang]['err_cust']);
-      return;
-  }
-  
   const el = document.getElementById(`name-${i}`); 
   let name = el ? el.value.trim() : '';
 
   // 💡 سد دفاعی: جلوگیری از اجرای هر دستوری (شارژ و دیس‌شارژ) بدون تگ در حالت Auto، به جز تریاژ
   if (globalMode === 'auto' && act !== 'autotriage') {
       if (!name) {
-          alert(dict[currentLang]['err_notag']);
+          if (act === 'charge') {
+              alert(dict[currentLang]['err_notag_chg']);
+          } else {
+              alert(dict[currentLang]['err_notag_dis']);
+          }
           return; // توقف عملیات در سمت مرورگر
       }
   }
