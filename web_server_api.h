@@ -178,12 +178,12 @@ void setupWebServer() {
   });
 
   // ۶. دستور توقف دستی
+  // ۶. دستور توقف دستی
   server.on("/stop", HTTP_POST, []() {
     int chIdx = server.arg("plain").toInt();
     if (chIdx >= 0 && chIdx < 3 && ch[chIdx].state != IDLE && ch[chIdx].state != DONE) {
-      ch[chIdx].autoMode = AUTO_OFF;
-      ch[chIdx].autoPhase = PHASE_NONE;
-      stopChannel(chIdx); 
+      ch[chIdx].isCanceled = true;  // به جای صفر کردن متغیرها، ثبت می‌کنیم که لغو شده
+      stopChannel(chIdx);           // خود stopChannel در مرحله آخر همه‌چیز را پاک می‌کند
       server.send(200, "text/plain", "OK");
     } else server.send(400, "text/plain", "Error");
   });
