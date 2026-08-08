@@ -3,8 +3,7 @@
 
 #include <Arduino.h>
 
-String buildIndexPage() {
-  return R"rawhtml(
+const char PAGE_INDEX_HTML[] PROGMEM = R"rawhtml(
 <!DOCTYPE html>
 <html lang="fa">
 <head>
@@ -832,6 +831,5 @@ function showToast(m) { const t=document.getElementById('toast'); t.textContent=
 
 </script></body></html>
 )rawhtml";
-}
 
 #endif

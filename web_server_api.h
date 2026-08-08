@@ -25,35 +25,35 @@ void stopChannel(uint8_t ch_idx);
 // ─── راه‌اندازی و تعریف مسیرهای وب‌سرور (Routes) ───────────────
 void setupWebServer() {
   
-  // ۱. صفحات اصلی (HTML)
+  // ۱. صفحات اصلی (HTML) - تطبیق با حافظه PROGMEM و کشینگ
   server.on("/", HTTP_GET, []() { 
-      server.sendHeader("Connection", "close"); 
-      server.send(200, "text/html; charset=utf-8", buildIndexPage()); 
+      server.sendHeader("Cache-Control", "max-age=86400, public");
+      server.send_P(200, "text/html; charset=utf-8", PAGE_INDEX_HTML); 
   });
   
   server.on("/settings", HTTP_GET, []() { 
-      server.sendHeader("Connection", "close"); 
-      server.send(200, "text/html; charset=utf-8", buildSettingsPage()); 
+      server.sendHeader("Cache-Control", "max-age=86400, public");
+      server.send_P(200, "text/html; charset=utf-8", PAGE_SETTINGS_HTML); 
   });
   
   server.on("/logs", HTTP_GET, []() { 
-      server.sendHeader("Connection", "close"); 
-      server.send(200, "text/html; charset=utf-8", buildLogPage()); 
+      server.sendHeader("Cache-Control", "max-age=86400, public");
+      server.send_P(200, "text/html; charset=utf-8", PAGE_LOGS_HTML); 
   });
   
   server.on("/triage", HTTP_GET, []() { 
-      server.sendHeader("Connection", "close"); 
-      server.send(200, "text/html; charset=utf-8", buildTriagePage()); 
+      server.sendHeader("Cache-Control", "max-age=86400, public");
+      server.send_P(200, "text/html; charset=utf-8", PAGE_TRIAGE_HTML); 
   });
   
   server.on("/pack_builder", HTTP_GET, []() { 
-      server.sendHeader("Connection", "close"); 
-      server.send(200, "text/html; charset=utf-8", buildPackBuilderPage()); 
+      server.sendHeader("Cache-Control", "max-age=86400, public");
+      server.send_P(200, "text/html; charset=utf-8", PAGE_PACK_BUILDER_HTML); 
   });
   
   server.on("/worker_manager", HTTP_GET, []() { 
-      server.sendHeader("Connection", "close"); 
-      server.send(200, "text/html; charset=utf-8", buildWorkerManagerPage()); 
+      server.sendHeader("Cache-Control", "max-age=86400, public");
+      server.send_P(200, "text/html; charset=utf-8", PAGE_WORKER_MANAGER_HTML); 
   });
 
   // ۲. دریافت اطلاعات آنلاین وضعیت سیستم (JSON)
@@ -108,27 +108,25 @@ void setupWebServer() {
     String response;
     serializeJson(doc, response);
     
-    server.sendHeader("Connection", "close"); // آزادسازی سوکت
+    // در گام چهارم: مطمئن می‌شویم دیتای زنده کش نمی‌شود
+    server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate"); 
     server.send(200, "application/json", response);
   });
 
   // ۳. API مربوط به پروفایل تریاژ
   server.on("/getprofile", HTTP_GET, []() {
     String json = "{\"p\":2,\"a\":80.0,\"b\":150.0,\"c\":300.0}";
-    server.sendHeader("Connection", "close");
     server.send(200, "application/json", json);
   });
 
   // ۴. API مربوط به گراف هوشمند
   server.on("/api/graph", HTTP_GET, []() {
     if (!server.hasArg("ch")) { 
-        server.sendHeader("Connection", "close");
         server.send(400, "text/plain", "missing ch"); 
         return; 
     }
     int c = server.arg("ch").toInt();
     if (c < 0 || c >= 3) { 
-        server.sendHeader("Connection", "close");
         server.send(400, "text/plain", "bad ch"); 
         return; 
     }
@@ -142,7 +140,9 @@ void setupWebServer() {
     
     String response;
     serializeJson(doc, response);
-    server.sendHeader("Connection", "close"); // آزادسازی سوکت
+    
+    // دیتای گراف نیز نباید کش شود
+    server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate"); 
     server.send(200, "application/json", response);
   });
 
@@ -166,7 +166,6 @@ void setupWebServer() {
     name.trim(); 
     
     if (uiMode == "auto" && act != "autotriage" && name.length() == 0) {
-        server.sendHeader("Connection", "close");
         server.send(400, "text/plain", "Error: Triage Tag is REQUIRED!");
         return; 
     }
@@ -190,7 +189,6 @@ void setupWebServer() {
       if (act == "stop") {
         ch[chIdx].isCanceled = true; 
         stopChannel(chIdx);          
-        server.sendHeader("Connection", "close");
         server.send(200, "text/plain", "Stopped");
         return; 
       }
@@ -207,10 +205,8 @@ void setupWebServer() {
       else if (act == "triage") startChannel(chIdx, name, Triage);
       else if (act == "autotriage") startAuto(chIdx, name, AUTO_TRIAGE);
       
-      server.sendHeader("Connection", "close");
       server.send(200, "text/plain", "OK");
     } else {
-      server.sendHeader("Connection", "close");
       server.send(400, "text/plain", "Error: Channel is busy or in Auto-Rest phase");
     }
   });
@@ -221,10 +217,8 @@ void setupWebServer() {
     if (chIdx >= 0 && chIdx < 3 && ch[chIdx].state != IDLE && ch[chIdx].state != DONE) {
       ch[chIdx].isCanceled = true;  
       stopChannel(chIdx);           
-      server.sendHeader("Connection", "close");
       server.send(200, "text/plain", "OK");
     } else {
-      server.sendHeader("Connection", "close");
       server.send(400, "text/plain", "Error");
     }
   });
@@ -234,10 +228,8 @@ void setupWebServer() {
     int chIdx = server.arg("plain").toInt();
     if (chIdx >= 0 && chIdx < 3 && (ch[chIdx].state == IDLE || ch[chIdx].state == DONE)) {
       ch[chIdx] = Channel(); 
-      server.sendHeader("Connection", "close");
       server.send(200, "text/plain", "OK");
     } else {
-      server.sendHeader("Connection", "close");
       server.send(400, "text/plain", "Error");
     }
   });
@@ -252,17 +244,14 @@ void setupWebServer() {
       tv.tv_sec = epoch;
       tv.tv_usec = 0;
       settimeofday(&tv, NULL); 
-      server.sendHeader("Connection", "close");
       server.send(200, "text/plain", "Time Sync Success");
     } else {
-      server.sendHeader("Connection", "close");
       server.send(400, "text/plain", "Error");
     }
   });
 
   // ۹. دانلود فایل لاگ یکپارچه
   server.on("/global_log", HTTP_GET, []() {
-    server.sendHeader("Connection", "close"); // قطع آنی سوکت بعد از ارسال لاگ سنگین
     if (LittleFS.exists("/global_log.csv")) { 
         File f = LittleFS.open("/global_log.csv", FILE_READ); 
         server.streamFile(f, "text/csv"); 
@@ -277,14 +266,12 @@ void setupWebServer() {
         LittleFS.remove("/global_log.csv");
     }
     prefs.putUInt("global_id", 1); 
-    server.sendHeader("Connection", "close");
     server.send(200, "text/plain", "Log Cleared");
   });
 
   // ۱۱. مدیریت شبکه‌های WiFi
   server.on("/scanwifi", HTTP_GET, []() {
     int n = WiFi.scanComplete();
-    server.sendHeader("Connection", "close");
     
     if (n == WIFI_SCAN_FAILED) {
       WiFi.scanNetworks(true); 
@@ -310,7 +297,6 @@ void setupWebServer() {
 
   server.on("/getwifi", HTTP_GET, []() {
     String wifiJson = prefs.getString("wifi_list", "[]");
-    server.sendHeader("Connection", "close");
     server.send(200, "application/json", wifiJson);
   });
 
@@ -331,7 +317,6 @@ void setupWebServer() {
       serializeJson(doc, out);
       prefs.putString("wifi_list", out);
     }
-    server.sendHeader("Connection", "close");
     server.send(200, "text/plain", "OK");
   });
 
@@ -341,8 +326,6 @@ void setupWebServer() {
     
     ssid.trim();
     pass.trim();
-    
-    server.sendHeader("Connection", "close");
     
     if (ssid.length() > 0) {
       WiFi.disconnect();

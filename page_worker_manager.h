@@ -3,8 +3,7 @@
 
 #include <Arduino.h>
 
-String buildWorkerManagerPage() {
-  return R"rawhtml(
+const char PAGE_WORKER_MANAGER_HTML[] PROGMEM = R"rawhtml(
 <!DOCTYPE html>
 <html lang="fa">
 <head>
@@ -161,6 +160,5 @@ window.onload = () => {
 </body>
 </html>
 )rawhtml";
-}
 
 #endif

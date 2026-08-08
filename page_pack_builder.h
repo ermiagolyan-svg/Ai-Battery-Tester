@@ -3,8 +3,7 @@
 
 #include <Arduino.h>
 
-String buildPackBuilderPage() {
-  return R"rawhtml(
+const char PAGE_PACK_BUILDER_HTML[] PROGMEM = R"rawhtml(
 <!DOCTYPE html>
 <html lang="fa">
 <head>
@@ -692,6 +691,5 @@ function generatePackPDF() {
 </body>
 </html>
 )rawhtml";
-}
 
 #endif

@@ -3,8 +3,7 @@
 
 #include <Arduino.h>
 
-String buildLogPage() {
-  return R"rawhtml(
+const char PAGE_LOGS_HTML[] PROGMEM = R"rawhtml(
 <!DOCTYPE html>
 <html lang="fa">
 <head>
@@ -877,6 +876,5 @@ String buildLogPage() {
 </body>
 </html>
 )rawhtml";
-}
 
 #endif

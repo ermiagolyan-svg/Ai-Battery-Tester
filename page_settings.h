@@ -3,8 +3,7 @@
 
 #include <Arduino.h>
 
-String buildSettingsPage() {
-  return R"rawhtml(
+const char PAGE_SETTINGS_HTML[] PROGMEM = R"rawhtml(
 <!DOCTYPE html>
 <html lang="fa">
 <head>
@@ -391,6 +390,5 @@ function clearGlobalLog() {
 }
 </script></body></html>
 )rawhtml";
-}
 
 #endif
