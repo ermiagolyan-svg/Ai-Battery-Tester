@@ -185,7 +185,7 @@ String buildIndexPage() {
   
   <nav class="nav-links">
     <a href="/" title="Dashboard" style="background:var(--surface2)"><span class="icon">🏠</span> <span class="text" data-i18n="nav_home">داشبورد</span></a>
-    <a href="/pack_builder" class="special" title="AI Pack Builder"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
+    <a href="/pack_builder"  title="AI Pack Builder"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
     <a href="/triage" title="Triage Manager"><span class="icon">⚕️</span> <span class="text" data-i18n="nav_triage">تریاژ</span></a>
     <a href="/worker_manager" title="Worker Manager"><span class="icon">🧑‍🔧</span> <span class="text" data-i18n="nav_worker">مدیریت ورکر</span></a>
     <a href="/logs" title="CSV Manager"><span class="icon">📋</span> <span class="text" data-i18n="nav_logs">فایل‌ها</span></a>
