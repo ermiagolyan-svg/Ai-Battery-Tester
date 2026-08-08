@@ -49,9 +49,24 @@ void saveCSV(uint8_t c) {
   if (xSemaphoreTake(csvMutex, portMAX_DELAY) == pdTRUE) {
     
     // حفظ شناسه یکپارچه (ID) برای کلاستربندی تمام فازها
-    if (ch[c].name == "" || ch[c].name.startsWith("#CH")) {
-      ch[c].name = getNextGlobalAutoName();
-      incrementGlobalId();
+    if (ch[c].name == "" || ch[c].name.startsWith("#CH") || ch[c].name == "No-Tag-Selected") {
+      
+      bool isManual = (ch[c].autoMode == AUTO_OFF);
+      bool isAutoTriage = (ch[c].autoMode == AUTO_TRIAGE);
+
+      if (isManual) {
+        // تست‌های دستی در لاگ نیز با MAN ثبت می‌شوند تا به دیتابیس کلاسترینگ نروند
+        uint16_t mId = prefs.getUInt("man_id", 1);
+        char buf[16];
+        snprintf(buf, sizeof(buf), "MAN-%03u", mId);
+        ch[c].name = String(buf);
+        prefs.putUInt("man_id", mId + 1);
+      } else if (isAutoTriage) {
+        ch[c].name = getNextGlobalAutoName();
+        incrementGlobalId();
+      } else {
+        ch[c].name = "No-Tag-Selected"; 
+      }
     }
 
     String filename = "/global_log.csv";

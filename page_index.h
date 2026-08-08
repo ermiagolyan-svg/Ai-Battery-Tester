@@ -69,6 +69,7 @@ String buildIndexPage() {
   .form-row { display: flex; gap: 8px; margin-bottom: 10px; }
   
   .input-name { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 8px; font-size: 13px; outline: none; transition: border-color 0.2s; font-family: inherit; direction: inherit; }
+  select.input-name { cursor: pointer; appearance: none; }
   .input-name:focus { border-color: var(--accent); }
   
   .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -120,26 +121,13 @@ String buildIndexPage() {
 
   @media (max-width: 700px) {
     .logo-sub, .sys-time { display: none; }
-    /* مخفی کردن متن لینک‌ها در موبایل */
     .nav-links a span { display: none; }
-    /* استایل دکمه‌ای مربعی و تمیز برای آیکون‌های منو در موبایل */
-    .nav-links { gap: 6px; } /* فاصله بین دکمه‌ها در موبایل */
+    .nav-links { gap: 6px; } 
     .nav-links a { 
-      padding: 0; /* حذف پدینگ قبلی */
-      width: 38px; /* عرض ثابت */
-      height: 38px; /* ارتفاع ثابت */
-      font-size: 18px; /* سایز بزرگتر برای آیکون */
-      display: flex; 
-      align-items: center; 
-      justify-content: center; /* وسط‌چین کردن آیکون */
-      border: 1px solid var(--border); /* برگرداندن حاشیه */
-      background: var(--surface2); /* پس‌زمینه متمایز */
-      border-radius: 8px; /* لبه‌های گرد */
+      padding: 0; width: 38px; height: 38px; font-size: 18px; display: flex; align-items: center; justify-content: center; 
+      border: 1px solid var(--border); background: var(--surface2); border-radius: 8px; 
     }
-    .nav-links a.special { 
-      background: rgba(0,212,170,.15); 
-      border-color: var(--accent); 
-    }
+    .nav-links a.special { background: rgba(0,212,170,.15); border-color: var(--accent); }
     header { padding: 10px 14px; }
     .header-right { gap: 8px; }
     .grid { padding: 12px; }
@@ -222,7 +210,7 @@ String buildIndexPage() {
 </div>
 
 <script>
-// دیکشنری دو زبانه
+// دیکشنری دو زبانه (افزودن سلکتور تگ)
 const dict = {
   'fa': {
      nav_pack: 'ساخت پک', nav_triage: 'تریاژ', nav_logs: 'فایل‌ها', nav_settings: 'تنظیمات',
@@ -235,11 +223,12 @@ const dict = {
      btn_conf: 'تأیید و ذخیره', btn_canc: 'انصراف', info_ok: 'متوجه شدم',
      toast_prof: 'پروفایل با موفقیت تغییر کرد.', toast_cust: 'مقادیر کاستوم ذخیره شدند.', toast_cmd: 'دستور با موفقیت به دستگاه ارسال شد.',
      err_cust: 'اخطار امنیتی ⚠️\n\nشما پروفایل کاستوم را انتخاب کرده‌اید اما مقادیر آن را وارد نکرده‌اید. ابتدا تأیید کنید.',
+     err_notag: 'اخطار ⚠️\n\nبرای شروع دیس‌شارژ در حالت اتوماتیک، انتخاب نام باتری (تگ تریاژ) الزامی است!',
      btn_stop: '⏹ توقف', btn_chg: '⚡ شارژ', btn_chg_m: '⚡ شارژ (دستی)', btn_500: '🔋 دشارژ 0.5A', btn_500_m: '🔋 0.5A (دستی)',
      btn_1000: '🔥 دشارژ 1.0A', btn_1000_m: '🔥 1.0A (دستی)', btn_1500: '💥 دشارژ 1.5A', btn_1500_m: '💥 1.5A (دستی)',
      btn_trg: '⚕️ تریاژ خودکار', btn_trg_m: '⚕️ تریاژ دستی', btn_stop_rest: '■ توقف آنالیز (در حال استراحت)',
      btn_dl: '📥 دانلود CSV', btn_graph: '📸 خروجی گراف', btn_rst: '↺ ریست',
-     lbl_prev: 'پیش‌نمایش لاگ', lbl_no_data: 'هیچ لاگی یافت نشد.', plc_id: 'شناسه باتری (اختیاری)',
+     lbl_prev: 'پیش‌نمایش لاگ', lbl_no_data: 'هیچ لاگی یافت نشد.', plc_id: 'شناسه باتری (اختیاری)', sel_tag: 'انتخاب تگ (الزامی)',
      info_mode_t: '⚙️ راهنمای حالت کارکرد', info_mode_d: 'حالت اتوماتیک (Auto):\nدر این حالت دستگاه تمام مراحل استاندارد را متوالی اجرا می‌کند.\n\nحالت دستی (Manual):\nتنها همان فازی که انتخاب می‌کنید یک‌بار اجرا می‌شود.',
      info_prof_t: '⚕️ راهنمای پروفایل تریاژ', info_prof_d: 'باتری‌ها بر اساس مقاومت داخلی دسته‌بندی می‌شوند.\n- برای ابزارآلات مقاومت باید پایین باشد.\n- می‌توانید با انتخاب گزینه "کاستوم"، سقف مجاز را خودتان تعیین کنید.'
   },
@@ -254,17 +243,19 @@ const dict = {
      btn_conf: 'Save & Confirm', btn_canc: 'Cancel', info_ok: 'Got it',
      toast_prof: 'Profile updated successfully.', toast_cust: 'Custom values saved.', toast_cmd: 'Command sent to device.',
      err_cust: 'Security Warning ⚠️\n\nYou selected Custom Profile but have not confirmed the values.',
+     err_notag: 'Warning ⚠️\n\nA Triage Tag MUST be selected to start Auto Discharge!',
      btn_stop: '⏹ Stop', btn_chg: '⚡ Charge', btn_chg_m: '⚡ Charge (Manual)', btn_500: '🔋 0.5A Disch.', btn_500_m: '🔋 0.5A (Manual)',
      btn_1000: '🔥 1.0A Disch.', btn_1000_m: '🔥 1.0A (Manual)', btn_1500: '💥 1.5A Disch.', btn_1500_m: '💥 1.5A (Manual)',
      btn_trg: '⚕️ Auto Triage', btn_trg_m: '⚕️ Manual Triage', btn_stop_rest: '■ Stop Analysis (Resting)',
      btn_dl: '📥 Down. CSV', btn_graph: '📸 Export Graph', btn_rst: '↺ Reset',
-     lbl_prev: 'Log Preview', lbl_no_data: 'No log data yet.', plc_id: 'Battery ID (Optional)',
+     lbl_prev: 'Log Preview', lbl_no_data: 'No log data yet.', plc_id: 'Battery ID (Optional)', sel_tag: 'Select Tag (Required)',
      info_mode_t: '⚙️ Operation Mode Guide', info_mode_d: 'Auto Mode:\nExecutes all standard testing phases sequentially.\n\nManual Mode:\nRuns only the selected phase and stops completely.',
      info_prof_t: '⚕️ Triage Profile Guide', info_prof_d: 'Sorts batteries by internal resistance classes.\n- Power Tools require very low resistance.\n- Choose "Custom" to set manual limits for each grade.'
   }
 };
 
 let currentLang = 'fa';
+let availableTags = []; // 💡 آرایه ذخیره تگ‌های استخراج شده از CSV
 
 function applyLanguage(lang) {
   currentLang = lang;
@@ -422,12 +413,43 @@ async function fetchAndDrawGraph(i) {
   } catch(e) {}
 }
 
-// 💡 تابع جدید برای فراخوانی لاگ یکپارچه و فیلتر کردن هوشمند برای هر کانال
+// 💡 تزریق تگ‌ها به دراپ‌داون بدون پاک کردن انتخاب فعلی کاربر
+function populateDropdowns() {
+    for (let i = 0; i < 3; i++) {
+        const el = document.getElementById(`name-${i}`);
+        if (el && el.tagName === 'SELECT') {
+            const currentVal = el.value;
+            let html = `<option value="">-- ${dict[currentLang]['sel_tag']} --</option>`;
+            availableTags.forEach(t => {
+                html += `<option value="${t}" ${t === currentVal ? 'selected' : ''}>${t}</option>`;
+            });
+            el.innerHTML = html;
+        }
+    }
+}
+
+// 💡 واکشی لاگ یکپارچه و استخراج تگ‌ها
 async function fetchGlobalLogCSV() {
   try {
     const r = await fetch('/global_log');
     const txt = await r.text();
     
+    // 💡 استخراج تگ‌های باتری برای منوی کرکره‌ای
+    availableTags = [];
+    if(txt && txt !== "Empty" && txt.trim() !== "") {
+        const rows = txt.trim().split('\n');
+        for(let rIdx = 1; rIdx < rows.length; rIdx++) {
+            const cols = rows[rIdx].split(',');
+            if (cols.length > 1) {
+                let tag = cols[1].trim();
+                // نادیده گرفتن مقادیر پیش‌فرض و خطاها
+                if (tag && tag !== "Battery ID" && tag !== "No-Tag-Selected" && !tag.startsWith("#CH") && !availableTags.includes(tag)) {
+                    availableTags.push(tag);
+                }
+            }
+        }
+    }
+
     for(let i = 0; i < 3; i++) {
       const logBox = document.getElementById(`csv-log-${i}`);
       if(!logBox) continue;
@@ -443,7 +465,6 @@ async function fetchGlobalLogCSV() {
       
       let tableHTML = '<table class="csv-table"><tr>';
       headers.forEach((col, colIdx) => {
-        // نادیده گرفتن ستون اول (Channel) در رابط کاربری چون لاگ داخل باکس اختصاصی کانال است
         if(colIdx > 0 && colIdx < 10) tableHTML += `<th>${col.trim()}</th>`;
       });
       tableHTML += '</tr>';
@@ -451,7 +472,6 @@ async function fetchGlobalLogCSV() {
       let hasData = false;
       for(let rIdx = 1; rIdx < rows.length; rIdx++) {
         const cols = rows[rIdx].split(',');
-        // فقط ردیف‌های مربوط به همین کانال فیزیکی پردازش می‌شوند
         if(cols.length > 1 && cols[0].trim() === `CH${i+1}`) {
           hasData = true;
           tableHTML += '<tr>';
@@ -470,6 +490,10 @@ async function fetchGlobalLogCSV() {
         if (isScrolledToBottom) logBox.scrollTop = logBox.scrollHeight;
       }
     }
+    
+    // 💡 به‌روزرسانی منوهای کرکره‌ای در صورت وجود
+    populateDropdowns();
+    
   } catch(e) {}
 }
 
@@ -548,7 +572,6 @@ function renderCards(data) {
 
       let footerHtml = '';
       if (ch.state === STATE.DONE) {
-        // 💡 لینک دانلود آپدیت شد تا فایل یکپارچه را دریافت کند
         footerHtml = `<div class="form-row" style="direction:ltr;"><a href="/global_log" class="btn" style="background:#333; color:#fff; text-decoration:none; display:flex; align-items:center; justify-content:center; flex:1;" download="Global_Log.csv">${dict[currentLang]['btn_dl']}</a><button class="btn btn-report" onclick="downloadGraph(${i})">${dict[currentLang]['btn_graph']}</button><button class="btn btn-reset" onclick="resetCh(${i})">${dict[currentLang]['btn_rst']}</button></div>`;
       } else {
         let bCharge = (ch.state === STATE.CHARGING) ? 'active-btn chg' : '';
@@ -575,8 +598,20 @@ function renderCards(data) {
         let lbl1500 = ch.state === STATE.D1500 ? dict[currentLang]['btn_stop'] : (globalMode === 'auto' ? dict[currentLang]['btn_1500'] : dict[currentLang]['btn_1500_m']);
         let lblTrg = ch.state === STATE.TRIAGE ? dict[currentLang]['btn_stop'] : (globalMode === 'auto' ? dict[currentLang]['btn_trg'] : dict[currentLang]['btn_trg_m']);
 
+        // 💡 منطق نمایش داینامیک ورودی تگ بر اساس مود انتخاب شده
+        let tagInputHtml = '';
+        if (ch.state === STATE.IDLE && !isResting) {
+            if (globalMode === 'auto') {
+                let opts = `<option value="">-- ${dict[currentLang]['sel_tag']} --</option>`;
+                availableTags.forEach(t => { opts += `<option value="${t}">${t}</option>`; });
+                tagInputHtml = `<div class="form-row"><select class="input-name" id="name-${i}">${opts}</select></div>`;
+            } else {
+                tagInputHtml = `<div class="form-row"><input class="input-name" id="name-${i}" type="text" placeholder="${dict[currentLang]['plc_id']}"></div>`;
+            }
+        }
+
         footerHtml = `
-          ${(ch.state === STATE.IDLE && !isResting) ? `<div class="form-row"><input class="input-name" id="name-${i}" type="text" placeholder="${dict[currentLang]['plc_id']}"></div>` : ''}
+          ${tagInputHtml}
           <div class="action-grid">
             <button class="btn-big ${bCharge}" onclick="${onCharge}">${lblCharge}</button>
             <button class="btn-big ${b500}" onclick="${on500}">${lbl500}</button>
@@ -775,7 +810,6 @@ async function fetchData() {
     renderCards(d); 
     document.getElementById('sysTime').textContent=d.time; 
     
-    // 💡 اضافه شدن تابع جدید فیلترینگ و اسکن لاگ یکپارچه
     fetchGlobalLogCSV();
   } catch(e){} 
 }
@@ -788,8 +822,18 @@ async function startAct(i, act) {
   
   const el = document.getElementById(`name-${i}`); 
   let name = el ? el.value.trim() : '';
-  const r = await fetch('/action',{method:'POST',body:`ch=${i}&act=${act}&name=${encodeURIComponent(name)}`}); 
-  if(r.ok) { showToast(dict[currentLang]['toast_cmd']); if(el) el.value = ''; }
+
+  // 💡 سد دفاعی: جلوگیری از اجرای هر دستوری (شارژ و دیس‌شارژ) بدون تگ در حالت Auto، به جز تریاژ
+  if (globalMode === 'auto' && act !== 'autotriage') {
+      if (!name) {
+          alert(dict[currentLang]['err_notag']);
+          return; // توقف عملیات در سمت مرورگر
+      }
+  }
+
+  // اضافه شدن متغیر mode برای تصمیم‌گیری در بک‌اند
+  const r = await fetch('/action',{method:'POST',body:`ch=${i}&act=${act}&mode=${globalMode}&name=${encodeURIComponent(name)}`}); 
+  if(r.ok) { showToast(dict[currentLang]['toast_cmd']); if(el && el.tagName === 'INPUT') el.value = ''; }
   fetchData(); 
 }
 

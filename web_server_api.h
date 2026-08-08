@@ -111,9 +111,10 @@ void setupWebServer() {
   });
 
   // ۵. دریافت دستورات کنترلی از کلاینت (Action)
+  // ۵. دریافت دستورات کنترلی از کلاینت (Action)
   server.on("/action", HTTP_POST, []() {
     String body = server.arg("plain");
-    int chIdx = -1; String name = ""; String act = "";
+    int chIdx = -1; String name = ""; String act = ""; String uiMode = "";
     
     int p = body.indexOf("ch=");
     if (p >= 0) chIdx = body.substring(p+3, body.indexOf('&', p)).toInt();
@@ -121,16 +122,34 @@ void setupWebServer() {
     p = body.indexOf("act=");
     if (p >= 0) act = body.substring(p+4, body.indexOf('&', p));
     
+    p = body.indexOf("mode=");
+    if (p >= 0) uiMode = body.substring(p+5, body.indexOf('&', p));
+    
     p = body.indexOf("name=");
-    if (p >= 0) {
-      name = server.urlDecode(body.substring(p+5)); 
-    }
+    if (p >= 0) name = server.urlDecode(body.substring(p+5)); 
     
     name.trim(); 
     
+    // 🛑 سد دفاعی سرور: اگر در حالت اتوماتیک هستیم و دستور تریاژ نیست، تگ الزامی است
+    if (uiMode == "auto" && act != "autotriage" && name.length() == 0) {
+        server.send(400, "text/plain", "Error: Triage Tag is REQUIRED!");
+        return; 
+    }
+    
+    // 🏷️ سیستم تگ‌گذاری تفکیک شده برای جلوگیری از تداخل در هوش مصنوعی
     if (name.length() == 0) {
-        name = getNextGlobalAutoName();
-        incrementGlobalId();
+        if (act == "autotriage") {
+            // تگ‌های تمیز برای هوش مصنوعی (001, 002)
+            name = getNextGlobalAutoName();
+            incrementGlobalId();
+        } else if (uiMode == "manual") {
+            // تگ‌های دستی برای تست‌های متفرقه (MAN-001)
+            uint16_t mId = prefs.getUInt("man_id", 1);
+            char buf[16];
+            snprintf(buf, sizeof(buf), "MAN-%03u", mId);
+            name = String(buf);
+            prefs.putUInt("man_id", mId + 1);
+        }
     }
 
     if (chIdx >= 0 && chIdx < 3) {
