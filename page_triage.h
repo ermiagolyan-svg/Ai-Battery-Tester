@@ -97,6 +97,7 @@ String buildTriagePage() {
   </div>
   
   <nav class="nav-links">
+    <a href="/" title="Dashboard"><span class="icon">🏠</span> <span class="text" data-i18n="nav_home">داشبورد</span></a>
     <a href="/pack_builder" class="special" title="AI Pack Builder"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
     <a href="/triage" title="Triage Manager" style="background:var(--surface2)"><span class="icon">⚕️</span> <span class="text" data-i18n="nav_triage">تریاژ</span></a>
     <a href="/worker_manager" title="Worker Manager"><span class="icon">🧑‍🔧</span> <span class="text" data-i18n="nav_worker">مدیریت ورکر</span></a>
@@ -119,13 +120,13 @@ String buildTriagePage() {
 <script>
 const dict = {
   'fa': {
-    'nav_pack': 'ساخت پک', 'nav_triage': 'تریاژ', 'nav_worker': 'مدیریت ورکر', 'nav_logs': 'فایل‌ها', 'nav_settings': 'تنظیمات',
+    'nav_home': 'داشبورد', 'nav_pack': 'ساخت پک', 'nav_triage': 'تریاژ', 'nav_worker': 'مدیریت ورکر', 'nav_logs': 'فایل‌ها', 'nav_settings': 'تنظیمات',
     'back_dash': '→ بازگشت به داشبورد',
     'wip_title': 'بخش تریاژ در حال ساخت است',
     'wip_desc': 'این صفحه به زودی با قابلیت‌ها و امکانات جدید به‌روزرسانی خواهد شد.'
   },
   'en': {
-    'nav_pack': 'Pack Builder', 'nav_triage': 'Triage', 'nav_worker': 'Worker Manager', 'nav_logs': 'Logs', 'nav_settings': 'Settings',
+    'nav_home': 'Dashboard', 'nav_pack': 'Pack Builder', 'nav_triage': 'Triage', 'nav_worker': 'Worker Manager', 'nav_logs': 'Logs', 'nav_settings': 'Settings',
     'back_dash': '← Back to Dashboard',
     'wip_title': 'Triage Module Under Construction',
     'wip_desc': 'This page will be updated with new features and tools soon.'

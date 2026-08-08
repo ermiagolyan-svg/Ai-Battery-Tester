@@ -155,8 +155,9 @@ String buildPackBuilderPage() {
     <div class="logo-text">AI Battery Studio</div>
   </div>
   
-  <nav class="nav-links">
-    <a href="/pack_builder" class="special" title="AI Pack Builder"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
+ <nav class="nav-links">
+    <a href="/" title="Dashboard"><span class="icon">🏠</span> <span class="text" data-i18n="nav_home">داشبورد</span></a>
+    <a href="/pack_builder" class="special" title="AI Pack Builder" style="background:var(--surface2)"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
     <a href="/triage" title="Triage Manager"><span class="icon">⚕️</span> <span class="text" data-i18n="nav_triage">تریاژ</span></a>
     <a href="/worker_manager" title="Worker Manager"><span class="icon">🧑‍🔧</span> <span class="text" data-i18n="nav_worker">مدیریت ورکر</span></a>
     <a href="/logs" title="CSV Manager"><span class="icon">📋</span> <span class="text" data-i18n="nav_logs">فایل‌ها</span></a>
@@ -216,7 +217,7 @@ String buildPackBuilderPage() {
 <script>
 const dict = {
   'fa': {
-    'nav_pack': 'ساخت پک', 'nav_triage': 'تریاژ', 'nav_worker': 'مدیریت ورکر', 'nav_logs': 'فایل‌ها', 'nav_settings': 'تنظیمات',
+    'nav_home': 'داشبورد', 'nav_pack': 'ساخت پک', 'nav_triage': 'تریاژ', 'nav_worker': 'مدیریت ورکر', 'nav_logs': 'فایل‌ها', 'nav_settings': 'تنظیمات',  
     'back_dash': '→ بازگشت به داشبورد',
     'title_main': 'موتور هوشمند ساخت پک',
     'engine1_title': 'موتور هوشمند محاسبه تلورانس و کلاستربندی',
@@ -234,7 +235,7 @@ const dict = {
     'alert_fallback_both': '📦⚠️ <strong>محدودیت موجودی و ایمنی:</strong> ابتدا به دلیل کمبود سلول، ساختار به {S}S{P_INV}P کاهش یافت. سپس برای جلوگیری از خطر حرارتی تحت جریان {A} آمپر، سیستم امن‌ترین پک ممکن را به صورت <strong>{S}S{P_NEW}P</strong> نهایی کرد.',
   },
   'en': {
-    'nav_pack': 'Pack Builder', 'nav_triage': 'Triage', 'nav_worker': 'Worker Manager', 'nav_logs': 'Logs', 'nav_settings': 'Settings',
+    'nav_home': 'Dashboard', 'nav_pack': 'Pack Builder', 'nav_triage': 'Triage Manager', 'nav_worker': 'Worker Manager', 'nav_logs': 'CSV Manager', 'nav_settings': 'Settings',
     'back_dash': '← Dashboard',
     'title_main': 'AI Smart Pack Builder',
     'engine1_title': 'Smart Tolerance & Assembly Engine',

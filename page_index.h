@@ -15,33 +15,27 @@ String buildIndexPage() {
     --bg: #0d0d0f; --surface: #161619; --surface2: #1e1e23; --border: #2a2a32; 
     --accent: #00d4aa; --accent2: #0096ff; --warn: #ff6b35; --ok: #00e676; 
     --text: #e8e8f0; --muted: #6b6b80; --mono: 'Consolas', monospace;
-    --dir-sign: 1; /* برای انیمیشن سایدبار: 1 برای راست-چین، 1- برای چپ-چین */
+    --dir-sign: 1; 
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   
-  /* حل مشکل نوار پایین سافاری با 100dvh و تنظیم دقیق فاصله‌های Safe Area */
   body { background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; min-height: 100vh; min-height: 100dvh; direction: rtl; text-align: right; transition: background 0.3s ease; padding-inline-start: max(70px, env(safe-area-inset-left)); overflow-x: hidden; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); }
   
-  /* Overlay بک‌گراند برای زمانی که کشو باز است */
   .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 95; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px); }
   .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
   
-  /* تاپ‌بار مخصوص موبایل (Gemini Style) */
   .mobile-top-bar { display: none; }
 
-  /* سایدبار کشویی دسکتاپ */
   header#mainSidebar { position: fixed; top: 0; bottom: 0; inset-inline-start: 0; width: 70px; background: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow-x: hidden; white-space: nowrap; }
   header#mainSidebar.open { width: 260px; box-shadow: 0 0 24px rgba(0,0,0,0.7); }
   
   .top-bar-sidebar { display: flex; align-items: center; padding: 0 13px 16px; gap: 16px; min-height: 50px; }
   
-  /* دکمه همبرگری استایل Gemini */
   .menu-toggle { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text); cursor: pointer; border-radius: 50%; flex-shrink: 0; transition: background 0.2s; }
   .menu-toggle:hover { background: var(--surface2); }
   
   .logo-icon { font-size: 20px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   
-  /* مخفی/نمایان شدن متون کشو */
   .text, .logo-text { opacity: 0; transition: opacity 0.2s ease; font-weight: 600; }
   .logo-text { font-size: 16px; }
   header#mainSidebar.open .text, header#mainSidebar.open .logo-text { opacity: 1; transition-delay: 0.1s; }
@@ -57,7 +51,6 @@ String buildIndexPage() {
   .sys-time { padding: 0 24px; font-family: var(--mono); font-size: 12px; color: var(--muted); direction: ltr; text-align: left; opacity: 0; transition: opacity 0.2s ease; margin-top: 8px; }
   header#mainSidebar.open .sys-time { opacity: 0.6; transition-delay: 0.1s; }
 
-  /* پنل تنظیمات سراسری */
   .global-panel { background: var(--surface); margin: 16px 20px 0; max-width: 1500px; border-radius: 16px; border: 1px solid var(--border); padding: 16px 24px; display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-start; }
   .panel-col { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 8px; }
   .panel-label { font-size: 13px; color: var(--text); font-weight: 700; }
@@ -140,19 +133,15 @@ String buildIndexPage() {
   .modal h3 { color: var(--accent); margin-bottom: 12px; font-size: 18px; display: flex; align-items: center; gap: 8px;}
   .modal p { font-size: 14px; color: var(--text); line-height: 1.6; margin-bottom: 15px;}
 
-  /* --- Mobile UI: Gemini Layout --- */
   @media (max-width: 700px) {
-    /* تغییرات اصلی بدنه برای هدر بالایی */
     body { padding-inline-start: env(safe-area-inset-left); padding-top: calc(64px + env(safe-area-inset-top)); padding-bottom: max(40px, env(safe-area-inset-bottom)); }
     
-    /* نوار افقی بالای صفحه در موبایل */
     .mobile-top-bar { display: flex; position: fixed; top: 0; left: 0; right: 0; height: calc(64px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 16px 0; background: var(--bg); align-items: center; justify-content: space-between; z-index: 90; }
     .mobile-top-bar .title-group { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 500; }
     
-    /* تبدیل سایدبار به کشوی متحرک (Drawer) */
     header#mainSidebar { 
        width: 280px; 
-       transform: translateX(calc(100% * var(--dir-sign))); /* خروج به سمت لبه با توجه به زبان */
+       transform: translateX(calc(100% * var(--dir-sign)));
        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
        border-inline-end: none;
        background: var(--surface);
@@ -180,7 +169,7 @@ String buildIndexPage() {
     </button>
     <span>AI Battery Studio <span style="font-size:12px; color:var(--muted)">▾</span></span>
   </div>
-  <div></div> <!-- فضای خالی برای تعادل راست-چپ -->
+  <div></div>
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
@@ -195,6 +184,7 @@ String buildIndexPage() {
   </div>
   
   <nav class="nav-links">
+    <a href="/" title="Dashboard" style="background:var(--surface2)"><span class="icon">🏠</span> <span class="text" data-i18n="nav_home">داشبورد</span></a>
     <a href="/pack_builder" class="special" title="AI Pack Builder"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
     <a href="/triage" title="Triage Manager"><span class="icon">⚕️</span> <span class="text" data-i18n="nav_triage">تریاژ</span></a>
     <a href="/worker_manager" title="Worker Manager"><span class="icon">🧑‍🔧</span> <span class="text" data-i18n="nav_worker">مدیریت ورکر</span></a>
@@ -235,7 +225,7 @@ String buildIndexPage() {
 <script>
 const dict = {
   'fa': {
-     nav_pack: 'ساخت پک', nav_triage: 'تریاژ', nav_worker: 'مدیریت ورکر', nav_logs: 'فایل‌ها', nav_settings: 'تنظیمات',
+     nav_home: 'داشبورد', nav_pack: 'ساخت پک', nav_triage: 'تریاژ', nav_worker: 'مدیریت ورکر', nav_logs: 'فایل‌ها', nav_settings: 'تنظیمات',
      mode_lbl: 'حالت کارکرد دستگاه (Mode)',
      mode_auto: 'اتوماتیک (اجرای متوالی مراحل)', mode_manual: 'دستی (اجرای یک مرحله و توقف)',
      info_ok: 'متوجه شدم',
@@ -250,7 +240,7 @@ const dict = {
      info_mode_t: '⚙️ راهنمای حالت کارکرد', info_mode_d: 'حالت اتوماتیک (Auto):\nدر این حالت دستگاه تمام مراحل استاندارد را متوالی اجرا می‌کند.\n\nحالت دستی (Manual):\nتنها همان فازی که انتخاب می‌کنید یک‌بار اجرا می‌شود.'
   },
   'en': {
-     nav_pack: 'Pack Builder', nav_triage: 'Triage', nav_worker: 'Worker Manager', nav_logs: 'Logs', nav_settings: 'Settings',
+     nav_home: 'Dashboard', nav_pack: 'Pack Builder', nav_triage: 'Triage', nav_worker: 'Worker Manager', nav_logs: 'Logs', nav_settings: 'Settings',
      mode_lbl: 'Operation Mode',
      mode_auto: 'Automatic (Sequential Phases)', mode_manual: 'Manual (Single Phase)',
      info_ok: 'Got it',
@@ -272,7 +262,6 @@ let availableTags = [];
 function applyLanguage(lang) {
   currentLang = lang;
   
-  // تنظیم جهت اسلاید شدن منو در موبایل بر اساس زبان
   document.documentElement.style.setProperty('--dir-sign', lang === 'fa' ? '1' : '-1');
   
   if(lang === 'fa') {

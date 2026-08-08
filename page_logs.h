@@ -166,6 +166,7 @@ String buildLogPage() {
   </div>
   
   <nav class="nav-links">
+    <a href="/" title="Dashboard"><span class="icon">🏠</span> <span class="text" data-i18n="nav_home">داشبورد</span></a>
     <a href="/pack_builder" class="special" title="AI Pack Builder"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
     <a href="/triage" title="Triage Manager"><span class="icon">⚕️</span> <span class="text" data-i18n="nav_triage">تریاژ</span></a>
     <a href="/worker_manager" title="Worker Manager"><span class="icon">🧑‍🔧</span> <span class="text" data-i18n="nav_worker">مدیریت ورکر</span></a>
@@ -218,7 +219,7 @@ String buildLogPage() {
 <script>
   const dict = {
     'fa': {
-      'nav_pack': 'ساخت پک', 'nav_triage': 'تریاژ', 'nav_worker': 'مدیریت ورکر', 'nav_logs': 'فایل‌ها', 'nav_settings': 'تنظیمات',
+      'nav_home': 'داشبورد', 'nav_pack': 'ساخت پک', 'nav_triage': 'تریاژ', 'nav_worker': 'مدیریت ورکر', 'nav_logs': 'فایل‌ها', 'nav_settings': 'تنظیمات',
       'back_dash': '→ بازگشت به داشبورد',
       'page_title': '📋 گزارش‌ها و لاگ‌ها',
       'sec_unified': '🌍 پایگاه داده یکپارچه (ادغام هوشمند Triage و ظرفیت)',
@@ -233,7 +234,7 @@ String buildLogPage() {
       'toast_pdf': 'در حال پردازش، لطفاً صبر کنید...'
     },
     'en': {
-      'nav_pack': 'Pack Builder', 'nav_triage': 'Triage', 'nav_worker': 'Worker Manager', 'nav_logs': 'Logs', 'nav_settings': 'Settings',
+      'nav_home': 'Dashboard', 'nav_pack': 'Pack Builder', 'nav_triage': 'Triage', 'nav_worker': 'Worker Manager', 'nav_logs': 'Logs', 'nav_settings': 'Settings',
       'back_dash': '← Dashboard',
       'page_title': '📋 Mass Reports & Logs',
       'sec_unified': '🌍 Global Unified Database (Smart Merge)',
