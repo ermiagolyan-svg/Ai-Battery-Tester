@@ -176,9 +176,14 @@ async function fetchDeviceLogs() {
         let chStr = cols[0].replace('CH', '').trim();
         let c = parseInt(chStr) || 1;
         let rawId = cols[1].trim();
+        let mode = cols[5] ? cols[5].trim() : "";
+        
+        // 🛑 سد دفاعی هوشمند (Whitelist): فقط تگ‌های استاندارد (شروع با B-) مجاز هستند
+        if (!rawId.startsWith("B-")) continue;
+        if (mode.includes("Canceled") || mode.includes("Fault")) continue;
+        
         let cleanId = rawId; 
         
-        let mode = cols[5] ? cols[5].trim() : "";
         let cap = parseFloat(cols[6]) || 0;
         let ir = parseFloat(cols[7]) || 0;
         let grade = cols[8] ? cols[8].trim() : "Unknown";

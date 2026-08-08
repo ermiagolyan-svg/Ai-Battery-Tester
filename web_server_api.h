@@ -136,20 +136,23 @@ void setupWebServer() {
         return; 
     }
     
-    // 🏷️ سیستم تگ‌گذاری تفکیک شده برای جلوگیری از تداخل در هوش مصنوعی
-    if (name.length() == 0) {
-        if (act == "autotriage") {
-            // تگ‌های تمیز برای هوش مصنوعی (001, 002)
-            name = getNextGlobalAutoName();
-            incrementGlobalId();
-        } else if (uiMode == "manual") {
-            // تگ‌های دستی برای تست‌های متفرقه (MAN-001)
+    // 🏷️ سیستم تگ‌گذاری تفکیک شده و فورس‌ماژور برای تست‌های دستی
+    if (uiMode == "manual") {
+        if (name.length() == 0) {
+            // ساخت تگ دستی خودکار
             uint16_t mId = prefs.getUInt("man_id", 1);
             char buf[16];
             snprintf(buf, sizeof(buf), "MAN-%03u", mId);
             name = String(buf);
             prefs.putUInt("man_id", mId + 1);
+        } else if (!name.startsWith("MAN-")) {
+            // اگر کاربر اسم دلخواه مثل batry2 داد، به زور MAN- را میچسبانیم
+            name = "MAN-" + name;
         }
+    } else if (uiMode == "auto" && act == "autotriage" && name.length() == 0) {
+        // تگ‌های تمیز برای هوش مصنوعی (B-001)
+        name = getNextGlobalAutoName();
+        incrementGlobalId();
     }
 
     if (chIdx >= 0 && chIdx < 3) {

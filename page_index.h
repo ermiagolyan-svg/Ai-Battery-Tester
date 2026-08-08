@@ -443,7 +443,7 @@ async function fetchGlobalLogCSV() {
             if (cols.length > 1) {
                 let tag = cols[1].trim();
                 // نادیده گرفتن مقادیر پیش‌فرض و خطاها
-                if (tag && tag !== "Battery ID" && tag !== "No-Tag-Selected" && !tag.startsWith("#CH") && !availableTags.includes(tag)) {
+                if (tag && tag !== "Battery ID" && tag !== "No-Tag-Selected" && !tag.startsWith("#CH") && !tag.startsWith("MAN-") && !availableTags.includes(tag)) {
                     availableTags.push(tag);
                 }
             }

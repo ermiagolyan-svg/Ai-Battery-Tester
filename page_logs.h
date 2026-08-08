@@ -294,6 +294,17 @@ String buildLogPage() {
 
     parsedData.forEach(row => {
         let id = row.cleanId;
+        
+        // 🛑 سد دفاعی هوش مصنوعی (Whitelist): فقط تگ‌های استاندارد اتوماتیک (شروع با B-) مجاز هستند
+        if (!id.startsWith("B-")) {
+            return;
+        }
+        
+        // 🛑 سد دفاعی جدید: نادیده گرفتن تست‌های لغو شده (Canceled) و خطا خورده (Fault/Error)
+        if (row.mode.includes("Canceled") || row.mode.includes("Fault")) {
+            return;
+        }
+        
         if (!currentSessionForId[id]) {
             let newSession = { triage: null, capTests: [] };
             allSessions.push(newSession);
