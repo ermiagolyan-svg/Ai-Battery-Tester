@@ -9,38 +9,64 @@ String buildIndexPage() {
 <html lang="fa">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Li-ion Battery Analyzer V6.8.2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Li-ion Battery Analyzer V6.8.2</title>
 <style>
-  :root { --bg: #0d0d0f; --surface: #161619; --surface2: #1e1e23; --border: #2a2a32; --accent: #00d4aa; --accent2: #0096ff; --warn: #ff6b35; --ok: #00e676; --text: #e8e8f0; --muted: #6b6b80; --mono: 'Consolas', monospace; }
+  :root { 
+    --bg: #0d0d0f; --surface: #161619; --surface2: #1e1e23; --border: #2a2a32; 
+    --accent: #00d4aa; --accent2: #0096ff; --warn: #ff6b35; --ok: #00e676; 
+    --text: #e8e8f0; --muted: #6b6b80; --mono: 'Consolas', monospace;
+    --dir-sign: 1; /* برای انیمیشن سایدبار: 1 برای راست-چین، 1- برای چپ-چین */
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; min-height: 100vh; direction: rtl; text-align: right; transition: all 0.3s ease; }
-  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; direction: ltr; }
   
-  .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-  .logo-text { font-size: 16px; font-weight: 700; text-align: left; }
-  .logo-sub { font-size: 11px; color: var(--muted); text-align: left; }
+  /* حل مشکل نوار پایین سافاری با 100dvh و تنظیم دقیق فاصله‌های Safe Area */
+  body { background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; min-height: 100vh; min-height: 100dvh; direction: rtl; text-align: right; transition: background 0.3s ease; padding-inline-start: max(70px, env(safe-area-inset-left)); overflow-x: hidden; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); }
   
-  .header-right { display: flex; align-items: center; gap: 12px; direction: rtl; }
-  .sys-time { font-family: var(--mono); font-size: 12px; color: var(--muted); background: var(--surface2); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); direction: ltr; }
+  /* Overlay بک‌گراند برای زمانی که کشو باز است */
+  .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 95; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px); }
+  .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
   
-  .nav-links { display: flex; gap: 5px; }
-  .nav-links a { text-decoration: none; color: var(--muted); font-size: 13px; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); transition: all .15s; display: flex; align-items: center; gap: 4px; font-weight: 600;}
-  .nav-links a:hover { color: var(--text); border-color: var(--accent); }
-  .nav-links a.special { color: var(--accent); border-color: var(--accent); background: rgba(0,212,170,.1); }
-  .nav-links a.special:hover { background: var(--accent); color: #000; }
+  /* تاپ‌بار مخصوص موبایل (Gemini Style) */
+  .mobile-top-bar { display: none; }
+
+  /* سایدبار کشویی دسکتاپ */
+  header#mainSidebar { position: fixed; top: 0; bottom: 0; inset-inline-start: 0; width: 70px; background: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow-x: hidden; white-space: nowrap; }
+  header#mainSidebar.open { width: 260px; box-shadow: 0 0 24px rgba(0,0,0,0.7); }
   
+  .top-bar-sidebar { display: flex; align-items: center; padding: 0 13px 16px; gap: 16px; min-height: 50px; }
+  
+  /* دکمه همبرگری استایل Gemini */
+  .menu-toggle { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text); cursor: pointer; border-radius: 50%; flex-shrink: 0; transition: background 0.2s; }
+  .menu-toggle:hover { background: var(--surface2); }
+  
+  .logo-icon { font-size: 20px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  
+  /* مخفی/نمایان شدن متون کشو */
+  .text, .logo-text { opacity: 0; transition: opacity 0.2s ease; font-weight: 600; }
+  .logo-text { font-size: 16px; }
+  header#mainSidebar.open .text, header#mainSidebar.open .logo-text { opacity: 1; transition-delay: 0.1s; }
+  
+  .nav-links { display: flex; flex-direction: column; gap: 6px; flex: 1; margin-top: 10px; }
+  .nav-links a, .bottom-section a { text-decoration: none; color: var(--text); font-size: 14px; padding: 0 12px; height: 44px; margin: 0 13px; border-radius: 50px; display: flex; align-items: center; gap: 16px; transition: background 0.2s, color 0.2s; border: none; font-weight: normal; }
+  .nav-links a:hover, .bottom-section a:hover { background: var(--surface2); }
+  .nav-links a.special { background: rgba(0, 212, 170, 0.1); color: var(--accent); }
+  .nav-links a.special:hover { background: rgba(0, 212, 170, 0.2); }
+  .icon { font-size: 18px; width: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  
+  .bottom-section { display: flex; flex-direction: column; gap: 6px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+  .sys-time { padding: 0 24px; font-family: var(--mono); font-size: 12px; color: var(--muted); direction: ltr; text-align: left; opacity: 0; transition: opacity 0.2s ease; margin-top: 8px; }
+  header#mainSidebar.open .sys-time { opacity: 0.6; transition-delay: 0.1s; }
+
   /* پنل تنظیمات سراسری */
-  .global-panel { background: var(--surface); margin: 20px auto 0; max-width: 1500px; width: calc(100% - 40px); border-radius: 16px; border: 1px solid var(--border); padding: 16px 24px; display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-start; }
-  .panel-col { flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 8px; }
+  .global-panel { background: var(--surface); margin: 16px 20px 0; max-width: 1500px; border-radius: 16px; border: 1px solid var(--border); padding: 16px 24px; display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-start; }
+  .panel-col { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 8px; }
   .panel-label { font-size: 13px; color: var(--text); font-weight: 700; }
   .info-btn { cursor: pointer; color: var(--accent); background: rgba(0,212,170,0.1); border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; border: 1px solid rgba(0,212,170,0.3); transition: 0.2s; }
   .info-btn:hover { background: var(--accent); color: #000; }
   .panel-select { background: #0a0a0c; color: var(--text); border: 1px solid var(--border); padding: 12px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; cursor: pointer; font-family: inherit; width: 100%; direction: inherit; }
   .panel-select:focus { border-color: var(--accent); }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; padding: 20px; max-width: 1500px; margin: 0 auto; direction: inherit;}
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; padding: 20px; max-width: 1540px; margin: 0 auto; direction: inherit;}
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.3s;}
   
   .card-header { padding: 14px 18px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); direction: ltr; }
@@ -114,38 +140,69 @@ String buildIndexPage() {
   .modal h3 { color: var(--accent); margin-bottom: 12px; font-size: 18px; display: flex; align-items: center; gap: 8px;}
   .modal p { font-size: 14px; color: var(--text); line-height: 1.6; margin-bottom: 15px;}
 
+  /* --- Mobile UI: Gemini Layout --- */
   @media (max-width: 700px) {
-    .logo-sub, .sys-time { display: none; }
-    .nav-links a span { display: none; }
-    .nav-links { gap: 6px; } 
-    .nav-links a { 
-      padding: 0; width: 38px; height: 38px; font-size: 18px; display: flex; align-items: center; justify-content: center; 
-      border: 1px solid var(--border); background: var(--surface2); border-radius: 8px; 
+    /* تغییرات اصلی بدنه برای هدر بالایی */
+    body { padding-inline-start: env(safe-area-inset-left); padding-top: calc(64px + env(safe-area-inset-top)); padding-bottom: max(40px, env(safe-area-inset-bottom)); }
+    
+    /* نوار افقی بالای صفحه در موبایل */
+    .mobile-top-bar { display: flex; position: fixed; top: 0; left: 0; right: 0; height: calc(64px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 16px 0; background: var(--bg); align-items: center; justify-content: space-between; z-index: 90; }
+    .mobile-top-bar .title-group { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 500; }
+    
+    /* تبدیل سایدبار به کشوی متحرک (Drawer) */
+    header#mainSidebar { 
+       width: 280px; 
+       transform: translateX(calc(100% * var(--dir-sign))); /* خروج به سمت لبه با توجه به زبان */
+       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+       border-inline-end: none;
+       background: var(--surface);
     }
-    .nav-links a.special { background: rgba(0,212,170,.15); border-color: var(--accent); }
-    header { padding: 10px 14px; }
-    .header-right { gap: 8px; }
-    .grid { padding: 12px; }
-    .global-panel { width: calc(100% - 24px); padding: 14px; gap: 14px; }
+    header#mainSidebar.open { 
+       transform: translateX(0); 
+       box-shadow: 0 0 40px rgba(0,0,0,0.8); 
+    }
+    
+    .top-bar-sidebar { padding: 0 16px 16px; }
+    .nav-links a, .bottom-section a { margin: 0 12px; }
+    .text, .logo-text { opacity: 1; }
+    
+    .grid { grid-template-columns: minmax(260px, 1fr); padding: 12px; gap: 12px; }
+    .global-panel { margin: 12px 12px 0; padding: 14px; gap: 12px; }
   }
 
 </style>
 </head><body>
-<header>
-  <div class="logo">
-    <div class="logo-icon">⚡</div>
-    <div>
-      <div class="logo-text">Li-ion Analyzer</div>
-      <div class="logo-sub">Internal Resistance & Capacity Tester</div>
-    </div>
+
+<div class="mobile-top-bar">
+  <div class="title-group">
+    <button class="menu-toggle" onclick="toggleSidebar()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 16h18v-2H3v2zm0-5h18v-2H3v2z"/></svg>
+    </button>
+    <span>AI Battery Studio <span style="font-size:12px; color:var(--muted)">▾</span></span>
   </div>
-  <div class="header-right">
-   <nav class="nav-links">
-      <a href="/pack_builder" class="special" title="AI Pack Builder">🧠 <span data-i18n="nav_pack">ساخت پک</span></a>
-      <a href="/triage" title="Triage Manager">⚕️ <span data-i18n="nav_triage">تریاژ</span></a>
-      <a href="/logs" title="CSV Manager">📋 <span data-i18n="nav_logs">فایل‌ها</span></a>
-      <a href="/settings" title="Settings">⚙️ <span data-i18n="nav_settings">تنظیمات</span></a>
-    </nav>
+  <div></div> <!-- فضای خالی برای تعادل راست-چپ -->
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<header id="mainSidebar">
+  <div class="top-bar-sidebar">
+    <button class="menu-toggle" onclick="toggleSidebar()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 16h18v-2H3v2zm0-5h18v-2H3v2z"/></svg>
+    </button>
+    <div class="logo-icon">✨</div>
+    <div class="logo-text">AI Battery Studio</div>
+  </div>
+  
+  <nav class="nav-links">
+    <a href="/pack_builder" class="special" title="AI Pack Builder"><span class="icon">🧠</span> <span class="text" data-i18n="nav_pack">ساخت پک</span></a>
+    <a href="/triage" title="Triage Manager"><span class="icon">⚕️</span> <span class="text" data-i18n="nav_triage">تریاژ</span></a>
+    <a href="/worker_manager" title="Worker Manager"><span class="icon">🧑‍🔧</span> <span class="text" data-i18n="nav_worker">مدیریت ورکر</span></a>
+    <a href="/logs" title="CSV Manager"><span class="icon">📋</span> <span class="text" data-i18n="nav_logs">فایل‌ها</span></a>
+  </nav>
+
+  <div class="bottom-section">
+    <a href="/settings" title="Settings"><span class="icon">⚙️</span> <span class="text" data-i18n="nav_settings">تنظیمات</span></a>
     <div class="sys-time" id="sysTime">--:--:--</div>
   </div>
 </header>
@@ -176,10 +233,9 @@ String buildIndexPage() {
 </div>
 
 <script>
-// دیکشنری دو زبانه (افزودن سلکتور تگ تفکیک شده)
 const dict = {
   'fa': {
-     nav_pack: 'ساخت پک', nav_triage: 'تریاژ', nav_logs: 'فایل‌ها', nav_settings: 'تنظیمات',
+     nav_pack: 'ساخت پک', nav_triage: 'تریاژ', nav_worker: 'مدیریت ورکر', nav_logs: 'فایل‌ها', nav_settings: 'تنظیمات',
      mode_lbl: 'حالت کارکرد دستگاه (Mode)',
      mode_auto: 'اتوماتیک (اجرای متوالی مراحل)', mode_manual: 'دستی (اجرای یک مرحله و توقف)',
      info_ok: 'متوجه شدم',
@@ -194,7 +250,7 @@ const dict = {
      info_mode_t: '⚙️ راهنمای حالت کارکرد', info_mode_d: 'حالت اتوماتیک (Auto):\nدر این حالت دستگاه تمام مراحل استاندارد را متوالی اجرا می‌کند.\n\nحالت دستی (Manual):\nتنها همان فازی که انتخاب می‌کنید یک‌بار اجرا می‌شود.'
   },
   'en': {
-     nav_pack: 'Pack Builder', nav_triage: 'Triage', nav_logs: 'Logs', nav_settings: 'Settings',
+     nav_pack: 'Pack Builder', nav_triage: 'Triage', nav_worker: 'Worker Manager', nav_logs: 'Logs', nav_settings: 'Settings',
      mode_lbl: 'Operation Mode',
      mode_auto: 'Automatic (Sequential Phases)', mode_manual: 'Manual (Single Phase)',
      info_ok: 'Got it',
@@ -211,18 +267,20 @@ const dict = {
 };
 
 let currentLang = 'fa';
-let availableTags = []; // 💡 آرایه ذخیره تگ‌های استخراج شده از CSV
+let availableTags = [];
 
 function applyLanguage(lang) {
   currentLang = lang;
+  
+  // تنظیم جهت اسلاید شدن منو در موبایل بر اساس زبان
+  document.documentElement.style.setProperty('--dir-sign', lang === 'fa' ? '1' : '-1');
+  
   if(lang === 'fa') {
       document.body.style.direction = 'rtl';
       document.body.style.textAlign = 'right';
-      document.querySelector('.header-right').style.direction = 'rtl';
   } else {
       document.body.style.direction = 'ltr';
       document.body.style.textAlign = 'left';
-      document.querySelector('.header-right').style.direction = 'ltr';
   }
 
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -236,9 +294,22 @@ function applyLanguage(lang) {
   fetchData(); 
 }
 
+function toggleSidebar() {
+  const sidebar = document.getElementById('mainSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('active');
+}
+
 window.onload = () => {
   currentLang = localStorage.getItem('sysLang') || 'fa';
   applyLanguage(currentLang);
+  
+  let savedMode = localStorage.getItem('sysMode');
+  if (savedMode) {
+      document.getElementById('globalMode').value = savedMode;
+  }
+  updateModeUI();
 };
 
 const STATE = {IDLE:0, CHARGING:1, D500:2, D1000:3, D1500:4, IR:5, TRIAGE:6, DONE:7};
@@ -247,20 +318,20 @@ let globalMode = 'auto';
 
 function updateModeUI() {
   globalMode = document.getElementById('globalMode').value;
+  localStorage.setItem('sysMode', globalMode); 
+  
   const grid = document.getElementById('channelGrid');
   Array.from(grid.children).forEach(card => card.setAttribute('data-mode', 'invalid'));
   
-  // 💡 تغییر رنگ داینامیک پس‌زمینه برای تشخیص راحت‌تر
   if (globalMode === 'manual') {
-      document.documentElement.style.setProperty('--bg', '#0a1118');
-      document.documentElement.style.setProperty('--surface', '#121c26');
-      document.documentElement.style.setProperty('--border', '#2c3e50');
+      document.documentElement.style.setProperty('--bg', '#17100b');
+      document.documentElement.style.setProperty('--surface', '#1f1611');
+      document.documentElement.style.setProperty('--border', '#38261d');
   } else {
-      document.documentElement.style.setProperty('--bg', '#0d0d0f');
-      document.documentElement.style.setProperty('--surface', '#161619');
-      document.documentElement.style.setProperty('--border', '#2a2a32');
+      document.documentElement.style.setProperty('--bg', '#091011');
+      document.documentElement.style.setProperty('--surface', '#0f181a');
+      document.documentElement.style.setProperty('--border', '#1a2b2e');
   }
-  
   fetchData();
 }
 
@@ -333,7 +404,6 @@ async function fetchAndDrawGraph(i) {
   } catch(e) {}
 }
 
-// 💡 تزریق تگ‌ها به دراپ‌داون بدون پاک کردن انتخاب فعلی کاربر
 function populateDropdowns() {
     for (let i = 0; i < 3; i++) {
         const el = document.getElementById(`name-${i}`);
@@ -348,13 +418,11 @@ function populateDropdowns() {
     }
 }
 
-// 💡 واکشی لاگ یکپارچه و استخراج تگ‌ها
 async function fetchGlobalLogCSV() {
   try {
     const r = await fetch('/global_log');
     const txt = await r.text();
     
-    // 💡 استخراج تگ‌های باتری برای منوی کرکره‌ای
     availableTags = [];
     if(txt && txt !== "Empty" && txt.trim() !== "") {
         const rows = txt.trim().split('\n');
@@ -362,7 +430,6 @@ async function fetchGlobalLogCSV() {
             const cols = rows[rIdx].split(',');
             if (cols.length > 1) {
                 let tag = cols[1].trim();
-                // نادیده گرفتن مقادیر پیش‌فرض و خطاها
                 if (tag && tag !== "Battery ID" && tag !== "No-Tag-Selected" && !tag.startsWith("#CH") && !tag.startsWith("MAN-") && !availableTags.includes(tag)) {
                     availableTags.push(tag);
                 }
@@ -411,9 +478,7 @@ async function fetchGlobalLogCSV() {
       }
     }
     
-    // 💡 به‌روزرسانی منوهای کرکره‌ای در صورت وجود
     populateDropdowns();
-    
   } catch(e) {}
 }
 
@@ -518,7 +583,6 @@ function renderCards(data) {
         let lbl1500 = ch.state === STATE.D1500 ? dict[currentLang]['btn_stop'] : (globalMode === 'auto' ? dict[currentLang]['btn_1500'] : dict[currentLang]['btn_1500_m']);
         let lblTrg = ch.state === STATE.TRIAGE ? dict[currentLang]['btn_stop'] : (globalMode === 'auto' ? dict[currentLang]['btn_trg'] : dict[currentLang]['btn_trg_m']);
 
-        // 💡 منطق نمایش داینامیک ورودی تگ بر اساس مود انتخاب شده
         let tagInputHtml = '';
         if (ch.state === STATE.IDLE && !isResting) {
             if (globalMode === 'auto') {
@@ -734,24 +798,18 @@ async function fetchData() {
   } catch(e){} 
 }
 
-// 💡 رفع باگ خطاها و مجزا کردن آن‌ها
 async function startAct(i, act) { 
   const el = document.getElementById(`name-${i}`); 
   let name = el ? el.value.trim() : '';
 
-  // 💡 سد دفاعی: جلوگیری از اجرای هر دستوری (شارژ و دیس‌شارژ) بدون تگ در حالت Auto، به جز تریاژ
   if (globalMode === 'auto' && act !== 'autotriage') {
       if (!name) {
-          if (act === 'charge') {
-              alert(dict[currentLang]['err_notag_chg']);
-          } else {
-              alert(dict[currentLang]['err_notag_dis']);
-          }
-          return; // توقف عملیات در سمت مرورگر
+          if (act === 'charge') alert(dict[currentLang]['err_notag_chg']);
+          else alert(dict[currentLang]['err_notag_dis']);
+          return; 
       }
   }
 
-  // اضافه شدن متغیر mode برای تصمیم‌گیری در بک‌اند
   const r = await fetch('/action',{method:'POST',body:`ch=${i}&act=${act}&mode=${globalMode}&name=${encodeURIComponent(name)}`}); 
   if(r.ok) { showToast(dict[currentLang]['toast_cmd']); if(el && el.tagName === 'INPUT') el.value = ''; }
   fetchData(); 

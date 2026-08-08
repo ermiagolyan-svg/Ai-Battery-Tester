@@ -188,7 +188,7 @@ void setup() {
   tft.setTextSize(1); 
   tft.setTextColor(TFT_CYAN, TFT_BLACK); 
   tft.setCursor(5, 10); 
-  tft.println("Li-ion Analyzer");
+  tft.println("AI Battery Studio");
   tft.setTextFont(2); 
   tft.setTextSize(1); 
   tft.setTextColor(TFT_LIGHTGREY, TFT_BLACK); 
