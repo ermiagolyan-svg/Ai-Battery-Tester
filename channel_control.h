@@ -215,8 +215,10 @@ void stopChannel(uint8_t c) {
   ch[c].endTime    = nowEpoch();
   ch[c].state = lastState; 
   
-  // لاگ در این نقطه گرفته می‌شود (تمام متغیرهای Auto دست‌نخورده هستند)
-  saveCSV(c); 
+  // فازهای استراحت میانی لاگ نمی‌شوند (تست تریاژ به دلیل داشتن autoPhase = PHASE_DISCHG کامل لاگ می‌شود)
+  if (ch[c].autoPhase != PHASE_REST && ch[c].autoPhase != PHASE_REST_POST) {
+    saveCSV(c); 
+  }
   
   ch[c].state = DONE;
 
@@ -444,7 +446,6 @@ void sampleAll(unsigned long dt) {
         
         ch[c].endMillis = millis();
         ch[c].endTime = nowEpoch();
-        saveCSV(c);
 
         if (ch[c].autoPhase == PHASE_REST) {
             ChannelState nState;
