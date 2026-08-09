@@ -9,6 +9,7 @@
 #include <Wire.h>
 #include <WiFi.h>
 #include <WiFiMulti.h> 
+#include <ESPmDNS.h>
 #include <WebServer.h>
 #include <LittleFS.h>
 #include <TFT_eSPI.h>
@@ -272,6 +273,19 @@ void setup() {
     tft.setTextColor(UI_WARN, UI_BG);
     tft.drawString("Network: AP Mode    ", 20, 160);
   }
+
+  // ---------------------------------------------------------
+  // ---> کدهای راه‌اندازی دامنه aibatterystudio.local
+  // ---------------------------------------------------------
+  if (MDNS.begin("aibatterystudio")) {
+    Serial.println("mDNS responder started");
+    Serial.println("You can now connect to http://aibatterystudio.local");
+    // معرفی سرویس وب به شبکه برای کشف خودکار
+    MDNS.addService("http", "tcp", 80); 
+  } else {
+    Serial.println("Error setting up MDNS responder!");
+  }
+  // ---------------------------------------------------------
   
   setupWebServer();
   server.begin();
