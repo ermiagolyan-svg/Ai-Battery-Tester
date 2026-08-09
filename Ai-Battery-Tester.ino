@@ -152,6 +152,8 @@ Preferences prefs;
 void setup() {
   Serial.begin(115200);
 
+  prefs.begin("triage", false);
+
   csvMutex = xSemaphoreCreateMutex();
   
   baleQueue = xQueueCreate(10, sizeof(String*));
@@ -209,7 +211,6 @@ void setup() {
 
   // ---> بارگذاری لیست شبکه‌ها از NVS در WiFiMulti <---
   WiFiMulti wifiMulti;
-  prefs.begin("triage", false);
   String wifiJson = prefs.getString("wifi_list", "[]");
   JsonDocument doc;
   deserializeJson(doc, wifiJson);
