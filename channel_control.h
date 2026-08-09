@@ -117,9 +117,10 @@ void startChannel(uint8_t c, const String& name, ChannelState act) {
     measureIR(c);
   }
   else if (act == Triage) {
+    measureIR(c);
+
     ch[c].voltStart = readVoltage(c);
     ch[c].qt_voltBase = ch[c].voltStart;
-    ch[c].IR = 0; 
     
     ch[c].qtPhase = QT_REST_INIT;
     ch[c].qtPhaseStartMillis = millis();
