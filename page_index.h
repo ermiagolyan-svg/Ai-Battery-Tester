@@ -527,6 +527,12 @@ function renderCards(data) {
 
     let cardBorderColor = isRunning ? CH_COLORS[i] : (isResting ? '#87ceeb' : (ch.state===STATE.DONE ? '#00ff00' : 'rgba(255,255,255,0.05)'));
 
+    // ================= بَج ترکیبی برای تگ و وضعیت =================
+    let tagBadgeHtml = ch.name ? `<span style="background:rgba(255,255,255,0.08); padding:4px 8px; border-right:1px solid rgba(255,255,255,0.1); font-family:var(--mono); font-size:12px; font-weight:normal; color:var(--text);">${ch.name}</span>` : '';
+    let statusBadgeHtml = `<span style="padding:4px 8px; color:${stateColor}; font-weight:700; font-size:11px; letter-spacing:0.5px; display:flex; align-items:center;" id="badge-val-${i}">${sn}</span>`;
+    let combinedBadge = `<div id="combined-badge-${i}" style="display:flex; align-items:stretch; background:rgba(0,0,0,0.3); border:1px solid ${stateColor}; border-radius:8px; overflow:hidden; transition:border-color 0.3s;">${tagBadgeHtml}${statusBadgeHtml}</div>`;
+    // =========================================================
+
     if (!card || forceRebuild || (card.getAttribute('data-state') != ch.state && !isFocused) || (isResting && card.getAttribute('data-resting') !== 'true')) {
       if (!card) { card = document.createElement('div'); card.id = id; grid.appendChild(card); }
       card.className = `card`;
@@ -544,10 +550,15 @@ function renderCards(data) {
       let metric3Value = isTriage ? (ch.qt_grade === "Testing..." ? "Testing..." : (ch.qt_grade ? ch.qt_grade.charAt(0) : "---")) : parseFloat(ch.mah).toFixed(0);
       let metric3Unit  = isTriage ? '' : 'mAh';
       
-      let metric4Label = isTriage ? 'DCIR' : 'Resistance';
-      let metric4Value = isTriage ? (ch.qt_dcir && parseFloat(ch.qt_dcir)>0 ? parseFloat(ch.qt_dcir).toFixed(0) : '---') : parseFloat(ch.ir).toFixed(1);
+      let metric4Label = isTriage ? 'IR / DCIR' : 'Resistance';
+      let irDisplay = parseFloat(ch.ir).toFixed(1);
+      let dcirDisplay = (ch.qt_dcir && parseFloat(ch.qt_dcir) > 0) ? parseFloat(ch.qt_dcir).toFixed(0) : '---';
+      
+      let metric4Value = isTriage 
+          ? `<span style="color:var(--text)">${irDisplay}</span> <span style="font-size:18px; color:var(--muted); font-weight:normal; margin:0 2px;">/</span> ${dcirDisplay}` 
+          : irDisplay;
       let metric4Unit  = 'mΩ';
-
+      
       let footerHtml = '';
       if (ch.state === STATE.DONE) {
         footerHtml = `<div class="form-row" style="direction:ltr;"><a href="/global_log" class="btn" style="background:rgba(255,255,255,0.1); color:var(--text); text-decoration:none; display:flex; align-items:center; justify-content:center; flex:1; border:1px solid rgba(255,255,255,0.1);" download="Global_Log.csv">${dict[currentLang]['btn_dl']}</a><button class="btn btn-report" onclick="downloadGraph(${i})">${dict[currentLang]['btn_graph']}</button><button class="btn btn-reset" onclick="resetCh(${i})">${dict[currentLang]['btn_rst']}</button></div>`;
@@ -608,9 +619,11 @@ function renderCards(data) {
         <div class="card-header">
             <div class="ch-label">
                 <div class="ch-dot" id="dot-${i}" style="background: ${cardBorderColor}; box-shadow: 0 0 8px ${cardBorderColor}; ${isRunning||isResting ? 'animation: p 1.5s infinite;' : ''}"></div>
-                <div><div class="ch-name" id="name-label-${i}">${ch.name || 'Channel '+(i+1)}</div><div class="ch-num" style="color:${CH_COLORS[i]}">CH${i+1} · #${i+1}-</div></div>
+                <div class="ch-name">Channel ${i+1}</div>
+                <!-- المان مخفی برای ارسال اسم به خروجی تصویر گراف -->
+                <span id="name-label-${i}" style="display:none;">${ch.name || 'Channel '+(i+1)}</span>
             </div>
-            <span class="badge" style="background: rgba(0,0,0,0.3); border: 1px solid ${stateColor}; color: ${stateColor};" id="badge-val-${i}">${sn}</span>
+            ${combinedBadge}
         </div>
         <div class="metrics">
           <div class="metric"><span class="metric-label">Voltage</span><span class="metric-value ${(isRunning||isResting)?'accent':''}" id="v-val-${i}">${ch.v}<span class="metric-unit">V</span></span></div>
@@ -653,10 +666,12 @@ function renderCards(data) {
       dot.style.boxShadow = `0 0 8px ${cardBorderColor}`;
       dot.style.animation = (isRunning || isResting) ? 'p 1.5s infinite' : 'none';
 
-      let badge = document.getElementById(`badge-val-${i}`);
-      badge.textContent = sn;
-      badge.style.borderColor = stateColor;
-      badge.style.color = stateColor;
+      // آپدیت لایو بَج ترکیبی
+      let cb = document.getElementById(`combined-badge-${i}`);
+      if(cb) {
+          cb.style.borderColor = stateColor;
+          cb.innerHTML = tagBadgeHtml + statusBadgeHtml;
+      }
 
       document.getElementById(`v-val-${i}`).innerHTML = `${ch.v}<span class="metric-unit">V</span>`;
       
@@ -664,14 +679,15 @@ function renderCards(data) {
           let recVal = ch.qt_rec && parseFloat(ch.qt_rec)>0 ? parseFloat(ch.qt_rec).toFixed(1) : '---';
           let grVal = ch.qt_grade === "Testing..." ? "Testing..." : (ch.qt_grade ? ch.qt_grade.charAt(0) : "---");
           let dcVal = ch.qt_dcir && parseFloat(ch.qt_dcir)>0 ? parseFloat(ch.qt_dcir).toFixed(0) : '---';
+          let irVal = parseFloat(ch.ir).toFixed(1);
           
           document.getElementById(`i-val-${i}`).innerHTML = `${recVal}<span class="metric-unit">mV/s</span>`;
           document.getElementById(`mah-val-${i}`).innerText = grVal;
-          document.getElementById(`ir-val-${i}`).innerText = dcVal;
+          document.getElementById(`ir-val-${i}`).innerHTML = `<span style="color:var(--text)">${irVal}</span> <span style="font-size:18px; color:var(--muted); font-weight:normal; margin:0 2px;">/</span> ${dcVal}`;
       } else {
           document.getElementById(`i-val-${i}`).innerHTML = `${ch.i}<span class="metric-unit">mA</span>`;
           document.getElementById(`mah-val-${i}`).innerText = parseFloat(ch.mah).toFixed(0);
-          document.getElementById(`ir-val-${i}`).innerText = parseFloat(ch.ir).toFixed(1);
+          document.getElementById(`ir-val-${i}`).innerHTML = parseFloat(ch.ir).toFixed(1);
       }
       
       const elpEl = document.getElementById(`elapsed-val-${i}`);
@@ -681,7 +697,11 @@ function renderCards(data) {
       document.getElementById(`vstart-val-${i}`).textContent = `${ch.vstart}V`;
       document.getElementById(`vpct-val-${i}`).textContent = `${vPct.toFixed(0)}%`;
       document.getElementById(`vbar-val-${i}`).style.width = `${vPct}%`;
-      if (!isFocused && ch.name) document.getElementById(`name-label-${i}`).textContent = ch.name;
+      
+      if (!isFocused) {
+          const nameEl = document.getElementById(`name-label-${i}`);
+          if (nameEl) nameEl.textContent = ch.name || 'Channel ' + (i+1);
+      }
     }
 
     fetchAndDrawGraph(i);
