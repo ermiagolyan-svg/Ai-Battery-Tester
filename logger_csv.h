@@ -125,11 +125,14 @@ void saveCSV(uint8_t c) {
       // ظرفیت ثبت شده در همین فاز اختصاصی
       float finalCapacity = ch[c].mAh;
 
+      // ─── تغییرات جدید برای چاپ N/A در مقاومت داخلی (IR) ───
+      String irStr = (ch[c].IR > 0.0f) ? String(ch[c].IR, 1) : "N/A";
       String grade = (ch[c].qt_grade != "" && ch[c].qt_grade != "Testing...") ? ch[c].qt_grade : "N/A";
       String dcirStr = ch[c].qt_dcir > 0 ? String(ch[c].qt_dcir, 1) : "N/A";
       String recStr = ch[c].qt_recoveryRate > 0 ? String(ch[c].qt_recoveryRate, 1) : "N/A";
 
-      f.printf("CH%d,%s,%s,%s,%s,%s,%.1f,%.1f,%s,%s,%s,%.3f,%.3f",
+      // ⚠️ توجه: فرمت هشتم از %.1f به %s تغییر کرده است
+      f.printf("CH%d,%s,%s,%s,%s,%s,%.1f,%s,%s,%s,%s,%.3f,%.3f",
         c + 1,
         ch[c].name.c_str(),
         timeStr(ch[c].sessionStartTime).c_str(),
@@ -137,7 +140,7 @@ void saveCSV(uint8_t c) {
         durationStr(elapsed).c_str(),
         actStr.c_str(),
         finalCapacity,
-        ch[c].IR,
+        irStr.c_str(), // <--- استفاده از متغیر جدید رشته‌ای
         grade.c_str(),
         dcirStr.c_str(),
         recStr.c_str(),
@@ -156,5 +159,4 @@ void saveCSV(uint8_t c) {
     xSemaphoreGive(csvMutex);
   }
 }
-
 #endif
