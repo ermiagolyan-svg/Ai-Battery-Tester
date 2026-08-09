@@ -303,6 +303,8 @@ async function fetchDeviceLogs() {
         
         // 🛑 سد دفاعی هوشمند (Whitelist): فقط تگ‌های استاندارد (شروع با B-) مجاز هستند
         if (!rawId.startsWith("B-")) continue;
+        
+        // شرط حذف تست‌های دارای خطا یا کنسل شده
         if (mode.includes("Canceled") || mode.includes("Fault")) continue;
         
         let cleanId = rawId; 
@@ -345,7 +347,7 @@ async function fetchDeviceLogs() {
       g.capTests.sort((a, b) => b.cap - a.cap);
       let bestCapTest = g.capTests[0];
       
-      if (bestCapTest.cap < 400) continue;
+      // شرط bestCapTest.cap < 400 طبق درخواست شما حذف شد
 
       allCells.push({ 
           id: id, cap: bestCapTest.cap, ir: bestCapTest.ir, dcir: g.triage.dcir, 
