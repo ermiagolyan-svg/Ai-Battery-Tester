@@ -163,22 +163,22 @@ void startChannel(uint8_t c, const String& name, ChannelState act) {
     setHwState(c, act);            
   }
   
-  String actStr = (act == CHARGING) ? "شارژ" : (act == Triage) ? "تریاژ پله‌ای" : "دشارژ";
-  String modeType = (ch[c].autoMode != AUTO_OFF) ? "(اتوماتیک)" : "(دستی)";
-  String msg = "🚀 عملیات " + actStr + " " + modeType + " کانال " + String(c + 1) + " آغاز شد!\n\n";
-  msg += "🔋 نام: " + (name.length() > 0 ? name : "نامشخص") + "\n";
-  
-  if ((act == DISCHARGE_500 || act == DISCHARGE_1000 || act == DISCHARGE_1500) && ch[c].autoMode == AUTO_OFF) {
-      msg += "🎯 مقاومت داخلی: " + String(ch[c].IR, 1) + " mOhm\n";
-  } else if(ch[c].autoPhase == PHASE_FINAL_CHG) {
-      msg += "🎯 مقاومت داخلی (ثبت شده): " + String(ch[c].IR, 1) + " mOhm\n";
-  } else if (act == Triage) {
-      msg += "🎯 مقاومت داخلی: " + String(ch[c].IR, 1) + " mOhm\n";
+  // پیام بله فقط در صورت اجرای دستی ارسال می‌شود تا از پیام‌های تکراری اتوماتیک جلوگیری شود
+  if (ch[c].autoMode == AUTO_OFF) {
+      String actStr = (act == CHARGING) ? "شارژ" : (act == Triage) ? "تریاژ پله‌ای" : "دشارژ";
+      String msg = "🚀 عملیات " + actStr + " (دستی) کانال " + String(c + 1) + " آغاز شد!\n\n";
+      msg += "🔋 نام: " + (name.length() > 0 ? name : "نامشخص") + "\n";
+      
+      if (act == DISCHARGE_500 || act == DISCHARGE_1000 || act == DISCHARGE_1500) {
+          msg += "🎯 مقاومت داخلی: " + String(ch[c].IR, 1) + " mOhm\n";
+      } else if (act == Triage) {
+          msg += "🎯 مقاومت داخلی: " + String(ch[c].IR, 1) + " mOhm\n";
+      }
+      
+      msg += "⚡ ولتاژ شروع: " + String(ch[c].voltStart, 2) + " V";
+      sendBaleNotification(msg); 
   }
   
-  msg += "⚡ ولتاژ شروع: " + String(ch[c].voltStart, 2) + " V";
-  
-  sendBaleNotification(msg); 
   updateInaAverage();
 }
 
@@ -186,13 +186,14 @@ void startAuto(uint8_t c, const String& name, AutoMode mode) {
   ch[c].recordedCapacity = 0.0f;
   
   float v = readVoltage(c);
-  if (v < 4.05f) {
+  String modeName = (mode == AUTO_TRIAGE) ? "تریاژ اتوماتیک" : "اتوماتیک";
+  
+  if (v < 4.10f) {
     ch[c].autoMode = mode;
     ch[c].autoPhase = PHASE_INIT_CHG;
     startChannel(c, name, CHARGING);
     
-    String modeName = (mode == AUTO_TRIAGE) ? "تریاژ اتوماتیک" : "اتوماتیک";
-    sendBaleNotification("🤖 حالت " + modeName + " کانال " + String(c+1) + " فعال شد.\nولتاژ کمتر از 4.05V است، ابتدا شارژ اولیه انجام می‌شود.");
+    sendBaleNotification("🤖 حالت " + modeName + " کانال " + String(c+1) + " آغاز شد.\n🔋 باتری: " + (name.length() > 0 ? name : "نامشخص") + "\n⚡ ولتاژ شروع: " + String(v, 2) + "V (نیاز به شارژ اولیه)");
   } else {
     ch[c].autoMode = mode;
     ch[c].autoPhase = PHASE_DISCHG;
@@ -205,9 +206,7 @@ void startAuto(uint8_t c, const String& name, AutoMode mode) {
     
     startChannel(c, name, nState);
     
-    String modeName = (mode == AUTO_TRIAGE) ? "تریاژ اتوماتیک" : "اتوماتیک";
-    String actionName = (mode == AUTO_TRIAGE) ? "تریاژ هوشمند پله‌ای" : "تست دشارژ";
-    sendBaleNotification("🤖 حالت " + modeName + " کانال " + String(c+1) + " فعال شد.\nباتری پر است، مستقیماً وارد " + actionName + " شدیم.");
+    sendBaleNotification("🤖 حالت " + modeName + " کانال " + String(c+1) + " آغاز شد.\n🔋 باتری: " + (name.length() > 0 ? name : "نامشخص") + "\n⚡ ولتاژ شروع: " + String(v, 2) + "V (شروع مستقیم تست)");
   }
 }
 
@@ -223,7 +222,7 @@ void stopChannel(uint8_t c) {
   ch[c].endTime    = nowEpoch();
   ch[c].state = lastState; 
   
-  // فازهای استراحت میانی لاگ نمی‌شوند (تست تریاژ به دلیل داشتن autoPhase = PHASE_DISCHG کامل لاگ می‌شود)
+  // فازهای استراحت میانی لاگ نمی‌شوند
   if (ch[c].autoPhase != PHASE_REST && ch[c].autoPhase != PHASE_REST_POST) {
     saveCSV(c); 
   }
@@ -232,68 +231,42 @@ void stopChannel(uint8_t c) {
 
   bool isFinalStop = (ch[c].autoMode == AUTO_OFF) || (ch[c].autoPhase == PHASE_FINAL_CHG) || (ch[c].hasFault) || (ch[c].isCanceled) || (lastState == Triage);
   
-  String actStr = (lastState == CHARGING) ? "شارژ" : (lastState == Triage) ? "تریاژ پله‌ای" : "دشارژ";
-  String modeType = (ch[c].autoMode != AUTO_OFF) ? "(اتوماتیک)" : "(دستی)";
-  
-  String msg;
-  if (ch[c].hasFault) {
-      msg = "❌ عملیات " + modeType + " کانال " + String(c + 1) + " به دلیل خطا متوقف شد.\n\n";
-  } else if (ch[c].isCanceled) {
-      msg = "🛑 عملیات " + modeType + " کانال " + String(c + 1) + " توسط کاربر لغو شد.\n\n";
-  } else if (isFinalStop) {
-      msg = "✅ عملیات نهایی " + modeType + " کانال " + String(c + 1) + " به پایان رسید!\n\n";
-  } else {
-      msg = "✅ فاز " + actStr + " " + modeType + " کانال " + String(c + 1) + " موقتاً تکمیل شد.\n\n";
-  }
-  
-  msg += "🔋 نام: " + (ch[c].name.length() > 0 ? ch[c].name : "وارد نشده") + "\n";
-  
-  float dispMah = (ch[c].autoMode != AUTO_OFF && ch[c].autoPhase == PHASE_FINAL_CHG) ? ch[c].recordedCapacity : ch[c].mAh;
-  msg += "⚡ ظرفیت: " + String(dispMah, 0) + " mAh\n";
-  
-  if(lastState == Triage || ch[c].autoPhase == PHASE_FINAL_CHG || (ch[c].autoMode == AUTO_OFF && lastState != CHARGING)) {
-    msg += "🎯 مقاومت داخلی: " + String(ch[c].IR, 1) + " mOhm\n";
-  }
-  
-  if (lastState == Triage) {
-    msg += "🥇 نمره تریاژ: " + ch[c].qt_grade + "\n";
-    msg += "📉 افت ولتاژ پله 1.5A: " + String(ch[c].qt_voltDrop1500, 2) + " V\n";
-    msg += "⚡ مقاومت داینامیک (DCIR): " + String(ch[c].qt_dcir, 1) + " mOhm\n";
-    msg += "⏱️ سرعت ریکاوری: " + String(ch[c].qt_recoveryRate, 1) + " mV/s\n";
-    msg += "🌡️ پیش‌بینی حرارتی: " + ch[c].qt_thermalStatus + "\n";
+  // فقط در پایان نهایی تست، لغو کاربر یا خطا پیام ارسال می‌شود
+  if (isFinalStop) {
+      String modeType = (ch[c].autoMode != AUTO_OFF) ? "(اتوماتیک)" : "(دستی)";
+      String msg;
+      
+      if (ch[c].hasFault) {
+          msg = "❌ عملیات " + modeType + " کانال " + String(c + 1) + " به دلیل خطا متوقف شد.\n\n";
+      } else if (ch[c].isCanceled) {
+          msg = "🛑 عملیات " + modeType + " کانال " + String(c + 1) + " توسط کاربر لغو شد.\n\n";
+      } else {
+          msg = "✅ عملیات نهایی " + modeType + " کانال " + String(c + 1) + " با موفقیت به پایان رسید!\n\n";
+      }
+      
+      msg += "🔋 نام: " + (ch[c].name.length() > 0 ? ch[c].name : "وارد نشده") + "\n";
+      
+      float dispMah = (ch[c].autoMode != AUTO_OFF && ch[c].autoPhase == PHASE_FINAL_CHG) ? ch[c].recordedCapacity : ch[c].mAh;
+      msg += "⚡ ظرفیت: " + String(dispMah, 0) + " mAh\n";
+      
+      if(lastState == Triage || ch[c].autoPhase == PHASE_FINAL_CHG || (ch[c].autoMode == AUTO_OFF && lastState != CHARGING)) {
+        msg += "🎯 مقاومت داخلی: " + String(ch[c].IR, 1) + " mOhm\n";
+      }
+      
+      if (lastState == Triage) {
+        msg += "🥇 نمره تریاژ: " + ch[c].qt_grade + "\n";
+        msg += "📉 افت ولتاژ پله 1.5A: " + String(ch[c].qt_voltDrop1500, 2) + " V\n";
+        msg += "⚡ مقاومت داینامیک (DCIR): " + String(ch[c].qt_dcir, 1) + " mOhm\n";
+        msg += "⏱️ سرعت ریکاوری: " + String(ch[c].qt_recoveryRate, 1) + " mV/s\n";
+        msg += "🌡️ پیش‌بینی حرارتی: " + ch[c].qt_thermalStatus + "\n";
+      }
+
+      msg += "📉 ولتاژ نهایی: " + String(ch[c].voltNow, 2) + " V\n";
+      
+      sendBaleNotification(msg);
   }
 
-  msg += "📉 ولتاژ: " + String(ch[c].voltNow, 2) + " V\n\n";
-  
-  if (isFinalStop && ch[c].graphCount > 0) {
-    String chartUrl = "https://quickchart.io/chart?c=%7Btype:%27line%27,data:%7Blabels:%5B";
-    int step = max(1, ch[c].graphCount / 20); 
-    bool first = true;
-    for(int i = 0; i < ch[c].graphCount; i += step) {
-      if(!first) chartUrl += ",";
-      chartUrl += String(i);
-      first = false;
-    }
-    
-    chartUrl += "%5D,datasets:%5B%7Blabel:%27V%27,fill:false,borderColor:%27green%27,data:%5B";
-    
-    first = true;
-    for(int i = 0; i < ch[c].graphCount; i += step) {
-      if(!first) chartUrl += ",";
-      chartUrl += String(ch[c].graphV[i], 2);
-      first = false;
-    }
-    chartUrl += "%5D%7D%5D%7D%7D";
-    msg += "📊 تصویر نمودار فاز نهایی:\n" + chartUrl;
-  } else if (!isFinalStop) {
-    msg += "⏳ در حال ورود به فاز استراحت/بعدی...";
-  } else {
-    msg += "📊 دیتایی برای رسم نمودار ثبت نشده است.";
-  }
-  
-  sendBaleNotification(msg);
-
-  // 🧹 پاکسازی متغیرهای اتوماتیک در آخرین قدم انجام می‌شود تا سیستم لاگر دچار اشتباه نشود
+  // 🧹 پاکسازی متغیرهای اتوماتیک در آخرین قدم انجام می‌شود
   if (isFinalStop) {
     ch[c].autoMode = AUTO_OFF;
     ch[c].autoPhase = PHASE_NONE;
@@ -307,10 +280,7 @@ void handleCharging(uint8_t c) {
     
     if (ch[c].voltNow < 4.15f && topUpRetries[c] < 3) {
       topUpRetries[c]++;
-      String msg = "🔄 شارژ تکمیلی کانال " + String(c+1) + " (تلاش " + String(topUpRetries[c]) + " از 3)\n";
-      msg += "ولتاژ " + String(ch[c].voltNow, 2) + "V است. اعمال پالس تحریک برای شکستن ولتاژ کاذب...";
-      sendBaleNotification(msg);
-
+      // پیام نوتیفیکیشن شارژ تکمیلی حذف شد تا خلوت باشد
       setHwState(c, IDLE);
       delay(200);
       setHwState(c, DISCHARGE_1000); 
@@ -342,7 +312,7 @@ void handleCharging(uint8_t c) {
         else nState = DISCHARGE_1500;
         
         startChannel(c, name, nState);
-        sendBaleNotification("⚡ باتری کانال " + String(c+1) + " از قبل پر بود. بدون استراحت وارد فاز تست شدیم.");
+        // پیام ورود به فاز تست (باتری پر بود) حذف شد
       } else {
         ch[c].autoMode = am;
         ch[c].autoPhase = PHASE_REST;
@@ -354,15 +324,14 @@ void handleCharging(uint8_t c) {
         ch[c].sessionStartTime = nowEpoch();
         ch[c].sessionVoltStart = ch[c].voltNow;
         graphReset(c);
-
-        sendBaleNotification("☕ شارژ اولیه کانال " + String(c+1) + " کامل شد.\nآغاز فاز استراحت برای تثبیت ولتاژ...");
+        // پیام آغاز فاز استراحت حذف شد
       }
     } 
     else if (ch[c].autoMode != AUTO_OFF && ch[c].autoPhase == PHASE_FINAL_CHG) {
       float finalCapacity = ch[c].recordedCapacity; 
-      stopChannel(c); // لاگر ثبت شده و متغیرهای auto در اینجا به درستی صفر می‌شوند
+      stopChannel(c); 
       ch[c].recordedCapacity = finalCapacity;
-      sendBaleNotification("🎉 تست اتوماتیک کانال " + String(c+1) + " به پایان رسید!\nباتری فول شارژ و آماده است.\nظرفیت نهایی: " + String(finalCapacity, 0) + " mAh");
+      // پیام مجزای پایان تست اتوماتیک از اینجا حذف شد چون تابع stopChannel گزارش نهایی را می‌دهد
     } else {
       stopChannel(c); 
     }
@@ -423,7 +392,6 @@ void sampleAll(unsigned long dt) {
         ch[c].hasFault = true;
         ch[c].faultMsg = reason;
         
-        // مقادیر Auto پاک نمی‌شوند تا لاگر بتواند نوع خطای دشارژ اتوماتیک را تشخیص دهد
         stopChannel(c);
         
         String alertMsg = "🚨🚨 هشدار امنیتی اضطراری (Failsafe) 🚨🚨\n\n";
@@ -466,31 +434,17 @@ void sampleAll(unsigned long dt) {
             ch[c].autoPhase = PHASE_DISCHG;
             ch[c].recordedCapacity = rc;
             startChannel(c, name, nState);
-            
-            if (am == AUTO_TRIAGE) {
-                sendBaleNotification("⏳ استراحت ۴۵ ثانیه‌ای کانال " + String(c+1) + " به پایان رسید.\nشروع تست پله‌ای هوشمند (Triage)...");
-            } else {
-                sendBaleNotification("⏳ استراحت ۵ دقیقه‌ای کانال " + String(c+1) + " به پایان رسید.\nشروع تست دشارژ...");
-            }
+            // پیام‌های استراحت میانی به طور کامل حذف شد
         } 
         else if (ch[c].autoPhase == PHASE_REST_POST) {
             ch[c].autoMode = am;
             ch[c].autoPhase = PHASE_FINAL_CHG;
             ch[c].recordedCapacity = rc;
             startChannel(c, name, CHARGING);
-            sendBaleNotification("⏳ استراحت ۱ دقیقه‌ای کانال " + String(c+1) + " به پایان رسید.\nشروع شارژ نهایی...");
+            // پیام پایان استراحت دوم و شروع شارژ نهایی حذف شد
         }
       }
       continue; 
-    }
-
-    if ((ch[c].state == DISCHARGE_500 || ch[c].state == DISCHARGE_1000 || ch[c].state == DISCHARGE_1500) && (ch[c].mAh - ch[c].lastReport_mAh >= 500.0f)) {
-      ch[c].lastReport_mAh = floor(ch[c].mAh / 500.0f) * 500.0f; 
-      String midMsg = "⏳ گزارش میان‌دوره‌ای دشارژ کانال " + String(c + 1) + "\n\n";
-      midMsg += "🔋 نام: " + (ch[c].name.length() > 0 ? ch[c].name : "وارد نشده") + "\n";
-      midMsg += "⚡ ظرفیت تخلیه شده تا این لحظه: " + String(ch[c].mAh, 0) + " mAh\n";
-      midMsg += "📉 ولتاژ فعلی باتری: " + String(ch[c].voltNow, 2) + " V";
-      sendBaleNotification(midMsg);
     }
 
     if (ch[c].state == DISCHARGE_500 || ch[c].state == DISCHARGE_1000 || ch[c].state == DISCHARGE_1500) {
@@ -515,7 +469,7 @@ void sampleAll(unsigned long dt) {
           ch[c].sessionVoltStart = ch[c].voltNow;
           graphReset(c);
 
-          sendBaleNotification("📉 دشارژ کانال " + String(c+1) + " کامل شد.\nآغاز فاز استراحت ۱ دقیقه‌ای پیش از شارژ نهایی...");
+          // پیام تکمیل دشارژ حذف شد
         } else {
           stopChannel(c);
         }
