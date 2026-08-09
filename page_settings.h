@@ -22,14 +22,11 @@ const char PAGE_SETTINGS_HTML[] PROGMEM = R"rawhtml(
   
   .main-content { padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 
-  /* Overlay بک‌گراند برای زمانی که کشو باز است */
   .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 95; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px); }
   .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
   
-  /* تاپ‌بار مخصوص موبایل */
   .mobile-top-bar { display: none; }
 
-  /* سایدبار کشویی */
   header#mainSidebar { position: fixed; top: 0; bottom: 0; inset-inline-start: 0; width: 70px; background: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); z-index: 100; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow-x: hidden; white-space: nowrap; }
   header#mainSidebar.open { width: 260px; box-shadow: 0 0 24px rgba(0,0,0,0.7); }
   
@@ -39,7 +36,6 @@ const char PAGE_SETTINGS_HTML[] PROGMEM = R"rawhtml(
   
   .logo-icon { font-size: 20px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   
-  /* مخفی/نمایان شدن متون کشو */
   .text, .logo-text { opacity: 0; transition: opacity 0.2s ease; font-weight: 600; }
   .logo-text { font-size: 16px; }
   header#mainSidebar.open .text, header#mainSidebar.open .logo-text { opacity: 1; transition-delay: 0.1s; }
@@ -53,7 +49,6 @@ const char PAGE_SETTINGS_HTML[] PROGMEM = R"rawhtml(
   
   .bottom-section { display: flex; flex-direction: column; gap: 6px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
   
-  /* عناصر مختص صفحه Settings */
   .nav-back { color: var(--accent); text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block; margin-bottom: 20px; transition: 0.2s; direction: inherit;}
   .nav-back:hover { text-shadow: 0 0 8px rgba(0,212,170,0.5); }
   
@@ -74,33 +69,19 @@ const char PAGE_SETTINGS_HTML[] PROGMEM = R"rawhtml(
   .wifi-del { color: #ff3366; cursor: pointer; font-weight: bold; font-family: monospace; padding: 0 4px; transition: 0.2s;}
   .wifi-del:hover { background: rgba(255,51,102,0.2); border-radius: 50%; }
   
-  .flex-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
-  
   .input-field { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.2s; }
   .input-field:focus { border-color: var(--accent); }
   .input-ltr { direction: ltr; text-align: left; }
 
   @media (max-width: 700px) {
-    /* تغییرات اصلی بدنه برای هدر بالایی */
     body { padding-inline-start: env(safe-area-inset-left); padding-top: calc(64px + env(safe-area-inset-top)); padding-bottom: max(40px, env(safe-area-inset-bottom)); }
     .main-content { padding: 15px; }
     
-    /* نوار افقی بالای صفحه در موبایل */
     .mobile-top-bar { display: flex; position: fixed; top: 0; left: 0; right: 0; height: calc(64px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 16px 0; background: var(--bg); align-items: center; justify-content: space-between; z-index: 90; }
     .mobile-top-bar .title-group { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 500; }
     
-    /* تبدیل سایدبار به کشوی متحرک */
-    header#mainSidebar { 
-       width: 280px; 
-       transform: translateX(calc(100% * var(--dir-sign))); 
-       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-       border-inline-end: none;
-       background: var(--surface);
-    }
-    header#mainSidebar.open { 
-       transform: translateX(0); 
-       box-shadow: 0 0 40px rgba(0,0,0,0.8); 
-    }
+    header#mainSidebar { width: 280px; transform: translateX(calc(100% * var(--dir-sign))); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-inline-end: none; background: var(--surface); }
+    header#mainSidebar.open { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,0.8); }
     
     .top-bar-sidebar { padding: 0 16px 16px; }
     .nav-links a, .bottom-section a { margin: 0 12px; }
@@ -111,7 +92,6 @@ const char PAGE_SETTINGS_HTML[] PROGMEM = R"rawhtml(
 </style>
 </head><body>
 
-<!-- Mobile Top Bar -->
 <div class="mobile-top-bar">
   <div class="title-group">
     <button class="menu-toggle" onclick="toggleSidebar()">
@@ -122,10 +102,8 @@ const char PAGE_SETTINGS_HTML[] PROGMEM = R"rawhtml(
   <div></div>
 </div>
 
-<!-- Sidebar Overlay -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-<!-- Sidebar -->
 <header id="mainSidebar">
   <div class="top-bar-sidebar">
     <button class="menu-toggle" onclick="toggleSidebar()">
@@ -153,6 +131,40 @@ const char PAGE_SETTINGS_HTML[] PROGMEM = R"rawhtml(
   
   <div class="settings-grid">
     
+    <!-- 🎛 کارت جدید: کالیبراسیون سنسورها -->
+    <div class="card">
+      <h3 data-i18n="calib_title">🎛 کالیبراسیون سنسورها</h3>
+      <p data-i18n="calib_desc">ضریب خطای ولتاژ، مقاومت شنت (INA3221) و مقاومت سیم‌ها (mOhm) را برای هر کانال تنظیم کنید.</p>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px; font-size:11px; color:var(--muted); text-align:center;">
+         <div data-i18n="calib_v">ضریب ولتاژ</div>
+         <div data-i18n="calib_r">شنت (Ohm)</div>
+         <div data-i18n="calib_w">سیم (mOhm)</div>
+      </div>
+      
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+         <span style="width:25px; font-weight:bold; color:var(--accent); font-size:12px;">CH1</span>
+         <input type="number" step="0.0001" class="input-field input-ltr" id="vcal0" style="margin:0; padding:8px 6px;">
+         <input type="number" step="0.0001" class="input-field input-ltr" id="rcal0" style="margin:0; padding:8px 6px;">
+         <input type="number" step="0.1" class="input-field input-ltr" id="wcal0" style="margin:0; padding:8px 6px;">
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+         <span style="width:25px; font-weight:bold; color:#0096ff; font-size:12px;">CH2</span>
+         <input type="number" step="0.0001" class="input-field input-ltr" id="vcal1" style="margin:0; padding:8px 6px;">
+         <input type="number" step="0.0001" class="input-field input-ltr" id="rcal1" style="margin:0; padding:8px 6px;">
+         <input type="number" step="0.1" class="input-field input-ltr" id="wcal1" style="margin:0; padding:8px 6px;">
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:15px;">
+         <span style="width:25px; font-weight:bold; color:#ff6b35; font-size:12px;">CH3</span>
+         <input type="number" step="0.0001" class="input-field input-ltr" id="vcal2" style="margin:0; padding:8px 6px;">
+         <input type="number" step="0.0001" class="input-field input-ltr" id="rcal2" style="margin:0; padding:8px 6px;">
+         <input type="number" step="0.1" class="input-field input-ltr" id="wcal2" style="margin:0; padding:8px 6px;">
+      </div>
+      
+      <button class="btn" onclick="saveCalib()" data-i18n="calib_save">ذخیره کالیبراسیون</button>
+      <div id="resCalib" style="margin-top:12px; color:var(--accent); font-size:13px; text-align:center; font-weight:bold;"></div>
+    </div>
+
     <div class="card">
       <h3 data-i18n="lang_title">🌐 انتخاب زبان (Language)</h3>
       <p data-i18n="lang_desc">زبان رابط کاربری را انتخاب کنید. این تنظیم در مرورگر شما ذخیره شده و پردازنده دستگاه را درگیر نمی‌کند.</p>
@@ -200,6 +212,10 @@ const dict = {
   'fa': {
     'nav_home': 'داشبورد', 'nav_pack': 'ساخت پک', 'nav_triage': 'تریاژ', 'nav_worker': 'مدیریت ورکر', 'nav_logs': 'فایل‌ها', 'nav_settings': 'تنظیمات',
     'back_dash': '→ بازگشت به داشبورد اصلی',
+    'calib_title': '🎛 کالیبراسیون سنسورها',
+    'calib_desc': 'ضریب خطای ولتاژ، مقاومت شنت (INA3221) و مقاومت سیم‌ها (mOhm) را برای هر کانال تنظیم کنید.',
+    'calib_v': 'ضریب ولتاژ', 'calib_r': 'شنت (Ohm)', 'calib_w': 'سیم (mOhm)', 'calib_save': 'ذخیره کالیبراسیون',
+    'calib_ok': 'تنظیمات با موفقیت در سخت‌افزار ذخیره و اعمال شد!',
     'lang_title': '🌐 انتخاب زبان (Language)',
     'lang_desc': 'زبان رابط کاربری را انتخاب کنید. این تنظیم در مرورگر شما ذخیره شده و پردازنده دستگاه را درگیر نمی‌کند.',
     'wifi_title': '📡 تنظیمات شبکه وای‌فای',
@@ -220,6 +236,10 @@ const dict = {
   'en': {
     'nav_home': 'Dashboard', 'nav_pack': 'Pack Builder', 'nav_triage': 'Triage', 'nav_worker': 'Worker Manager', 'nav_logs': 'Logs', 'nav_settings': 'Settings',
     'back_dash': '← Back to Dashboard',
+    'calib_title': '🎛 Sensor Calibration',
+    'calib_desc': 'Adjust the voltage error multiplier, exact shunt, and wire resistance (mOhm) for each channel separately.',
+    'calib_v': 'V-Multiplier', 'calib_r': 'Shunt (Ohm)', 'calib_w': 'Wire (mOhm)', 'calib_save': 'Save Calibration',
+    'calib_ok': 'Calibration saved and applied to hardware successfully!',
     'lang_title': '🌐 Language Selection',
     'lang_desc': 'Select your preferred UI language. This is saved locally in your browser to keep the ESP32 fast.',
     'wifi_title': '📡 WiFi Network Settings',
@@ -265,6 +285,25 @@ function changeLang(lang) {
     const key = el.getAttribute('data-i18n');
     if (dict[lang] && dict[lang][key]) el.innerText = dict[lang][key];
   });
+}
+
+function loadCalib() {
+  fetch('/getcal').then(r => r.json()).then(data => {
+    document.getElementById('vcal0').value = data.v0; document.getElementById('rcal0').value = data.r0; document.getElementById('wcal0').value = data.w0;
+    document.getElementById('vcal1').value = data.v1; document.getElementById('rcal1').value = data.r1; document.getElementById('wcal1').value = data.w1;
+    document.getElementById('vcal2').value = data.v2; document.getElementById('rcal2').value = data.r2; document.getElementById('wcal2').value = data.w2;
+  }).catch(e => console.log('Error loading calibration'));
+}
+
+function saveCalib() {
+  const body = `v0=${document.getElementById('vcal0').value}&r0=${document.getElementById('rcal0').value}&w0=${document.getElementById('wcal0').value}&v1=${document.getElementById('vcal1').value}&r1=${document.getElementById('rcal1').value}&w1=${document.getElementById('wcal1').value}&v2=${document.getElementById('vcal2').value}&r2=${document.getElementById('rcal2').value}&w2=${document.getElementById('wcal2').value}`;
+  
+  fetch('/setcal', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body })
+    .then(r => {
+      const res = document.getElementById('resCalib');
+      res.textContent = dict[currentLang]['calib_ok'];
+      setTimeout(() => res.textContent = '', 4000);
+    });
 }
 
 function loadDeviceWiFi() {
@@ -321,6 +360,7 @@ window.onload = () => {
   document.getElementById('langSelect').value = savedLang;
   changeLang(savedLang);
   loadDeviceWiFi(); 
+  loadCalib();
 };
 
 function scanWiFi() {

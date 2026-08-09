@@ -5,13 +5,16 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
+#include <INA3221.h>
 
-// این متغیرها در فایل اصلی تعریف شده‌اند
+// این متغیرها در فایل‌های دیگر تعریف شده‌اند
 extern WebServer server;
 extern Preferences prefs;
-
-// دسترسی به آرایه اضافه شده در بک‌اند
 extern uint8_t topUpRetries[3];
+extern float volt_cal[3];
+extern float shunt_res[3];
+extern float WIRE_RESISTANCE_MOHM[3];
+extern INA3221 ina3221;
 
 // ─── توابع سیستم لاگ یکپارچه (تعریف شده در logger_csv.h) ───
 extern String getNextGlobalAutoName();
@@ -54,6 +57,44 @@ void setupWebServer() {
   server.on("/worker_manager", HTTP_GET, []() { 
       server.sendHeader("Cache-Control", "max-age=86400, public");
       server.send_P(200, "text/html; charset=utf-8", PAGE_WORKER_MANAGER_HTML); 
+  });
+
+  // 🎛 API های جدید مربوط به کالیبراسیون
+  server.on("/getcal", HTTP_GET, []() {
+      String json = "{";
+      json += "\"v0\":" + String(volt_cal[0], 4) + ",";
+      json += "\"v1\":" + String(volt_cal[1], 4) + ",";
+      json += "\"v2\":" + String(volt_cal[2], 4) + ",";
+      json += "\"r0\":" + String(shunt_res[0], 4) + ",";
+      json += "\"r1\":" + String(shunt_res[1], 4) + ",";
+      json += "\"r2\":" + String(shunt_res[2], 4) + ",";
+      json += "\"w0\":" + String(WIRE_RESISTANCE_MOHM[0], 1) + ",";
+      json += "\"w1\":" + String(WIRE_RESISTANCE_MOHM[1], 1) + ",";
+      json += "\"w2\":" + String(WIRE_RESISTANCE_MOHM[2], 1) + "}";
+      server.send(200, "application/json", json);
+  });
+
+  server.on("/setcal", HTTP_POST, []() {
+      for(int i = 0; i < 3; i++) {
+          String vArg = "v" + String(i);
+          String rArg = "r" + String(i);
+          String wArg = "w" + String(i);
+          
+          if(server.hasArg(vArg)) {
+              volt_cal[i] = server.arg(vArg).toFloat();
+              prefs.putFloat(String("vcal" + String(i)).c_str(), volt_cal[i]);
+          }
+          if(server.hasArg(rArg)) {
+              shunt_res[i] = server.arg(rArg).toFloat();
+              prefs.putFloat(String("rcal" + String(i)).c_str(), shunt_res[i]);
+              ina3221.setShuntR(i, shunt_res[i]); // آپدیت زنده سخت‌افزار بدون نیاز به ریست
+          }
+          if(server.hasArg(wArg)) {
+              WIRE_RESISTANCE_MOHM[i] = server.arg(wArg).toFloat();
+              prefs.putFloat(String("wcal" + String(i)).c_str(), WIRE_RESISTANCE_MOHM[i]);
+          }
+      }
+      server.send(200, "text/plain", "OK");
   });
 
   // ۲. دریافت اطلاعات آنلاین وضعیت سیستم (JSON)
@@ -108,7 +149,6 @@ void setupWebServer() {
     String response;
     serializeJson(doc, response);
     
-    // در گام چهارم: مطمئن می‌شویم دیتای زنده کش نمی‌شود
     server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate"); 
     server.send(200, "application/json", response);
   });
@@ -141,7 +181,6 @@ void setupWebServer() {
     String response;
     serializeJson(doc, response);
     
-    // دیتای گراف نیز نباید کش شود
     server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate"); 
     server.send(200, "application/json", response);
   });

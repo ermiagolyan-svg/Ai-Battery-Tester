@@ -3,28 +3,42 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <INA3221.h> // Rob Tillaart's INA3221 library
+#include <INA3221.h>
+#include <Preferences.h>
+
+extern Preferences prefs; // دسترسی به حافظه NVS
 
 // ─── مقادیر کالیبراسیون و سخت‌افزار ───────────────────
-const float SHUNT_OHMS = 0.020f;  // R020
-const float WIRE_RESISTANCE_MOHM[3] = {95.9f, 116.3f, 114.2f}; // مقاومت سیم‌ها برای ۳ کانال
+float volt_cal[3] = {0.9498f, 0.9498f, 0.9498f}; // ضریب پیش‌فرض ولتاژ
+float shunt_res[3] = {0.020f, 0.020f, 0.020f};   // مقاومت پیش‌فرض شنت
+float WIRE_RESISTANCE_MOHM[3] = {95.9f, 116.3f, 114.2f}; // مقاومت پیش‌فرض سیم‌ها (متغیر شده)
 
 // ─── نمونه‌سازی سنسور ─────────────────────────────────
 INA3221 ina3221(0x40);
 
 // ─── راه‌اندازی اولیه سنسور ────────────────────────────
 void setupINA3221() {
+  float def_w[3] = {95.9f, 116.3f, 114.2f};
+  
+  // بارگذاری مقادیر کالیبراسیون از حافظه
+  for(int i = 0; i < 3; i++) {
+    volt_cal[i] = prefs.getFloat(String("vcal" + String(i)).c_str(), 0.9498f);
+    shunt_res[i] = prefs.getFloat(String("rcal" + String(i)).c_str(), 0.020f);
+    WIRE_RESISTANCE_MOHM[i] = prefs.getFloat(String("wcal" + String(i)).c_str(), def_w[i]);
+  }
+
   ina3221.begin();
   ina3221.reset();
-  ina3221.setAverage(3); // دقت بالاتر پیش‌فرض (حذف نویز)
-  ina3221.setShuntR(0, SHUNT_OHMS);
-  ina3221.setShuntR(1, SHUNT_OHMS);
-  ina3221.setShuntR(2, SHUNT_OHMS);
+  ina3221.setAverage(3); 
+  
+  ina3221.setShuntR(0, shunt_res[0]);
+  ina3221.setShuntR(1, shunt_res[1]);
+  ina3221.setShuntR(2, shunt_res[2]);
 }
 
-// ─── خواندن ولتاژ (با ضریب کالیبراسیون) ─────────────────
+// ─── خواندن ولتاژ (با اعمال ضریب خطای هر کانال) ────────
 float readVoltage(uint8_t c) { 
-  return ina3221.getBusVoltage(c) * 0.9498; 
+  return ina3221.getBusVoltage(c) * volt_cal[c]; 
 }
 
 // ─── خواندن جریان (تبدیل به میلی‌آمپر) ─────────────────
