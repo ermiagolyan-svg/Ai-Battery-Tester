@@ -114,7 +114,12 @@ void startChannel(uint8_t c, const String& name, ChannelState act) {
   ch[c].qt_voltDrop1500 = 0;
 
   if (act == DISCHARGE_500 || act == DISCHARGE_1000 || act == DISCHARGE_1500) {
-    measureIR(c);
+    if (ch[c].autoMode == AUTO_OFF) {
+      measureIR(c);
+    } else {
+      ch[c].voltStart = readVoltage(c); 
+      ch[c].IR = 0.0f; 
+    }
   }
   else if (act == Triage) {
     measureIR(c);
@@ -163,10 +168,12 @@ void startChannel(uint8_t c, const String& name, ChannelState act) {
   String msg = "🚀 عملیات " + actStr + " " + modeType + " کانال " + String(c + 1) + " آغاز شد!\n\n";
   msg += "🔋 نام: " + (name.length() > 0 ? name : "نامشخص") + "\n";
   
-  if (act == DISCHARGE_500 || act == DISCHARGE_1000 || act == DISCHARGE_1500) {
+  if ((act == DISCHARGE_500 || act == DISCHARGE_1000 || act == DISCHARGE_1500) && ch[c].autoMode == AUTO_OFF) {
       msg += "🎯 مقاومت داخلی: " + String(ch[c].IR, 1) + " mOhm\n";
   } else if(ch[c].autoPhase == PHASE_FINAL_CHG) {
       msg += "🎯 مقاومت داخلی (ثبت شده): " + String(ch[c].IR, 1) + " mOhm\n";
+  } else if (act == Triage) {
+      msg += "🎯 مقاومت داخلی: " + String(ch[c].IR, 1) + " mOhm\n";
   }
   
   msg += "⚡ ولتاژ شروع: " + String(ch[c].voltStart, 2) + " V";
@@ -199,7 +206,7 @@ void startAuto(uint8_t c, const String& name, AutoMode mode) {
     startChannel(c, name, nState);
     
     String modeName = (mode == AUTO_TRIAGE) ? "تریاژ اتوماتیک" : "اتوماتیک";
-    String actionName = (mode == AUTO_TRIAGE) ? "تریاژ هوشمند پله‌ای" : "تست دشارژ و سنجش IR";
+    String actionName = (mode == AUTO_TRIAGE) ? "تریاژ هوشمند پله‌ای" : "تست دشارژ";
     sendBaleNotification("🤖 حالت " + modeName + " کانال " + String(c+1) + " فعال شد.\nباتری پر است، مستقیماً وارد " + actionName + " شدیم.");
   }
 }
@@ -244,7 +251,7 @@ void stopChannel(uint8_t c) {
   float dispMah = (ch[c].autoMode != AUTO_OFF && ch[c].autoPhase == PHASE_FINAL_CHG) ? ch[c].recordedCapacity : ch[c].mAh;
   msg += "⚡ ظرفیت: " + String(dispMah, 0) + " mAh\n";
   
-  if(lastState != CHARGING || ch[c].autoPhase == PHASE_FINAL_CHG) {
+  if(lastState == Triage || ch[c].autoPhase == PHASE_FINAL_CHG || (ch[c].autoMode == AUTO_OFF && lastState != CHARGING)) {
     msg += "🎯 مقاومت داخلی: " + String(ch[c].IR, 1) + " mOhm\n";
   }
   
@@ -463,7 +470,7 @@ void sampleAll(unsigned long dt) {
             if (am == AUTO_TRIAGE) {
                 sendBaleNotification("⏳ استراحت ۴۵ ثانیه‌ای کانال " + String(c+1) + " به پایان رسید.\nشروع تست پله‌ای هوشمند (Triage)...");
             } else {
-                sendBaleNotification("⏳ استراحت ۵ دقیقه‌ای کانال " + String(c+1) + " به پایان رسید.\nشروع تست دشارژ و محاسبه IR...");
+                sendBaleNotification("⏳ استراحت ۵ دقیقه‌ای کانال " + String(c+1) + " به پایان رسید.\nشروع تست دشارژ...");
             }
         } 
         else if (ch[c].autoPhase == PHASE_REST_POST) {
