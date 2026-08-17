@@ -9,11 +9,7 @@ const char PAGE_INDEX_HTML[] PROGMEM = R"rawhtml(
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-<!-- اضافه شدن قابلیت Web App برای آیفون (iOS) و اندروید -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Battery Studio">
@@ -21,9 +17,6 @@ const char PAGE_INDEX_HTML[] PROGMEM = R"rawhtml(
 <meta name="theme-color" content="#0d0d0f">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔋</text></svg>">
 
-<style>
-  a, button { touch-action: manipulation; }
-  /* ادامه کدهای استایل شما... */
 <style>
   a, button { touch-action: manipulation; }
   :root { 
@@ -76,7 +69,7 @@ const char PAGE_INDEX_HTML[] PROGMEM = R"rawhtml(
   .panel-select:focus { border-color: var(--accent); }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; padding: 20px; max-width: 1540px; margin: 0 auto; direction: inherit;}
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.4s ease, background 0.4s ease;}
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.4s ease, background 0.4s ease; position: relative;}
   
   .card-header { padding: 14px 18px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); direction: ltr; }
   .ch-label { display: flex; align-items: center; gap: 8px; }
@@ -101,11 +94,31 @@ const char PAGE_INDEX_HTML[] PROGMEM = R"rawhtml(
   .voltage-bar-fill { height: 100%; background: linear-gradient(90deg, var(--warn), var(--accent), var(--ok)); transition: width .5s; }
   
   .card-footer { padding: 14px 18px; background: transparent; border-top: 1px solid rgba(255,255,255,0.05); }
-  .form-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .form-row { display: flex; gap: 8px; margin-bottom: 10px; position: relative; }
   
-  .input-name { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text); padding: 12px; border-radius: 8px; font-size: 13px; outline: none; transition: border-color 0.2s; font-family: inherit; direction: inherit; }
-  select.input-name { cursor: pointer; appearance: none; }
-  .input-name:focus { border-color: var(--accent); }
+  .input-name { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text); padding: 12px; border-radius: 8px; font-size: 13px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit; direction: inherit; }
+  .input-name:focus { border-color: var(--accent); box-shadow: 0 0 8px rgba(0, 212, 170, 0.2); }
+  
+  /* --- اصلاح استایل‌های موبایل و دراپ‌داون --- */
+  .dropdown-list { position: absolute; top: calc(100% - 8px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 200; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); direction: ltr; text-align: left; }
+  .dropdown-item { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .dropdown-item:last-child { border-bottom: none; }
+  .dropdown-item:hover { background: rgba(255,255,255,0.05); }
+  
+  /* رنگ بندی وضعیت باتری‌ها */
+  .tag-name { font-size: 13.5px; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+  .tag-name.ready { color: var(--ok); }
+  .tag-name.ready::before { content: "●"; font-size: 10px; color: var(--ok); text-shadow: 0 0 8px rgba(0,230,118,0.8); }
+  .tag-name.incomplete { color: var(--warn); }
+  .tag-name.incomplete::before { content: "○"; font-size: 10px; color: var(--warn); }
+  
+  .triage-info { display: flex; gap: 4px; align-items: center; font-family: var(--mono); flex-wrap: wrap; justify-content: flex-end; }
+  .stat-badge { background: rgba(255,255,255,0.05); color: var(--muted); font-size: 11px; padding: 0 6px; border-radius: 6px; display: inline-flex; align-items: center; height: 22px; box-sizing: border-box; }
+  .grade-badge { font-size: 11px; font-weight: bold; padding: 0 8px; border-radius: 6px; color: #000; display: inline-flex; align-items: center; height: 22px; box-sizing: border-box; }
+  .grade-A { background: var(--ok); } .grade-B { background: var(--accent2); } .grade-C { background: var(--warn); } .grade-D { background: #ff0000; color: #fff; } .grade-- { background: var(--muted); color: #fff; }
+  
+  .dropdown-list::-webkit-scrollbar { width: 6px; }
+  .dropdown-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
   
   .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .action-grid .full-width { grid-column: span 2; }
@@ -139,8 +152,8 @@ const char PAGE_INDEX_HTML[] PROGMEM = R"rawhtml(
   
   .csv-table { width: 100%; border-collapse: collapse; text-align: left; }
   .csv-table th, .csv-table td { padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); white-space: nowrap; }
-  .csv-table th { color: var(--muted); font-weight: bold; position: sticky; top: 0; background: rgba(10,10,12,0.95); z-index: 1; }
-  
+  .csv-table th { color: var(--text); font-weight: bold; position: sticky; top: 0; background: var(--surface); z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
   #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent); color: var(--text); padding: 12px 24px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-weight: bold; }
   #toast.show { opacity: 1; }
 
@@ -229,7 +242,6 @@ const char PAGE_INDEX_HTML[] PROGMEM = R"rawhtml(
 <div class="grid" id="channelGrid"></div>
 <div id="toast"></div>
 
-<!-- مودال پاپ‌آپ راهنما -->
 <div id="infoModal" class="modal">
    <div class="modal-content">
       <h3 id="infoTitle">راهنما</h3>
@@ -252,7 +264,7 @@ const dict = {
      btn_1000: '🔥 دشارژ 1.0A', btn_1000_m: '🔥 1.0A (دستی)', btn_1500: '💥 دشارژ 1.5A', btn_1500_m: '💥 1.5A (دستی)',
      btn_trg: '⚕️ تریاژ خودکار', btn_trg_m: '⚕️ تریاژ دستی', btn_stop_rest: '■ توقف آنالیز (در حال استراحت)',
      btn_dl: '📥 دانلود CSV', btn_graph: '📸 خروجی گراف', btn_rst: '↺ ریست',
-     lbl_prev: 'پیش‌نمایش لاگ', lbl_no_data: 'هیچ لاگی یافت نشد.', plc_id: 'شناسه باتری (اختیاری)', sel_tag: 'انتخاب تگ (الزامی)',
+     lbl_prev: 'پیش‌نمایش لاگ', lbl_no_data: 'هیچ لاگی یافت نشد.', plc_id: 'تگ دستی (خالی بگذارید: MAN-xxx)', sel_tag: 'تگ (تریاژ: خالی = خودکار B-xxx)',
      info_mode_t: '⚙️ راهنمای حالت کارکرد', info_mode_d: 'حالت اتوماتیک (Auto):\nدر این حالت دستگاه تمام مراحل استاندارد را متوالی اجرا می‌کند.\n\nحالت دستی (Manual):\nتنها همان فازی که انتخاب می‌کنید یک‌بار اجرا می‌شود.'
   },
   'en': {
@@ -267,35 +279,25 @@ const dict = {
      btn_1000: '🔥 1.0A Disch.', btn_1000_m: '🔥 1.0A (Manual)', btn_1500: '💥 1.5A Disch.', btn_1500_m: '💥 1.5A (Manual)',
      btn_trg: '⚕️ Auto Triage', btn_trg_m: '⚕️ Manual Triage', btn_stop_rest: '■ Stop Analysis (Resting)',
      btn_dl: '📥 Down. CSV', btn_graph: '📸 Export Graph', btn_rst: '↺ Reset',
-     lbl_prev: 'Log Preview', lbl_no_data: 'No log data yet.', plc_id: 'Battery ID (Optional)', sel_tag: 'Select Tag (Required)',
+     lbl_prev: 'Log Preview', lbl_no_data: 'No log data yet.', plc_id: 'Manual ID (Blank = MAN-xxx)', sel_tag: 'Tag (Blank for Auto Triage)',
      info_mode_t: '⚙️ Operation Mode Guide', info_mode_d: 'Auto Mode:\nExecutes all standard testing phases sequentially.\n\nManual Mode:\nRuns only the selected phase and stops completely.'
   }
 };
 
 let currentLang = 'fa';
-let availableTags = [];
+let availableTags = []; 
 
 function applyLanguage(lang) {
   currentLang = lang;
-  
   document.documentElement.style.setProperty('--dir-sign', lang === 'fa' ? '1' : '-1');
-  
-  if(lang === 'fa') {
-      document.body.style.direction = 'rtl';
-      document.body.style.textAlign = 'right';
-  } else {
-      document.body.style.direction = 'ltr';
-      document.body.style.textAlign = 'left';
-  }
-
+  if(lang === 'fa') { document.body.style.direction = 'rtl'; document.body.style.textAlign = 'right'; } 
+  else { document.body.style.direction = 'ltr'; document.body.style.textAlign = 'left'; }
   document.querySelectorAll('[data-i18n]').forEach(el => {
       let key = el.getAttribute('data-i18n');
       if(dict[lang][key]) el.innerText = dict[lang][key];
   });
-
   if(document.getElementById('opt_auto')) document.getElementById('opt_auto').innerText = dict[lang]['mode_auto'];
   if(document.getElementById('opt_manual')) document.getElementById('opt_manual').innerText = dict[lang]['mode_manual'];
-  
   fetchData(); 
 }
 
@@ -309,11 +311,8 @@ function toggleSidebar() {
 window.onload = () => {
   currentLang = localStorage.getItem('sysLang') || 'fa';
   applyLanguage(currentLang);
-  
   let savedMode = localStorage.getItem('sysMode');
-  if (savedMode) {
-      document.getElementById('globalMode').value = savedMode;
-  }
+  if (savedMode) document.getElementById('globalMode').value = savedMode;
   updateModeUI();
 };
 
@@ -324,10 +323,8 @@ let globalMode = 'auto';
 function updateModeUI() {
   globalMode = document.getElementById('globalMode').value;
   localStorage.setItem('sysMode', globalMode); 
-  
   const grid = document.getElementById('channelGrid');
   Array.from(grid.children).forEach(card => card.setAttribute('data-mode', 'invalid'));
-  
   if (globalMode === 'manual') {
       document.documentElement.style.setProperty('--bg', '#17100b');
       document.documentElement.style.setProperty('--surface', '#1f1611');
@@ -365,44 +362,24 @@ async function fetchAndDrawGraph(i) {
     const r = await fetch('/api/graph?ch=' + i);
     const data = await r.json();
     window['graphData_'+i] = data; 
-    
     const canvas = document.getElementById(`graph-val-${i}`);
     if(!canvas) return;
-    
     const ctx = canvas.getContext('2d');
     const w = canvas.width; const h = canvas.height;
     ctx.clearRect(0, 0, w, h);
-    
     let ptsEl = document.getElementById(`points-val-${i}`);
     if(ptsEl) ptsEl.textContent = data.length + " pts";
-    
     const minV = 2.5; const maxV = 4.3;
     const paddingLeft = 60; 
-    
-    ctx.fillStyle = '#6b6b80';
-    ctx.font = '22px Consolas, monospace'; 
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    
+    ctx.fillStyle = '#6b6b80'; ctx.font = '22px Consolas, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
     [2.5, 3.0, 3.5, 4.0, 4.2].forEach(v => {
         let y = h - ((v - minV) / (maxV - minV)) * h;
         let textY = Math.max(12, Math.min(y, h - 12)); 
-        
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'; 
-        ctx.lineWidth = 2; 
-        ctx.moveTo(paddingLeft - 10, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
+        ctx.beginPath(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'; ctx.lineWidth = 2; ctx.moveTo(paddingLeft - 10, y); ctx.lineTo(w, y); ctx.stroke();
         ctx.fillText(v.toFixed(1) + 'V', 0, textY);
     });
-
     if(!data || data.length < 2) return;
-    
-    ctx.beginPath();
-    ctx.strokeStyle = CH_COLORS[i]; 
-    ctx.lineWidth = 6; 
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.strokeStyle = CH_COLORS[i]; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     for(let j=0; j<data.length; j++) {
       let x = paddingLeft + (j / Math.max(1, data.length - 1)) * (w - paddingLeft);
       let y = h - ((data[j] - minV) / (maxV - minV)) * h;
@@ -412,83 +389,167 @@ async function fetchAndDrawGraph(i) {
   } catch(e) {}
 }
 
-function populateDropdowns() {
-    for (let i = 0; i < 3; i++) {
-        const el = document.getElementById(`name-${i}`);
-        if (el && el.tagName === 'SELECT') {
-            const currentVal = el.value;
-            let html = `<option value="">-- ${dict[currentLang]['sel_tag']} --</option>`;
-            availableTags.forEach(t => {
-                html += `<option value="${t}" ${t === currentVal ? 'selected' : ''}>${t}</option>`;
-            });
-            el.innerHTML = html;
-        }
-    }
-}
-
 async function fetchGlobalLogCSV() {
   try {
     const r = await fetch('/global_log');
     const txt = await r.text();
     
-    availableTags = [];
+    let tempTags = {}; // شیء موقت برای ادغام هوشمند ردیف‌های هر تگ
+    
     if(txt && txt !== "Empty" && txt.trim() !== "") {
         const rows = txt.trim().split('\n');
+        
+        const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+        let modeCol = headers.findIndex(h => h.includes('mode') || h.includes('test'));
+        let gradeCol = headers.findIndex(h => h.includes('grade'));
+        let mahCol = headers.findIndex(h => h.includes('mah') || h.includes('cap'));
+        let irCol = headers.findIndex(h => (h.includes('ir') || h.includes('res')) && !h.includes('dcir') && !h.includes('dir'));
+        let dcirCol = headers.findIndex(h => h.includes('dcir'));
+
         for(let rIdx = 1; rIdx < rows.length; rIdx++) {
             const cols = rows[rIdx].split(',');
             if (cols.length > 1) {
                 let tag = cols[1].trim();
-                if (tag && tag !== "Battery ID" && tag !== "No-Tag-Selected" && !tag.startsWith("#CH") && !tag.startsWith("MAN-") && !availableTags.includes(tag)) {
-                    availableTags.push(tag);
+                if (tag && tag !== "Battery ID" && tag !== "No-Tag-Selected" && !tag.startsWith("#CH") && !tag.startsWith("MAN-")) {
+                    
+                    if (!tempTags[tag]) {
+                        tempTags[tag] = { id: tag, grade: "-", mah: "-", ir: "-", dcir: "-", hasValidDischarge: false };
+                    }
+                    
+                    let mode = modeCol !== -1 && cols[modeCol] ? cols[modeCol].trim().toUpperCase() : "";
+                    
+                    if (gradeCol !== -1 && cols[gradeCol] && cols[gradeCol].trim() !== "N/A" && cols[gradeCol].trim() !== "-") tempTags[tag].grade = cols[gradeCol].trim();
+                    if (irCol !== -1 && cols[irCol] && cols[irCol].trim() !== "N/A" && cols[irCol].trim() !== "-") tempTags[tag].ir = cols[irCol].trim();
+                    if (dcirCol !== -1 && cols[dcirCol] && cols[dcirCol].trim() !== "N/A" && cols[dcirCol].trim() !== "-") tempTags[tag].dcir = cols[dcirCol].trim();
+                    
+                    let capVal = mahCol !== -1 && cols[mahCol] ? parseFloat(cols[mahCol]) : 0;
+                    
+                    // استخراج ظرفیت: فقط از فازهایی که دیس‌شارژ واقعی هستند (مانند منطق Pack Builder)
+                    if ((mode.includes("DISCHARGE") || mode.includes("DISCHG")) && !mode.includes("[CHG]") && capVal > 0) {
+                        let currentMah = parseFloat(tempTags[tag].mah) || 0;
+                        if (capVal > currentMah) {
+                            tempTags[tag].mah = capVal.toFixed(0);
+                            tempTags[tag].hasValidDischarge = (capVal >= 400); // تشخیص آمادگی برای ساخت پک
+                        }
+                    }
                 }
             }
         }
     }
+    
+    // تبدیل شیء به آرایه و معکوس کردن برای نمایش جدیدترین‌ها در بالای لیست
+    availableTags = Object.values(tempTags).reverse();
 
     for(let i = 0; i < 3; i++) {
       const logBox = document.getElementById(`csv-log-${i}`);
       if(!logBox) continue;
-      
-      if(txt === "Empty" || txt.trim() === "") {
-        logBox.innerHTML = dict[currentLang]['lbl_no_data'];
-        continue;
-      }
-      
+      if(txt === "Empty" || txt.trim() === "") { logBox.innerHTML = dict[currentLang]['lbl_no_data']; continue; }
       const isScrolledToBottom = logBox.scrollHeight - logBox.clientHeight <= logBox.scrollTop + 5;
       const rows = txt.trim().split('\n');
-      const headers = rows[0].split(',');
-      
+// ساخت هدرهای اختصاصی و جدید
       let tableHTML = '<table class="csv-table"><tr>';
-      headers.forEach((col, colIdx) => {
-        if(colIdx > 0 && colIdx < 10) tableHTML += `<th>${col.trim()}</th>`;
-      });
+      tableHTML += '<th>Tag</th><th>Test Mode</th><th>Grade</th><th>IR/DCIR</th><th>Capacity</th><th>Duration</th><th>V-Start</th><th>V-End</th>';
       tableHTML += '</tr>';
       
       let hasData = false;
       for(let rIdx = 1; rIdx < rows.length; rIdx++) {
         const cols = rows[rIdx].split(',');
-        if(cols.length > 1 && cols[0].trim() === `CH${i+1}`) {
+        // بررسی میکنیم که حتما ردیف مربوط به این کانال باشد و طول کافی داشته باشد
+        if(cols.length > 12 && cols[0].trim() === `CH${i+1}`) {
           hasData = true;
-          tableHTML += '<tr>';
-          cols.forEach((col, colIdx) => {
-            if(colIdx > 0 && colIdx < 10) tableHTML += `<td>${col.trim()}</td>`;
-          });
-          tableHTML += '</tr>';
+          
+          let tag = cols[1].trim();
+          let mode = cols[5].trim();
+          let cap = cols[6].trim();
+          let ir = cols[7].trim();
+          let grade = cols[8].trim();
+          let dcir = cols[9].trim();
+          let duration = cols[4].trim();
+          
+          // فرمت کردن ولتاژها به ۲ رقم اعشار
+          let vStart = parseFloat(cols[11]).toFixed(2);
+          let vEnd = parseFloat(cols[12]).toFixed(2);
+          
+          // ترکیب هوشمند IR و DCIR
+          let ir_dcir = (dcir === "N/A" || dcir === "-" || dcir === "0" || dcir === "0.0") ? ir : `${ir} / ${dcir}`;
+          
+          tableHTML += `<tr>
+            <td><strong style="color:var(--text)">${tag}</strong></td>
+            <td>${mode}</td>
+            <td>${grade}</td>
+            <td>${ir_dcir}</td>
+            <td style="color:var(--accent2)">${cap}</td>
+            <td>${duration}</td>
+            <td>${vStart}V</td>
+            <td>${vEnd}V</td>
+          </tr>`;
         }
       }
       tableHTML += '</table>';
-      
-      if(!hasData) {
-        logBox.innerHTML = dict[currentLang]['lbl_no_data'];
-      } else {
-        logBox.innerHTML = tableHTML;
-        if (isScrolledToBottom) logBox.scrollTop = logBox.scrollHeight;
-      }
+      if(!hasData) logBox.innerHTML = dict[currentLang]['lbl_no_data'];
+      else { logBox.innerHTML = tableHTML; if (isScrolledToBottom) logBox.scrollTop = logBox.scrollHeight; }
     }
-    
-    populateDropdowns();
   } catch(e) {}
 }
+
+let activeDropdown = -1;
+
+function showDropdown(ch) {
+    activeDropdown = ch;
+    filterDropdown(ch, document.getElementById(`name-${ch}`).value);
+}
+
+function filterDropdown(ch, text) {
+    const drop = document.getElementById(`dropdown-${ch}`);
+    if(!drop) return;
+    drop.innerHTML = '';
+    
+    const filtered = availableTags.filter(t => t.id.toLowerCase().includes(text.toLowerCase()));
+    
+    if(filtered.length === 0) {
+        drop.innerHTML = `<div style="padding:12px; color:var(--muted); font-size:12px; text-align:center; direction:inherit;">تگی یافت نشد (وارد کردن مجاز است)</div>`;
+    } else {
+        filtered.forEach(tagObj => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            
+            let irText = tagObj.ir;
+            if(tagObj.dcir !== "-" && tagObj.dcir !== "") {
+                irText += `/${tagObj.dcir}`;
+            }
+
+            // تعیین رنگ و کلاس بر اساس داشتن دیس‌شارژ معتبر
+            let tagClass = tagObj.hasValidDischarge ? "ready" : "incomplete";
+
+            item.innerHTML = `
+                <span class="tag-name ${tagClass}">${tagObj.id}</span>
+                <div class="triage-info">
+                  <span class="stat-badge">${tagObj.mah}mAh</span>
+                  <span class="stat-badge">${irText}mΩ</span>
+                  <span class="grade-badge grade-${tagObj.grade}">${tagObj.grade}</span>
+                </div>
+            `;
+            item.onclick = () => {
+                document.getElementById(`name-${ch}`).value = tagObj.id;
+                drop.style.display = 'none';
+                activeDropdown = -1;
+            };
+            drop.appendChild(item);
+        });
+    }
+    drop.style.display = 'block';
+}
+
+document.addEventListener('click', (e) => {
+    if(activeDropdown !== -1) {
+        const inputEl = document.getElementById(`name-${activeDropdown}`);
+        const dropEl = document.getElementById(`dropdown-${activeDropdown}`);
+        if(inputEl && dropEl && !inputEl.contains(e.target) && !dropEl.contains(e.target)) {
+            dropEl.style.display = 'none';
+            activeDropdown = -1;
+        }
+    }
+});
 
 function renderCards(data) {
   const grid = document.getElementById('channelGrid');
@@ -542,11 +603,9 @@ function renderCards(data) {
 
     let cardBorderColor = isRunning ? CH_COLORS[i] : (isResting ? '#87ceeb' : (ch.state===STATE.DONE ? '#00ff00' : 'rgba(255,255,255,0.05)'));
 
-    // ================= بَج ترکیبی برای تگ و وضعیت =================
     let tagBadgeHtml = ch.name ? `<span style="background:rgba(255,255,255,0.08); padding:4px 8px; border-right:1px solid rgba(255,255,255,0.1); font-family:var(--mono); font-size:12px; font-weight:normal; color:var(--text);">${ch.name}</span>` : '';
     let statusBadgeHtml = `<span style="padding:4px 8px; color:${stateColor}; font-weight:700; font-size:11px; letter-spacing:0.5px; display:flex; align-items:center;" id="badge-val-${i}">${sn}</span>`;
     let combinedBadge = `<div id="combined-badge-${i}" style="display:flex; align-items:stretch; background:rgba(0,0,0,0.3); border:1px solid ${stateColor}; border-radius:8px; overflow:hidden; transition:border-color 0.3s;">${tagBadgeHtml}${statusBadgeHtml}</div>`;
-    // =========================================================
 
     if (!card || forceRebuild || (card.getAttribute('data-state') != ch.state && !isFocused) || (isResting && card.getAttribute('data-resting') !== 'true')) {
       if (!card) { card = document.createElement('div'); card.id = id; grid.appendChild(card); }
@@ -605,9 +664,12 @@ function renderCards(data) {
         let tagInputHtml = '';
         if (ch.state === STATE.IDLE && !isResting) {
             if (globalMode === 'auto') {
-                let opts = `<option value="">-- ${dict[currentLang]['sel_tag']} --</option>`;
-                availableTags.forEach(t => { opts += `<option value="${t}">${t}</option>`; });
-                tagInputHtml = `<div class="form-row"><select class="input-name" id="name-${i}">${opts}</select></div>`;
+                tagInputHtml = `
+                  <div class="form-row">
+                    <input class="input-name" id="name-${i}" type="text" placeholder="${dict[currentLang]['sel_tag']}" autocomplete="off" onfocus="showDropdown(${i})" oninput="filterDropdown(${i}, this.value)">
+                    <div id="dropdown-${i}" class="dropdown-list"></div>
+                  </div>
+                `;
             } else {
                 tagInputHtml = `<div class="form-row"><input class="input-name" id="name-${i}" type="text" placeholder="${dict[currentLang]['plc_id']}"></div>`;
             }
@@ -635,7 +697,6 @@ function renderCards(data) {
             <div class="ch-label">
                 <div class="ch-dot" id="dot-${i}" style="background: ${cardBorderColor}; box-shadow: 0 0 8px ${cardBorderColor}; ${isRunning||isResting ? 'animation: p 1.5s infinite;' : ''}"></div>
                 <div class="ch-name">Channel ${i+1}</div>
-                <!-- المان مخفی برای ارسال اسم به خروجی تصویر گراف -->
                 <span id="name-label-${i}" style="display:none;">${ch.name || 'Channel '+(i+1)}</span>
             </div>
             ${combinedBadge}
@@ -681,7 +742,6 @@ function renderCards(data) {
       dot.style.boxShadow = `0 0 8px ${cardBorderColor}`;
       dot.style.animation = (isRunning || isResting) ? 'p 1.5s infinite' : 'none';
 
-      // آپدیت لایو بَج ترکیبی
       let cb = document.getElementById(`combined-badge-${i}`);
       if(cb) {
           cb.style.borderColor = stateColor;
@@ -824,7 +884,6 @@ async function fetchData() {
   } catch(e){} 
 }
 
-// 💡 جدا کردن دریافت لاگ‌های سنگین از دیتای زنده
 let isCsvFetching = false;
 async function fetchGlobalLogSafe() {
   if (isCsvFetching) return;
@@ -834,10 +893,8 @@ async function fetchGlobalLogSafe() {
 }
 
 fetchData();
-setInterval(fetchData, 1000); // آپدیت زنده کارت‌ها هر 1 ثانیه
+setInterval(fetchData, 1000);
 
-// بارگذاری فایل حجیم CSV با 1 ثانیه تاخیر (تا صفحه اول سریع لود شود)
-// و آپدیت آن هر 5 ثانیه یک‌بار (تا شبکه ESP32 خفه نشود)
 setTimeout(() => {
   fetchGlobalLogSafe();
   setInterval(fetchGlobalLogSafe, 5000);
@@ -856,7 +913,7 @@ async function startAct(i, act) {
   }
 
   const r = await fetch('/action',{method:'POST',body:`ch=${i}&act=${act}&mode=${globalMode}&name=${encodeURIComponent(name)}`}); 
-  if(r.ok) { showToast(dict[currentLang]['toast_cmd']); if(el && el.tagName === 'INPUT') el.value = ''; }
+  if(r.ok) { showToast(dict[currentLang]['toast_cmd']); if(el) el.value = ''; }
   fetchData(); 
 }
 
