@@ -66,14 +66,35 @@ const char PAGE_PACK_BUILDER_HTML[] PROGMEM = R"rawhtml(
   .engine-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;}
   .engine-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height:1.6;}
   
-  .input-row { display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-start; flex-wrap: wrap;}
+  .input-row { display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap;}
   .input-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 120px;}
   .input-group label { font-size: 12px; color: var(--muted); }
   .input-group input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; outline: none; width: 100%; box-sizing: border-box; font-family: var(--mono); text-align: center; direction: ltr; font-size:16px; font-weight:bold;}
   
-  .btn-run { color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; background: linear-gradient(135deg, var(--accent2), var(--accent)); height: 43px; display: flex; align-items: center; justify-content: center; min-width: 250px; margin-top: 21px; font-family: inherit;}
+  .btn-run { color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; background: linear-gradient(135deg, var(--accent2), var(--accent)); height: 43px; display: flex; align-items: center; justify-content: center; min-width: 220px; font-family: inherit;}
   .btn-run:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 212, 170, 0.3);}
   
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); padding: 12px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; height: 43px; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+  .btn-secondary:hover { background: var(--border); }
+  
+  .button-group { display: flex; gap: 10px; flex-wrap: wrap; flex: 2; min-width: 300px; justify-content: flex-end; }
+
+  /* استایل‌های مربوط به مدال فیلتر */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+  .modal-content { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; width: 95%; max-width: 550px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+  .modal-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface2); }
+  .modal-header h3 { margin: 0; font-size: 16px; color: var(--accent); }
+  .close-btn { background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer; line-height: 1; transition: 0.2s; }
+  .close-btn:hover { color: var(--danger); }
+  .modal-body { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: var(--bg); }
+  .cell-item { display: flex; align-items: center; background: var(--surface); padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-family: var(--mono); font-size: 13px; direction: ltr; }
+  .cell-item label { display: flex; align-items: center; gap: 12px; cursor: pointer; width: 100%; }
+  .cell-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+  .cell-info { display: flex; gap: 15px; color: var(--muted); flex-wrap: wrap; flex: 1; justify-content: flex-end;}
+  .cell-info div { display: flex; gap: 4px; }
+  .cell-info span { color: var(--text); font-weight: bold; }
+  .cell-id { color: var(--accent); font-weight: bold; width: 70px; font-size: 14px; }
+
   .alert-box { background: rgba(255, 107, 53, 0.1); border: 1px solid var(--warn); color: var(--text); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; font-size: 13px; line-height: 1.6;}
   .alert-box strong { color: var(--warn); }
   
@@ -96,15 +117,12 @@ const char PAGE_PACK_BUILDER_HTML[] PROGMEM = R"rawhtml(
   #loader { display: none; color: var(--accent); margin-bottom: 15px; font-weight: bold; text-align: center; width: 100%;}
   
   @media (max-width: 700px) {
-    /* تغییرات اصلی بدنه برای هدر بالایی */
     body { padding-inline-start: env(safe-area-inset-left); padding-top: calc(64px + env(safe-area-inset-top)); padding-bottom: max(40px, env(safe-area-inset-bottom)); }
     .main-content { padding: 15px; }
     
-    /* نوار افقی بالای صفحه در موبایل */
     .mobile-top-bar { display: flex; position: fixed; top: 0; left: 0; right: 0; height: calc(64px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 16px 0; background: var(--bg); align-items: center; justify-content: space-between; z-index: 90; }
     .mobile-top-bar .title-group { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 500; }
     
-    /* تبدیل سایدبار به کشوی متحرک */
     header#mainSidebar { 
        width: 280px; 
        transform: translateX(calc(100% * var(--dir-sign))); 
@@ -112,18 +130,17 @@ const char PAGE_PACK_BUILDER_HTML[] PROGMEM = R"rawhtml(
        border-inline-end: none;
        background: var(--surface);
     }
-    header#mainSidebar.open { 
-       transform: translateX(0); 
-       box-shadow: 0 0 40px rgba(0,0,0,0.8); 
-    }
+    header#mainSidebar.open { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,0.8); }
     
     .top-bar-sidebar { padding: 0 16px 16px; }
     .nav-links a, .bottom-section a { margin: 0 12px; }
     .text, .logo-text { opacity: 1; }
     
-    .input-row { flex-direction: column; }
-    .btn-run { width: 100%; }
+    .input-row { flex-direction: column; align-items: stretch; }
+    .button-group { flex-direction: column; }
+    .btn-run, .btn-secondary { width: 100%; }
     .header { flex-direction: column; gap: 10px; align-items: flex-start; }
+    .cell-info { justify-content: flex-start; margin-top: 5px; }
   }
 
 </style>
@@ -191,7 +208,10 @@ const char PAGE_PACK_BUILDER_HTML[] PROGMEM = R"rawhtml(
         <input type="number" id="target-amps" value="7" min="1" max="200">
       </div>
       
-      <button class="btn-run" onclick="runSmartPackBuilder()" data-i18n="btn_run">تحلیل هوشمند و مونتاژ پک 🚀</button>
+      <div class="button-group">
+        <button class="btn-secondary" onclick="openFilterModal()" data-i18n="btn_filter">مدیریت و فیلتر سلول‌ها ⚙️</button>
+        <button class="btn-run" onclick="runSmartPackBuilder()" data-i18n="btn_run">تحلیل هوشمند و مونتاژ پک 🚀</button>
+      </div>
     </div>
   </div>
 
@@ -213,6 +233,19 @@ const char PAGE_PACK_BUILDER_HTML[] PROGMEM = R"rawhtml(
   </div>
 </div>
 
+<!-- Modal Filter -->
+<div id="filterModalOverlay" class="modal-overlay" onclick="closeFilterModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 data-i18n="modal_title">فیلتر و انتخاب سلول‌های مجاز</h3>
+      <button onclick="closeFilterModal()" class="close-btn">&times;</button>
+    </div>
+    <div class="modal-body" id="cell-filter-list">
+      <!-- لیست سلول‌ها توسط جاوااسکریپت تزریق می‌شود -->
+    </div>
+  </div>
+</div>
+
 <script>
 const dict = {
   'fa': {
@@ -225,9 +258,13 @@ const dict = {
     'lbl_pack_p': 'تعداد موازی (P)',
     'lbl_amps': 'جریان دائم (Amps)',
     'btn_run': 'تحلیل هوشمند و مونتاژ پک 🚀',
+    'btn_filter': 'مدیریت و فیلتر سلول‌ها ⚙️',
+    'modal_title': 'فیلتر و انتخاب سلول‌های مجاز',
+    'loading_cells': 'در حال استخراج اطلاعات از دیتابیس...',
+    'empty_cells': 'هیچ سلول معتبری در دیتابیس یافت نشد.',
     'loader_txt': 'در حال اسکن لاگ‌ها و اجرای بهینه‌ساز شبکه عصبی...',
     'master_title': '📊 رفتار میانگین گراف تخلیه برای سلول‌های پک',
-    'alert_no_cell': 'هیچ سلول معتبری در دیتابیس یافت نشد.',
+    'alert_no_cell': 'هیچ سلولی در دیتابیس یافت نشد یا تمام سلول‌ها فیلتر شده‌اند.',
     'alert_impossible': '❌ با سلول‌های موجود در دیتاست شما، ساخت پک {S}S{P_NEW}P با جریان {A} آمپر به هیچ‌وجه از نظر حرارتی ایمن نیست. دیتاست نیازمند باتری‌های قوی‌تر (High-Drain) یا تعداد بیشتری سلول هم‌رده است.',
     'alert_fallback_inventory': '📦 <strong>کمبود موجودی:</strong> تعداد سلول‌های دیتابیس برای ساخت {S}S{P_OLD}P کافی نبود. سیستم به صورت خودکار بر اساس موجودی، پک را به <strong>{S}S{P_NEW}P</strong> کاهش داد.',
     'alert_fallback_thermal': '⚠️ <strong>مداخله سیستم ایمنی:</strong> سلول‌های شما برای ساخت {S}S{P_OLD}P تحت جریان {A} آمپر خطر Overheat داشتند. سیستم پک ایمن را با ساختار <strong>{S}S{P_NEW}P</strong> طراحی کرد.',
@@ -243,9 +280,13 @@ const dict = {
     'lbl_pack_p': 'Parallel (P)',
     'lbl_amps': 'Continuous Load (Amps)',
     'btn_run': 'Smart Analyze & Build Pack 🚀',
+    'btn_filter': 'Manage & Filter Cells ⚙️',
+    'modal_title': 'Filter & Select Allowed Cells',
+    'loading_cells': 'Extracting data from database...',
+    'empty_cells': 'No valid cells found in database.',
     'loader_txt': 'Scanning logs & running optimizer...',
     'master_title': '📊 Average Discharge Profile of Assembled Pack',
-    'alert_no_cell': 'No valid triaged cells found in database.',
+    'alert_no_cell': 'No cells found, or all cells were filtered out.',
     'alert_impossible': '❌ Based on your dataset, building a {S}S{P_NEW}P pack for {A}A continuous load is thermally unsafe. You need higher-drain cells or a larger uniform dataset.',
     'alert_fallback_inventory': '📦 <strong>Inventory Shortage:</strong> Not enough cells for {S}S{P_OLD}P. The system automatically scaled down based on availability to <strong>{S}S{P_NEW}P</strong>.',
     'alert_fallback_thermal': '⚠️ <strong>Safety Intervention:</strong> Your dataset could not safely support {S}S{P_OLD}P at {A}A without overheating. The AI automatically scaled down to the safest configuration: <strong>{S}S{P_NEW}P</strong>.',
@@ -281,6 +322,7 @@ let allCells = [];
 let globalBestBlocks = null;
 let globalBestStats = null;
 let globalTotalAmps = 0;
+let ignoredCells = new Set(); // نگهداری ID سلول‌های نادیده‌گرفته‌شده
 
 // =======================================================
 // آپدیت: هماهنگی سیستم استخراج داده با تگ‌های جدید فازها
@@ -301,10 +343,7 @@ async function fetchDeviceLogs() {
         let rawId = cols[1].trim();
         let mode = cols[5] ? cols[5].trim() : "";
         
-        // 🛑 سد دفاعی هوشمند (Whitelist): فقط تگ‌های استاندارد (شروع با B-) مجاز هستند
         if (!rawId.startsWith("B-")) continue;
-        
-        // شرط حذف تست‌های دارای خطا یا کنسل شده
         if (mode.includes("Canceled") || mode.includes("Fault")) continue;
         
         let cleanId = rawId; 
@@ -327,13 +366,11 @@ async function fetchDeviceLogs() {
   rawData.forEach(row => {
       if (!grouped[row.cleanId]) grouped[row.cleanId] = { triage: null, capTests: [] };
       
-      // استخراج دیتای تریاژ برای گرفتن مقاومت DCIR
       if (row.mode.includes("Triage")) {
           if (row.dcir > 0 || !grouped[row.cleanId].triage) {
               grouped[row.cleanId].triage = row;
           }
       } 
-      // استخراج گراف و ظرفیت فقط از فاز خالص دشارژ
       if (row.mode.includes("[DISCHARGE]") || row.mode.includes("Manual Dischg")) {
           if (row.cap > 0) grouped[row.cleanId].capTests.push(row);
       }
@@ -346,8 +383,6 @@ async function fetchDeviceLogs() {
       
       g.capTests.sort((a, b) => b.cap - a.cap);
       let bestCapTest = g.capTests[0];
-      
-      // شرط bestCapTest.cap < 400 طبق درخواست شما حذف شد
 
       allCells.push({ 
           id: id, cap: bestCapTest.cap, ir: bestCapTest.ir, dcir: g.triage.dcir, 
@@ -356,6 +391,74 @@ async function fetchDeviceLogs() {
   }
 }
 
+// =======================================================
+// سیستم فیلتر و مدال
+// =======================================================
+async function openFilterModal() {
+  document.getElementById('filterModalOverlay').style.display = 'flex';
+  const listContainer = document.getElementById('cell-filter-list');
+  listContainer.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">${dict[currentLang]['loading_cells']}</div>`;
+  
+  await fetchDeviceLogs();
+  renderFilterList();
+}
+
+function closeFilterModal(e) {
+  if (e && e.target !== document.getElementById('filterModalOverlay') && e.type === 'click') return;
+  document.getElementById('filterModalOverlay').style.display = 'none';
+}
+
+function renderFilterList() {
+  const listContainer = document.getElementById('cell-filter-list');
+  listContainer.innerHTML = '';
+  
+  let validPool = allCells.filter(c => c.grade !== 'D' && c.grade !== 'Unknown' && c.grade !== 'N/A');
+  
+  if (validPool.length === 0) {
+      listContainer.innerHTML = `<div style="text-align:center; padding:30px; color:var(--warn);">${dict[currentLang]['empty_cells']}</div>`;
+      return;
+  }
+  
+  let sortedCells = [...validPool].sort((a, b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
+  
+  sortedCells.forEach(cell => {
+      let isChecked = ignoredCells.has(cell.id) ? '' : 'checked';
+      let div = document.createElement('div');
+      div.className = 'cell-item';
+      
+      let gradeColor = "var(--text)";
+      if(cell.grade === 'A') gradeColor = "#00d4aa";
+      else if(cell.grade === 'B') gradeColor = "#0096ff";
+      else if(cell.grade === 'C') gradeColor = "#f1c40f";
+
+      div.innerHTML = `
+          <label>
+              <input type="checkbox" value="${cell.id}" ${isChecked} onchange="toggleIgnoreCell(this)">
+              <div class="cell-id">${cell.id}</div>
+              <div class="cell-info">
+                  <div>Cap: <span>${cell.cap.toFixed(0)}</span> mAh</div>
+                  <div style="margin: 0 5px;">|</div>
+                  <div>DCIR: <span>${cell.dcir.toFixed(1)}</span> mΩ</div>
+                  <div style="margin: 0 5px;">|</div>
+                  <div>Gr: <span style="color:${gradeColor}">${cell.grade}</span></div>
+              </div>
+          </label>
+      `;
+      listContainer.appendChild(div);
+  });
+}
+
+function toggleIgnoreCell(checkbox) {
+  if (checkbox.checked) {
+      ignoredCells.delete(checkbox.value); // اگر تیک خورده یعنی مجاز است
+  } else {
+      ignoredCells.add(checkbox.value); // اگر تیک برداشته شده یعنی نادیده گرفته شود
+  }
+}
+
+// =======================================================
+// الگوریتم ساخت پک
+// =======================================================
 async function runSmartPackBuilder() {
   document.getElementById('loader').style.display = 'block';
   document.getElementById('pack-result-section').style.display = 'none';
@@ -363,7 +466,14 @@ async function runSmartPackBuilder() {
   alertBox.style.display = 'none';
   
   await fetchDeviceLogs();
-  let validCells = allCells.filter(c => c.grade !== 'D' && c.grade !== 'Unknown' && c.grade !== 'N/A');
+  
+  // اعمال فیلتر هوشمند بر اساس گریدها و لیست نادیده‌گرفته‌شده
+  let validCells = allCells.filter(c => 
+      c.grade !== 'D' && 
+      c.grade !== 'Unknown' && 
+      c.grade !== 'N/A' && 
+      !ignoredCells.has(c.id) // حذف سلول‌های رد شده توسط کاربر
+  );
 
   if(validCells.length === 0) {
     alertBox.innerHTML = dict[currentLang]['alert_no_cell'];

@@ -341,8 +341,9 @@ const char PAGE_LOGS_HTML[] PROGMEM = R"rawhtml(
 
   function getPhaseTagClass(mode) {
     let m = mode.toUpperCase();
-    if(m.includes("CHG")) return "tag-chg";
+    // بررسی دیسشارژ باید حتماً قبل از شارژ باشد
     if(m.includes("DISCHARGE") || m.includes("DISCHG") || m.includes("TRIAGE")) return "tag-dis";
+    if(m.includes("CHG")) return "tag-chg";
     if(m.includes("REST") || m.includes("IDLE")) return "tag-rest";
     return "tag-def";
   }
@@ -470,11 +471,21 @@ const char PAGE_LOGS_HTML[] PROGMEM = R"rawhtml(
             currentSessionForId[id] = newSession; 
         }
         
-        if (row.mode.includes("Triage")) {
+        // نام حالت را برای بررسی دقیق‌تر به حروف بزرگ تبدیل می‌کنیم
+        let modeUpper = row.mode.toUpperCase();
+
+        if (modeUpper.includes("TRIAGE")) {
             currentSessionForId[id].triage = row;
         } 
-        else if (row.mode.includes("[DISCHARGE]") || row.mode.includes("Manual Dischg")) {
-            if (row.cap > 0) {
+        // حل باگ ظرفیت پیش‌شارژ: فیلتر هوشمند برای ورود انحصاری فازهای دیسشارژ
+        else if (modeUpper.includes("DISCHARGE") || modeUpper.includes("DISCHG")) {
+            // ۱. مطمئن می‌شویم که تگ مستقیماً فاز شارژ نیست
+            let isChargeTag = modeUpper.includes("[CHG]");
+            // ۲. از نظر فیزیکی، در دیسشارژ همیشه ولتاژ شروع باید بیشتر از ولتاژ پایان باشد
+            let isActualDischarge = (row.vStart > row.vEnd);
+
+            // فقط در صورتی که ظرفیت داشتیم، شارژ نبود و افت ولتاژ منطقی دیسشارژ را داشتیم، آن را ذخیره کن
+            if (row.cap > 0 && !isChargeTag && isActualDischarge) {
                 currentSessionForId[id].capTests.push(row);
             }
         }
@@ -487,6 +498,7 @@ const char PAGE_LOGS_HTML[] PROGMEM = R"rawhtml(
         if (!session.triage) return;
         if (session.capTests.length === 0) return;
 
+        // مرتب‌سازی بر اساس بالاترین ظرفیت در بین دیسشارژهای واقعی
         session.capTests.sort((a, b) => b.cap - a.cap);
         let bestCapTest = session.capTests[0];
 

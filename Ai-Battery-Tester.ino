@@ -59,6 +59,9 @@ const float CUTOFF_DISCHARGE = 2.80f;
 const float CUTOFF_CHARGE    = 4.20f;
 const uint8_t NUM_CHANNELS   = 3;
 const unsigned long SAMPLE_MS = 500;
+const time_t BACKUP_INTERVAL_SEC = 24UL * 60UL * 60UL; // ۲۴ ساعت به ثانیه
+time_t lastBackupEpoch = 0;
+bool backupNvsLoaded = false;
 
 // ─── State Definitions ─────────────────────────────
 enum ChannelState { IDLE, CHARGING, DISCHARGE_500, DISCHARGE_1000, DISCHARGE_1500, MEASURING_IR, Triage, DONE };
@@ -332,5 +335,39 @@ void loop() {
     sampleAll(dt); 
     updateTFT(); 
   }
+
+  // --- مکانیزم ارسال بکاپ هوشمند (ترکیب بوت و NVS) ---
+  // چک کردن زمان هر 5 ثانیه یک بار برای جلوگیری از درگیری پردازنده
+  static unsigned long lastTimeCheck = 0;
+  
+  if (now - lastTimeCheck >= 5000) {
+    lastTimeCheck = now;
+    time_t currentEpoch = nowEpoch(); // این تابع قبلا در کدات تعریف شده
+    
+    // مطمئن میشیم که ESP ساعت رو از NTP گرفته (Epoch سال بزرگتر از 2020 باشد)
+    if (currentEpoch > 1600000000) {
+      
+      // فقط یک‌بار بعد از روشن شدن مقدار قبلی رو از NVS می‌خونیم
+      if (!backupNvsLoaded) {
+        lastBackupEpoch = prefs.getULong("last_backup", 0);
+        backupNvsLoaded = true;
+        
+        // ترکیب روش 1: اگر در زمان خاموشی، از 24 ساعت گذشته بود همون اول روشن شدن بفرست
+        if (currentEpoch - lastBackupEpoch >= BACKUP_INTERVAL_SEC || lastBackupEpoch == 0) {
+           sendBaleNotification("[BACKUP_CSV]");
+           lastBackupEpoch = currentEpoch;
+           prefs.putULong("last_backup", lastBackupEpoch);
+        }
+      }
+      
+      // ترکیب روش 2: اگر دستگاه روشن موند و 24 ساعت گذشت
+      if (backupNvsLoaded && (currentEpoch - lastBackupEpoch >= BACKUP_INTERVAL_SEC)) {
+         sendBaleNotification("[BACKUP_CSV]");
+         lastBackupEpoch = currentEpoch;
+         prefs.putULong("last_backup", lastBackupEpoch);
+      }
+    }
+  }
+
   delay(10);
 }
